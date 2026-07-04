@@ -1,0 +1,8 @@
+# Notice
+
+Quest Starship Cabin is an original Unity/OpenXR relaxation prototype for Meta Quest.
+
+This project does not include third-party franchise assets, logos, music, voices, sound effects, meshes, fonts, or copied interface designs. It is not affiliated with, endorsed by, or sponsored by any entertainment rights holder, platform vendor, or headset manufacturer.
+
+The current scene uses simple procedural geometry, procedural starfield particles, and procedural ambient audio generated at runtime.
+
