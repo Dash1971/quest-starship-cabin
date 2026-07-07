@@ -6,18 +6,26 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
-Stable baseline: `Atmosphere V3`
+Stable comfort baseline: `Atmosphere V3`
+
+Current tested build: `VisibleStars/Input V10`
 
 - Native Quest APK build path proven
 - OpenXR immersive mode working on Quest 3
 - Head tracking working
 - Seated static scene, no locomotion
 - Procedural cabin geometry
-- Procedural starfield
+- Visible forward-window starfield with transparent observation glass, window star dots, and procedural particle depth
 - Procedural engine hum, air circulation, and occasional panel beeps
 - Lighting and room scale tuned through headset testing
+- Face-button ambience cycling with Quest controllers: A/B/X/Y cycles Drift / Orbit / Nebula
+- Console strip feedback and a short haptic pulse confirm each mode change
 
-The attempted first in-world control panel was removed from the publish baseline because it was visually messy and controller buttons were not mapped correctly. Controls are tracked in the roadmap.
+The attempted first large in-world text panel was removed because it was visually messy and controller buttons were not mapped correctly. Current controls are intentionally small and diegetic.
+
+## Near-Term Design Direction
+
+The current scene is a functional comfort and interaction prototype, not the target visual experience. The next major iteration should focus on making the cabin beautiful and believable: stronger spatial composition, less box-like architecture, better wall/window modules, more convincing sci-fi materials, richer lighting, and a more intentional relaxation atmosphere while preserving the seated, low-motion comfort baseline.
 
 ## Requirements
 
@@ -31,7 +39,7 @@ The attempted first in-world control panel was removed from the publish baseline
 
 ## Project Layout
 
-- `Assets/Scripts/` - runtime C# scripts for starfield, ambience, and session logic
+- `Assets/Scripts/` - runtime C# scripts for starfield, ambience, session logic, and XR input
 - `Assets/Editor/` - editor automation for scene setup and Android APK build
 - `Assets/Scenes/Cabin_Seated_MVP.unity` - generated stable cabin scene
 - `Assets/XR/` - Unity XR/OpenXR settings assets
@@ -76,4 +84,3 @@ Do not add copyrighted franchise names, logos, interface layouts, sound effects,
 ## License
 
 MIT. See `LICENSE`.
-

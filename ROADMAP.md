@@ -8,15 +8,17 @@
 
 ## Near Term
 
+- Done: implement proper XR controller input for ambience cycling.
+- Done: add one tested control first, using A/B/X/Y to cycle Drift / Orbit / Nebula.
+- Done: add small diegetic console-strip feedback plus haptic pulse for mode changes.
 - Replace the failed large text panel with a small, tidy diegetic console surface.
-- Implement proper XR controller input actions instead of legacy joystick button guesses.
-- Add one tested control first: cycle ambience mode.
 - Add a visible but unobtrusive session timer after controls work.
 - Add adjustable audio volume presets.
 - Add brightness presets: dim, normal, bright.
 
 ## Atmosphere
 
+- Done: make the forward starfield visible with transparent observation glass and window star dots.
 - Improve cabin architecture with cleaner wall modules and less box-like geometry.
 - Add a better observation window frame.
 - Add more starfield depth and optional slow nebula mode.
@@ -44,4 +46,3 @@
 - Add passthrough portal experiment.
 - Add personal object slots such as a book, chessboard, or quiet desk.
 - Explore lightweight custom 3D assets once the procedural prototype stabilizes.
-

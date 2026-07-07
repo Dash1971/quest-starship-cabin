@@ -25,6 +25,28 @@ namespace StarshipCabin
         [SerializeField] private UnityEvent onSessionEnded;
 
         private Coroutine sessionRoutine;
+        private Renderer driftIndicator;
+        private Renderer orbitIndicator;
+        private Renderer nebulaIndicator;
+
+        public CabinMode CurrentMode => mode;
+
+        private void Awake()
+        {
+            if (starfieldWindow == null)
+            {
+                starfieldWindow = FindAnyObjectByType<StarfieldWindow>();
+            }
+
+            if (audioController == null)
+            {
+                audioController = FindAnyObjectByType<AmbientAudioController>();
+            }
+
+            driftIndicator = FindRenderer("Amber Mode Strip");
+            orbitIndicator = FindRenderer("Teal Mode Strip");
+            nebulaIndicator = FindRenderer("Blue Status Strip");
+        }
 
         private void Start()
         {
@@ -51,6 +73,14 @@ namespace StarshipCabin
         {
             mode = nextMode;
             ApplyMode(mode);
+            Debug.Log($"Starship Cabin ambience mode: {mode}");
+        }
+
+        public void CycleMode()
+        {
+            var modeCount = System.Enum.GetValues(typeof(CabinMode)).Length;
+            var nextMode = (CabinMode)(((int)mode + 1) % modeCount);
+            SetMode(nextMode);
         }
 
         public void StartSession(int minutes)
@@ -75,15 +105,50 @@ namespace StarshipCabin
             switch (nextMode)
             {
                 case CabinMode.Drift:
-                    starfieldWindow.SetMotion(0.025f, 0.0f);
+                    starfieldWindow.SetMotion(0.018f, 0.0f);
+                    audioController?.SetMasterCalmVolume(1.0f);
                     break;
                 case CabinMode.Orbit:
-                    starfieldWindow.SetMotion(0.045f, 0.012f);
+                    starfieldWindow.SetMotion(0.095f, 0.020f);
+                    audioController?.SetMasterCalmVolume(0.88f);
                     break;
                 case CabinMode.Nebula:
-                    starfieldWindow.SetMotion(0.018f, 0.006f);
+                    starfieldWindow.SetMotion(0.006f, 0.004f);
+                    audioController?.SetMasterCalmVolume(0.74f);
                     break;
             }
+
+            UpdateModeIndicators(nextMode);
+        }
+
+        private static Renderer FindRenderer(string objectName)
+        {
+            var found = GameObject.Find(objectName);
+            return found == null ? null : found.GetComponent<Renderer>();
+        }
+
+        private static void SetIndicator(Renderer indicator, bool active)
+        {
+            if (indicator == null)
+            {
+                return;
+            }
+
+            var material = indicator.material;
+            var baseColor = material.color;
+            var intensity = active ? 2.8f : 0.35f;
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", baseColor * intensity);
+            indicator.transform.localScale = active
+                ? new Vector3(indicator.transform.localScale.x, 0.075f, indicator.transform.localScale.z)
+                : new Vector3(indicator.transform.localScale.x, 0.045f, indicator.transform.localScale.z);
+        }
+
+        private void UpdateModeIndicators(CabinMode activeMode)
+        {
+            SetIndicator(driftIndicator, activeMode == CabinMode.Drift);
+            SetIndicator(orbitIndicator, activeMode == CabinMode.Orbit);
+            SetIndicator(nebulaIndicator, activeMode == CabinMode.Nebula);
         }
 
         private IEnumerator SessionTimer()

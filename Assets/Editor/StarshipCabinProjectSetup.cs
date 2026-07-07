@@ -37,7 +37,8 @@ namespace StarshipCabin.EditorTools
             var darkTrim = Material("Graphite Trim", new Color(0.105f, 0.11f, 0.12f));
             var floorMat = Material("Quiet Charcoal Floor", new Color(0.16f, 0.15f, 0.135f));
             var carpetMat = Material("Muted Cabin Rug", new Color(0.25f, 0.16f, 0.14f));
-            var glassMat = EmissiveMaterial("Starfield Glass", new Color(0.016f, 0.028f, 0.052f), new Color(0.03f, 0.08f, 0.17f), 0.75f);
+            var glassMat = TransparentEmissiveMaterial("Starfield Glass", new Color(0.016f, 0.028f, 0.052f, 0.22f), new Color(0.03f, 0.08f, 0.17f), 0.55f);
+            var starMat = EmissiveMaterial("Visible Star Core", Color.white, Color.white, 2.4f);
             var amberMat = EmissiveMaterial("Soft Amber Panel", new Color(1.0f, 0.60f, 0.20f), new Color(1.0f, 0.50f, 0.12f), 1.75f);
             var tealMat = EmissiveMaterial("Soft Teal Panel", new Color(0.14f, 0.78f, 0.72f), new Color(0.10f, 0.70f, 0.64f), 1.35f);
             var blueMat = EmissiveMaterial("Soft Blue Status", new Color(0.16f, 0.50f, 0.92f), new Color(0.10f, 0.40f, 0.82f), 1.1f);
@@ -46,13 +47,13 @@ namespace StarshipCabin.EditorTools
 
             var cabinRoot = new GameObject("Atmosphere Cabin Shell");
             CreateShell(cabinRoot.transform, warmWall, wallInset, darkTrim, floorMat, carpetMat);
-            CreateForwardWindow(cabinRoot.transform, glassMat, darkTrim);
+            CreateForwardWindow(cabinRoot.transform, glassMat, darkTrim, starMat);
             CreateFurniture(cabinRoot.transform, darkTrim, cushionMat, woodMat);
             CreateControlSurfaces(cabinRoot.transform, darkTrim, amberMat, tealMat, blueMat);
             CreateLightRails(cabinRoot.transform, darkTrim, amberMat, tealMat);
 
             AddMainCamera();
-            AddStarfield();
+            AddStarfield(starMat);
             AddLights();
             AddExperienceController();
 
@@ -110,6 +111,21 @@ namespace StarshipCabin.EditorTools
             return mat;
         }
 
+        private static Material TransparentEmissiveMaterial(string name, Color color, Color emission, float intensity)
+        {
+            var mat = EmissiveMaterial(name, color, emission, intensity);
+            mat.SetFloat("_Mode", 3f);
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            mat.SetInt("_ZWrite", 0);
+            mat.DisableKeyword("_ALPHATEST_ON");
+            mat.EnableKeyword("_ALPHABLEND_ON");
+            mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            EditorUtility.SetDirty(mat);
+            return mat;
+        }
+
         private static GameObject Primitive(string name, PrimitiveType type, Vector3 position, Vector3 scale, Material material)
         {
             var go = GameObject.CreatePrimitive(type);
@@ -151,17 +167,38 @@ namespace StarshipCabin.EditorTools
             ChildPrimitive(root, "Rear Lower Trim", PrimitiveType.Cube, new Vector3(0f, 0.78f, 3.59f), new Vector3(7.8f, 0.08f, 0.12f), darkTrim);
         }
 
-        private static void CreateForwardWindow(Transform root, Material glassMat, Material darkTrim)
+        private static void CreateForwardWindow(Transform root, Material glassMat, Material darkTrim, Material starMat)
         {
             ChildPrimitive(root, "Forward Bulkhead Left", PrimitiveType.Cube, new Vector3(-3.62f, 1.65f, -3.70f), new Vector3(1.25f, 3.3f, 0.16f), darkTrim);
             ChildPrimitive(root, "Forward Bulkhead Right", PrimitiveType.Cube, new Vector3(3.62f, 1.65f, -3.70f), new Vector3(1.25f, 3.3f, 0.16f), darkTrim);
             ChildPrimitive(root, "Forward Bulkhead Top", PrimitiveType.Cube, new Vector3(0f, 2.86f, -3.70f), new Vector3(6.0f, 0.52f, 0.16f), darkTrim);
             ChildPrimitive(root, "Forward Bulkhead Bottom", PrimitiveType.Cube, new Vector3(0f, 0.58f, -3.70f), new Vector3(6.0f, 0.72f, 0.16f), darkTrim);
             ChildPrimitive(root, "Panoramic Observation Glass", PrimitiveType.Cube, new Vector3(0f, 1.80f, -3.75f), new Vector3(5.7f, 1.7f, 0.06f), glassMat);
+            CreateWindowStarDots(root, starMat);
             ChildPrimitive(root, "Window Top Trim", PrimitiveType.Cube, new Vector3(0f, 2.69f, -3.59f), new Vector3(6.05f, 0.12f, 0.16f), darkTrim);
             ChildPrimitive(root, "Window Bottom Trim", PrimitiveType.Cube, new Vector3(0f, 0.92f, -3.59f), new Vector3(6.05f, 0.12f, 0.16f), darkTrim);
             ChildPrimitive(root, "Window Left Trim", PrimitiveType.Cube, new Vector3(-3.02f, 1.80f, -3.59f), new Vector3(0.12f, 1.9f, 0.16f), darkTrim);
             ChildPrimitive(root, "Window Right Trim", PrimitiveType.Cube, new Vector3(3.02f, 1.80f, -3.59f), new Vector3(0.12f, 1.9f, 0.16f), darkTrim);
+        }
+
+        private static void CreateWindowStarDots(Transform root, Material starMat)
+        {
+            var stars = new GameObject("Visible Window Star Dots");
+            stars.transform.SetParent(root);
+
+            for (var i = 0; i < 180; i++)
+            {
+                var x = Mathf.Lerp(-2.62f, 2.62f, Hash01(i * 11 + 3));
+                var y = Mathf.Lerp(1.05f, 2.52f, Hash01(i * 17 + 5));
+                var size = Mathf.Lerp(0.018f, 0.052f, Mathf.Pow(Hash01(i * 23 + 7), 2.4f));
+                ChildPrimitive(stars.transform, $"Window Star Dot {i + 1}", PrimitiveType.Cube, new Vector3(x, y, -3.46f), new Vector3(size, size, 0.012f), starMat);
+            }
+        }
+
+        private static float Hash01(int seed)
+        {
+            var value = Mathf.Sin(seed * 12.9898f) * 43758.5453f;
+            return value - Mathf.Floor(value);
         }
 
         private static void CreateFurniture(Transform root, Material darkTrim, Material cushionMat, Material woodMat)
@@ -225,7 +262,7 @@ namespace StarshipCabin.EditorTools
             cameraObject.AddComponent<AudioListener>();
         }
 
-        private static void AddStarfield()
+        private static void AddStarfield(Material starMaterial)
         {
             var starObject = new GameObject("Procedural Starfield");
             starObject.transform.position = new Vector3(0f, 1.85f, -8.4f);
@@ -235,18 +272,24 @@ namespace StarshipCabin.EditorTools
             var main = particles.main;
             main.startLifetime = 120f;
             main.startSpeed = 0f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.012f, 0.04f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.085f);
             main.startColor = new ParticleSystem.MinMaxGradient(new Color(0.75f, 0.82f, 1f), Color.white);
             main.maxParticles = 1200;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var emission = particles.emission;
             emission.rateOverTime = 0f;
-            particles.Emit(1200);
 
             var shape = particles.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
             shape.scale = new Vector3(10.5f, 5.2f, 3.6f);
+
+            var renderer = starObject.GetComponent<ParticleSystemRenderer>();
+            renderer.sharedMaterial = starMaterial;
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sortingFudge = 5f;
+
+            particles.Emit(1200);
 
             starObject.AddComponent<StarfieldWindow>();
         }
@@ -290,6 +333,7 @@ namespace StarshipCabin.EditorTools
         {
             var controller = new GameObject("CabinExperience");
             controller.AddComponent<CabinExperienceController>();
+            controller.AddComponent<XRAmbienceInputController>();
 
             var audio = new GameObject("CabinAudio");
             audio.AddComponent<AmbientAudioController>();
