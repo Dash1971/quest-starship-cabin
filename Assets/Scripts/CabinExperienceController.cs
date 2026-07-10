@@ -11,10 +11,17 @@ namespace StarshipCabin
         Nebula
     }
 
+    /// <summary>
+    /// Ambience mode + session controller.
+    /// V2 change: drives the StarWindowSurface shader quad while preserving the
+    /// legacy StarfieldWindow path for the existing MVP scene. Audio volume is
+    /// applied even when no star window is present.
+    /// </summary>
     public class CabinExperienceController : MonoBehaviour
     {
         [Header("Mode")]
         [SerializeField] private CabinMode mode = CabinMode.Drift;
+        [SerializeField] private StarWindowSurface starWindow;
         [SerializeField] private StarfieldWindow starfieldWindow;
         [SerializeField] private AmbientAudioController audioController;
 
@@ -33,6 +40,11 @@ namespace StarshipCabin
 
         private void Awake()
         {
+            if (starWindow == null)
+            {
+                starWindow = FindAnyObjectByType<StarWindowSurface>();
+            }
+
             if (starfieldWindow == null)
             {
                 starfieldWindow = FindAnyObjectByType<StarfieldWindow>();
@@ -43,6 +55,8 @@ namespace StarshipCabin
                 audioController = FindAnyObjectByType<AmbientAudioController>();
             }
 
+            // Console mode strips arrive with the Milestone 2 furniture pass;
+            // these stay null-safe until then.
             driftIndicator = FindRenderer("Amber Mode Strip");
             orbitIndicator = FindRenderer("Teal Mode Strip");
             nebulaIndicator = FindRenderer("Blue Status Strip");
@@ -97,23 +111,33 @@ namespace StarshipCabin
 
         private void ApplyMode(CabinMode nextMode)
         {
-            if (starfieldWindow == null)
-            {
-                return;
-            }
-
             switch (nextMode)
             {
                 case CabinMode.Drift:
-                    starfieldWindow.SetMotion(0.018f, 0.0f);
+                    if (starWindow != null)
+                    {
+                        starWindow.SetMotion(0.018f, 0.0f);
+                        starWindow.SetNebula(0f);
+                    }
+                    starfieldWindow?.SetMotion(0.018f, 0.0f);
                     audioController?.SetMasterCalmVolume(1.0f);
                     break;
                 case CabinMode.Orbit:
-                    starfieldWindow.SetMotion(0.095f, 0.020f);
+                    if (starWindow != null)
+                    {
+                        starWindow.SetMotion(0.095f, 0.020f);
+                        starWindow.SetNebula(0f);
+                    }
+                    starfieldWindow?.SetMotion(0.095f, 0.020f);
                     audioController?.SetMasterCalmVolume(0.88f);
                     break;
                 case CabinMode.Nebula:
-                    starfieldWindow.SetMotion(0.006f, 0.004f);
+                    if (starWindow != null)
+                    {
+                        starWindow.SetMotion(0.006f, 0.004f);
+                        starWindow.SetNebula(1f);
+                    }
+                    starfieldWindow?.SetMotion(0.006f, 0.004f);
                     audioController?.SetMasterCalmVolume(0.74f);
                     break;
             }

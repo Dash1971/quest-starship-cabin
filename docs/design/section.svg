@@ -1,0 +1,59 @@
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="800" height="520" fill="#1e2024"/>
+  <defs>
+    <linearGradient id="glass2" x1="0" y1="1" x2="0.6" y2="0">
+      <stop offset="0%" stop-color="#0e1b30"/>
+      <stop offset="100%" stop-color="#060c18"/>
+    </linearGradient>
+  </defs>
+  <polygon points="100,440 120,365 240,190 700,190 700,440"
+           fill="#25231f" stroke="#d9d2c4" stroke-width="3"/>
+  <rect x="110" y="434" width="580" height="7" fill="#6d4a52"/>
+  <polygon points="132,352 226,204 244,214 150,362" fill="url(#glass2)" stroke="#1b1d20" stroke-width="4"/>
+  <g fill="#f4f8ff">
+    <circle cx="120" cy="150" r="1.8"/><circle cx="90" cy="220" r="1.3"/><circle cx="60" cy="300" r="1.6"/>
+    <circle cx="150" cy="110" r="1.2"/><circle cx="75" cy="120" r="1.4"/><circle cx="55" cy="190" r="1.1"/>
+    <circle cx="105" cy="260" r="1.1"/><circle cx="170" cy="80" r="1.5"/><circle cx="205" cy="120" r="1.1"/>
+  </g>
+  <rect x="122" y="360" width="26" height="7" rx="3" fill="#ffe8c4"/>
+  <ellipse cx="150" cy="345" rx="42" ry="18" fill="#ffe8c4" opacity="0.13"/>
+  <rect x="238" y="192" width="34" height="6" rx="3" fill="#ffe8c4"/>
+  <ellipse cx="262" cy="210" rx="48" ry="16" fill="#ffe8c4" opacity="0.12"/>
+  <rect x="660" y="192" width="34" height="6" rx="3" fill="#ffe8c4"/>
+  <g>
+    <rect x="150" y="392" width="180" height="42" rx="12" fill="#cfc6b4" stroke="#9b968c" stroke-width="2"/>
+    <rect x="150" y="360" width="34" height="46" rx="12" fill="#cfc6b4" stroke="#9b968c" stroke-width="2"/>
+  </g>
+  <g stroke="#6d5a49" stroke-width="3" fill="none" stroke-linecap="round">
+    <circle cx="246" cy="330" r="10"/>
+    <path d="M246,340 L246,392 L282,392 L282,432"/>
+    <path d="M246,352 L228,372 M246,352 L266,370"/>
+  </g>
+  <line x1="252" y1="326" x2="140" y2="200" stroke="#2cc7b8" stroke-width="1.5" stroke-dasharray="6,5" opacity="0.8"/>
+  <text x="118" y="188" fill="#2cc7b8" font-size="12">natural gaze → stars</text>
+  <rect x="368" y="408" width="96" height="10" rx="4" fill="#8a6a48"/>
+  <rect x="404" y="418" width="14" height="18" fill="#8a6a48"/>
+  <g stroke="#7d9468" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M494,404 C486,384 492,370 500,360 M494,404 C500,382 512,374 520,370 M494,404 C488,388 478,382 470,378"/>
+  </g>
+  <rect x="482" y="404" width="24" height="18" rx="4" fill="#8a6a48"/>
+  <g opacity="0.55">
+    <rect x="540" y="410" width="150" height="24" rx="4" fill="none" stroke="#9a958a" stroke-width="2" stroke-dasharray="6,5"/>
+    <rect x="556" y="384" width="120" height="26" rx="8" fill="none" stroke="#9a958a" stroke-width="2" stroke-dasharray="6,5"/>
+    <text x="616" y="374" text-anchor="middle" fill="#9a958a" font-size="11">sleep alcove beyond (raised 0.25 m)</text>
+  </g>
+  <g fill="#9a958a" font-size="12">
+    <line x1="100" y1="470" x2="700" y2="470" stroke="#55585e"/>
+    <line x1="100" y1="464" x2="100" y2="476" stroke="#55585e"/>
+    <line x1="700" y1="464" x2="700" y2="476" stroke="#55585e"/>
+    <text x="370" y="490">5.2 m deep</text>
+    <line x1="740" y1="190" x2="740" y2="440" stroke="#55585e"/>
+    <line x1="734" y1="190" x2="746" y2="190" stroke="#55585e"/>
+    <line x1="734" y1="440" x2="746" y2="440" stroke="#55585e"/>
+    <text x="750" y="320">2.5 m</text>
+    <text x="128" y="404" fill="#ffb35c" font-size="11">sill cove</text>
+    <text x="284" y="182" fill="#ffb35c" font-size="11">slope-return cove</text>
+    <text x="176" y="250" transform="rotate(-56 176 250)" font-size="11" fill="#d9d2c4">glazed hull slope ~55°</text>
+  </g>
+  <text x="400" y="30" text-anchor="middle" fill="#e8e4dc" font-size="14" font-weight="600">SECTION THROUGH LOUNGE · OUTBOARD AT LEFT</text>
+</svg>

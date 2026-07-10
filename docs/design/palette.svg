@@ -1,0 +1,48 @@
+<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <rect width="800" height="360" fill="#1e2024"/>
+  <text x="400" y="28" text-anchor="middle" fill="#e8e4dc" font-size="14" font-weight="600">PALETTE — SOFT BRIGHT (✦ = emissive)</text>
+  <g>
+    <rect x="20" y="48" width="170" height="56" rx="6" fill="#d9d2c4"/>
+    <text x="20" y="120" fill="#e8e4dc" font-size="12" font-weight="600">Quarters Cream</text>
+    <text x="20" y="136" fill="#9a958a" font-size="11">#D9D2C4 · walls, hull slope</text>
+    <rect x="215" y="48" width="170" height="56" rx="6" fill="#e6e0d4"/>
+    <text x="215" y="120" fill="#e8e4dc" font-size="12" font-weight="600">Soft Panel White</text>
+    <text x="215" y="136" fill="#9a958a" font-size="11">#E6E0D4 · ceiling, bed linen</text>
+    <rect x="410" y="48" width="170" height="56" rx="6" fill="#cfc6b4"/>
+    <text x="410" y="120" fill="#e8e4dc" font-size="12" font-weight="600">Oatmeal Upholstery</text>
+    <text x="410" y="136" fill="#9a958a" font-size="11">#CFC6B4 · couch, cushions</text>
+    <rect x="605" y="48" width="170" height="56" rx="6" fill="#6d4a52"/>
+    <text x="605" y="120" fill="#e8e4dc" font-size="12" font-weight="600">Muted Plum Carpet</text>
+    <text x="605" y="136" fill="#9a958a" font-size="11">#6D4A52 · lounge floor</text>
+  </g>
+  <g>
+    <rect x="20" y="152" width="170" height="56" rx="6" fill="#9b968c"/>
+    <text x="20" y="224" fill="#e8e4dc" font-size="12" font-weight="600">Warm Grey Trim</text>
+    <text x="20" y="240" fill="#9a958a" font-size="11">#9B968C · sills, frames, skirting</text>
+    <rect x="215" y="152" width="170" height="56" rx="6" fill="#8a6a48"/>
+    <text x="215" y="224" fill="#e8e4dc" font-size="12" font-weight="600">Cabin Wood</text>
+    <text x="215" y="240" fill="#9a958a" font-size="11">#8A6A48 · table, desk, planters</text>
+    <rect x="410" y="152" width="170" height="56" rx="6" fill="#7d9468"/>
+    <text x="410" y="224" fill="#e8e4dc" font-size="12" font-weight="600">Plant Green</text>
+    <text x="410" y="240" fill="#9a958a" font-size="11">#7D9468 · foliage accents</text>
+    <rect x="605" y="152" width="170" height="56" rx="6" fill="#1b1d20" stroke="#33363c"/>
+    <text x="605" y="224" fill="#e8e4dc" font-size="12" font-weight="600">Graphite Frame</text>
+    <text x="605" y="240" fill="#9a958a" font-size="11">#1B1D20 · window mullions only</text>
+  </g>
+  <g>
+    <rect x="20" y="256" width="170" height="56" rx="6" fill="#ffe8c4"/>
+    <text x="20" y="328" fill="#e8e4dc" font-size="12" font-weight="600">Warm White Cove ✦</text>
+    <text x="20" y="344" fill="#9a958a" font-size="11">#FFE8C4 · sill + ceiling coves</text>
+    <rect x="215" y="256" width="170" height="56" rx="6" fill="#ffb35c"/>
+    <text x="215" y="328" fill="#e8e4dc" font-size="12" font-weight="600">Amber Accent ✦</text>
+    <text x="215" y="344" fill="#9a958a" font-size="11">#FFB35C · reading light, mode strip</text>
+    <rect x="410" y="256" width="170" height="56" rx="6" fill="#2cc7b8"/>
+    <text x="410" y="328" fill="#e8e4dc" font-size="12" font-weight="600">Teal Status ✦</text>
+    <text x="410" y="344" fill="#9a958a" font-size="11">#2CC7B8 · tiny status details</text>
+    <rect x="605" y="256" width="170" height="56" rx="6" fill="#0a1526" stroke="#33363c"/>
+    <circle cx="640" cy="278" r="1.5" fill="#f4f8ff"/><circle cx="700" cy="292" r="1.2" fill="#f4f8ff"/>
+    <circle cx="745" cy="270" r="1.6" fill="#f4f8ff"/><circle cx="668" cy="298" r="1.0" fill="#f4f8ff"/>
+    <text x="605" y="328" fill="#e8e4dc" font-size="12" font-weight="600">Void Glass</text>
+    <text x="605" y="344" fill="#9a958a" font-size="11">#0A1526 · window base, stars #F4F8FF</text>
+  </g>
+</svg>
