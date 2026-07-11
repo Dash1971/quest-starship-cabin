@@ -19,7 +19,10 @@ using StarshipCabin;
 namespace StarshipCabin.EditorTools
 {
     /// <summary>
-    /// Concept V2 "Crew Quarters" scene generator — Milestone 1: shell + glazing.
+    /// Concept V2 "Crew Quarters" scene generator.
+    /// Milestone 1: shell + glazing. Milestone 2: furnishings (see
+    /// QuartersFurnishings.cs) — couch, sleep alcove, desk, console strips,
+    /// plants and set dressing, all beveled procedural meshes.
     ///
     /// Room frame: X = width (±3.2), Y = up (0..2.5), outboard (glazed hull
     /// slope) toward -Z, inner/entry wall at +Z. The hull face rises from a
@@ -83,6 +86,7 @@ namespace StarshipCabin.EditorTools
             var root = new GameObject("Quarters Shell").transform;
             BuildQuartersShell(root, materials);
             var starSurface = BuildGlazing(root, materials);
+            QuartersFurnishings.BuildAll(root);
             BuildInterimLights();
             AddXrRig();
             AddControllers(starSurface);
@@ -172,7 +176,7 @@ namespace StarshipCabin.EditorTools
 
             // Lounge carpet: rounded rectangle, slightly raised.
             var carpetContour = QuartersMeshes.RoundedQuadContour(
-                new Vector2(-3.0f, -1.55f), new Vector2(0.7f, -1.55f),
+                new Vector2(-3.0f, -2.05f), new Vector2(0.7f, -2.05f), // extended under the couch (Milestone 2)
                 new Vector2(0.7f, 1.95f), new Vector2(-3.0f, 1.95f),
                 0.25f, CornerSegments);
             var carpetTop = QuartersMeshes.MapToPlane(carpetContour, Vector3.zero, Vector3.right, Vector3.forward, Vector3.up, 0.012f);
@@ -383,7 +387,7 @@ namespace StarshipCabin.EditorTools
             // The tracked camera supplies real head height above it, and the
             // Milestone 3 SeatAnchorController will move this origin between anchors.
             var origin = new GameObject("XR Origin (Quarters)");
-            origin.transform.position = new Vector3(-1.0f, 0f, -0.4f);
+            origin.transform.position = new Vector3(-1.6f, 0f, -0.55f); // just in front of the couch
             origin.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
 
             var cameraObject = new GameObject("Main Camera");
@@ -426,7 +430,7 @@ namespace StarshipCabin.EditorTools
         // Materials
         // ------------------------------------------------------------------
 
-        private static Material CreateMaterial(string name, Color color)
+        internal static Material CreateMaterial(string name, Color color)
         {
             var path = $"Assets/Materials/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -444,7 +448,7 @@ namespace StarshipCabin.EditorTools
             return mat;
         }
 
-        private static Material CreateEmissiveMaterial(string name, Color color, Color emission, float intensity)
+        internal static Material CreateEmissiveMaterial(string name, Color color, Color emission, float intensity)
         {
             var mat = CreateMaterial(name, color);
             mat.EnableKeyword("_EMISSION");
@@ -494,12 +498,12 @@ namespace StarshipCabin.EditorTools
         // Object + asset helpers
         // ------------------------------------------------------------------
 
-        private static GameObject MeshObject(Transform parent, string name, Mesh mesh, Material material)
+        internal static GameObject MeshObject(Transform parent, string name, Mesh mesh, Material material)
         {
             return MeshObject(parent, name, mesh, material, Vector3.zero, Quaternion.identity);
         }
 
-        private static GameObject MeshObject(
+        internal static GameObject MeshObject(
             Transform parent, string name, Mesh mesh, Material material, Vector3 position, Quaternion rotation)
         {
             var saved = SaveMesh(mesh);
