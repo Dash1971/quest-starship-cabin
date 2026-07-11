@@ -269,6 +269,48 @@ namespace StarshipCabin.EditorTools
             return draft.ToMesh(name);
         }
 
+        /// <summary>
+        /// Appends a chamfered box into an existing draft (Milestone 6: lets
+        /// many small parts — chess pieces, book stacks — share one mesh and
+        /// one draw call instead of one asset each).
+        /// </summary>
+        public static void AppendChamferedBox(MeshDraft draft, Vector3 center, Vector3 size, float chamfer)
+        {
+            AppendChamferedBox(draft, center, size, chamfer, Quaternion.identity);
+        }
+
+        public static void AppendChamferedBox(MeshDraft draft, Vector3 center, Vector3 size, float chamfer, Quaternion rotation)
+        {
+            var hx = size.x * 0.5f;
+            var hy = size.y * 0.5f;
+            var hz = size.z * 0.5f;
+            var ch = Mathf.Min(chamfer, Mathf.Min(hx, hy) * 0.9f);
+
+            var profile = new List<Vector2>
+            {
+                new(hx - ch, -hy),
+                new(hx, -hy + ch),
+                new(hx, hy - ch),
+                new(hx - ch, hy),
+                new(-hx + ch, hy),
+                new(-hx, hy - ch),
+                new(-hx, -hy + ch),
+                new(-hx + ch, -hy)
+            };
+
+            var front = new List<Vector3>(profile.Count);
+            var back = new List<Vector3>(profile.Count);
+            foreach (var p in profile)
+            {
+                front.Add(center + rotation * new Vector3(p.x, p.y, hz));
+                back.Add(center + rotation * new Vector3(p.x, p.y, -hz));
+            }
+
+            draft.AddSkirt(front, back, faceOutward: true);
+            draft.AddConvexPolygon(front, rotation * Vector3.forward);
+            draft.AddConvexPolygon(back, rotation * Vector3.back);
+        }
+
         /// <summary>Single quad with explicit 0..1 UVs (used by the fade overlay).</summary>
         public static Mesh UvQuad(string name, Vector3 p00, Vector3 p10, Vector3 p11, Vector3 p01)
         {

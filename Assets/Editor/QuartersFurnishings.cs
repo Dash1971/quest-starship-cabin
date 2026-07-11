@@ -51,6 +51,7 @@ namespace StarshipCabin.EditorTools
             BuildEntryDoor(parent, mats);
             BuildMediaScreen(parent, mats);
             BuildDecor(parent, mats);
+            QuartersDecor.Build(parent); // Milestone 6: chess set + library
         }
 
         private static FurnishingMaterials CreateFurnishingMaterials()
@@ -311,9 +312,8 @@ namespace StarshipCabin.EditorTools
             BuildPlant(parent, mats, "Lounge Plant", new Vector3(0.45f, 0f, -1.90f), 0.26f, 0.55f, seed: 11);
             BuildPlant(parent, mats, "Desk Plant", new Vector3(-2.90f, 0f, 1.10f), 0.24f, 0.48f, seed: 29);
 
-            // Small tabletop plant (the sill ledge sits under the sloped glass —
-            // anything taller than ~0.2 m there would clip through it).
-            BuildPlant(parent, mats, "Table Plant", new Vector3(-1.85f, 0.39f, -0.05f), 0.14f, 0.22f, seed: 47);
+            // Milestone 6: the tabletop plant made way for the chessboard
+            // (see QuartersDecor). The two floor plants carry the greenery.
 
             // Books on the sill near the alcove.
             Box(parent, mats.Wood, "Sill Book 1", 0.045f, 0.17f, 0.12f, 0.006f,
