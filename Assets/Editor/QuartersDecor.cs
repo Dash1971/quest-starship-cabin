@@ -231,8 +231,13 @@ namespace StarshipCabin.EditorTools
 
         private static void Book(Transform parent, Material material, string name, Vector3 size, Vector3 position, Quaternion rotation)
         {
-            var mesh = QuartersMeshes.ChamferedBox($"Quarters {name}", size.x, size.y, size.z, 0.004f);
+            var mesh = QuartersMeshes.ChamferedBox($"Quarters {AssetSafeName(name)}", size.x, size.y, size.z, 0.004f);
             QuartersSceneSetup.MeshObject(parent, name, mesh, material, position, rotation);
+        }
+
+        private static string AssetSafeName(string value)
+        {
+            return value.Replace(':', '-').Replace('/', '-').Replace('\\', '-');
         }
 
         /// <summary>
