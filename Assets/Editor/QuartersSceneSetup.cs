@@ -9,6 +9,7 @@ using UnityEditor.XR.Management;
 using UnityEditor.XR.Management.Metadata;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SpatialTracking;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
@@ -21,11 +22,17 @@ namespace StarshipCabin.EditorTools
     /// <summary>
     /// Concept V2 "Crew Quarters" scene generator.
     /// Milestone 1: shell + glazing. Milestone 2: furnishings (see
-    /// QuartersFurnishings.cs). Milestone 3: seat anchors — grip-cycled
-    /// comfort hops between couch / bed-sit / bed-lie / desk with a fade
-    /// overlay (see SeatAnchorController.cs), spawn seated on the couch,
-    /// and an enlarged star surface so every pane shows stars from every
-    /// seat (fixes the black alcove window seen from the couch).
+    /// QuartersFurnishings.cs). Milestone 3: seat anchors (see
+    /// SeatAnchorController.cs) + star coverage fix. Milestone 4: URP
+    /// migration, baked cove lighting (area lights + emissive strips, one
+    /// mixed runtime light), a bake menu item, star shader V2 (colour
+    /// temperature, halos, galactic band, shooting stars), and the bed
+    /// anchor reworked to a reclining pose.
+    ///
+    /// Milestone 4 workflow: Setup Quarters Scene (V2) → Bake Quarters
+    /// Lighting → Build Quarters APK. The build no longer regenerates the
+    /// scene (that would discard the bake); regenerate explicitly via the
+    /// setup menu, then re-bake.
     ///
     /// Room frame: X = width (±3.2), Y = up (0..2.5), outboard (glazed hull
     /// slope) toward -Z, inner/entry wall at +Z. The hull face rises from a
@@ -77,12 +84,16 @@ namespace StarshipCabin.EditorTools
             EnsureFolders();
             ConfigureAndroidPlayer();
             ConfigureOpenXrForQuest();
+            ConfigureUrpPipeline();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+            // Dim flat ambient: the baked coves carry the room from Milestone 4 on.
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.40f, 0.385f, 0.355f);
+            RenderSettings.ambientLight = new Color(0.17f, 0.165f, 0.155f);
             RenderSettings.fog = false;
+
+            ConfigureLightingSettings();
 
             var materials = CreateQuartersMaterials();
 
@@ -90,7 +101,7 @@ namespace StarshipCabin.EditorTools
             BuildQuartersShell(root, materials);
             var starSurface = BuildGlazing(root, materials);
             QuartersFurnishings.BuildAll(root);
-            BuildInterimLights();
+            BuildBakedLightRig();
             AddXrRig();
             AddControllers(starSurface);
 
@@ -101,10 +112,41 @@ namespace StarshipCabin.EditorTools
             Debug.Log("Starship Cabin: Quarters V2 scene generated at " + ScenePath);
         }
 
+        [MenuItem("Starship Cabin/Bake Quarters Lighting")]
+        public static void BakeQuartersLighting()
+        {
+            if (!File.Exists(ScenePath))
+            {
+                throw new InvalidOperationException(
+                    "Quarters scene not found — run Starship Cabin/Setup Quarters Scene (V2) first.");
+            }
+
+            var active = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (active.path != ScenePath)
+            {
+                EditorSceneManager.OpenScene(ScenePath);
+            }
+
+            ConfigureLightingSettings();
+            Lightmapping.BakeAsync();
+            Debug.Log("Starship Cabin: lightmap bake started. Save the scene when it completes, then Build Quarters APK.");
+        }
+
         [MenuItem("Starship Cabin/Build Quarters APK")]
         public static void BuildQuartersApk()
         {
-            SetupQuartersScene();
+            // Milestone 4: the build no longer regenerates the scene — that
+            // would discard baked lightmaps. Regenerate + re-bake explicitly.
+            if (!File.Exists(ScenePath))
+            {
+                SetupQuartersScene();
+            }
+            else
+            {
+                ConfigureAndroidPlayer();
+                ConfigureOpenXrForQuest();
+                ConfigureUrpPipeline();
+            }
 
             Directory.CreateDirectory("Builds");
             var buildPath = "Builds/StarshipCabin-Quarters.apk";
@@ -367,19 +409,69 @@ namespace StarshipCabin.EditorTools
         // Lights, rig, controllers
         // ------------------------------------------------------------------
 
-        private static void BuildInterimLights()
+        private static void BuildBakedLightRig()
         {
-            // Interim realtime lights approximating the cove scheme; replaced by
-            // baked area lights in Milestone 4.
-            var lightsRoot = new GameObject("Interim Lights").transform;
+            // Milestone 4: the concept's lighting plan. Baked area lights along
+            // the cove lines (plus the already-BakedEmissive cove strips), warm
+            // baked points for the alcove/desk pools, and exactly ONE mixed
+            // runtime light — the cool starlight fill behind the glazing.
+            var lightsRoot = new GameObject("Baked Light Rig").transform;
 
-            PointLight(lightsRoot, "Warm Room Key", new Vector3(0f, 2.2f, 0.5f), new Color(1f, 0.88f, 0.72f), 1.7f, 9.5f);
-            PointLight(lightsRoot, "Sill Cove Glow", new Vector3(0f, 1.1f, -2.2f), new Color(1f, 0.87f, 0.68f), 0.9f, 4.5f);
-            PointLight(lightsRoot, "Starlight Fill", new Vector3(0f, 1.9f, -2.0f), new Color(0.5f, 0.64f, 0.95f), 0.5f, 4.5f);
-            PointLight(lightsRoot, "Alcove Reading Glow", new Vector3(2.1f, 2.1f, -0.5f), new Color(1f, 0.72f, 0.42f), 0.55f, 4.0f);
+            var warmCove = new Color(1f, 0.882f, 0.702f);
+            var warmPool = new Color(1f, 0.72f, 0.42f);
+
+            // Key: sill cove area light grazing up the glazed slope.
+            AreaLight(lightsRoot, "Sill Cove Key", new Vector3(0f, 0.82f, -2.48f),
+                Quaternion.LookRotation(SlopeNormal, Vector3.up), new Vector2(5.8f, 0.15f), warmCove, 2.4f, 5.5f);
+
+            // Fill: ceiling perimeter coves, angled slightly inward.
+            AreaLight(lightsRoot, "Ceiling Cove Left", new Vector3(-3.02f, 2.40f, 0.6f),
+                Quaternion.LookRotation(Vector3.down + Vector3.right * 0.35f, Vector3.forward), new Vector2(3.8f, 0.10f), warmCove, 1.5f, 4.5f);
+            AreaLight(lightsRoot, "Ceiling Cove Right", new Vector3(3.02f, 2.40f, 0.6f),
+                Quaternion.LookRotation(Vector3.down + Vector3.left * 0.35f, Vector3.forward), new Vector2(3.8f, 0.10f), warmCove, 1.5f, 4.5f);
+            AreaLight(lightsRoot, "Ceiling Cove Inner", new Vector3(0f, 2.40f, 2.48f),
+                Quaternion.LookRotation(Vector3.down + Vector3.back * 0.35f, Vector3.right), new Vector2(6.0f, 0.10f), warmCove, 1.3f, 4.5f);
+            AreaLight(lightsRoot, "Ceiling Cove Slope Return", new Vector3(0f, 2.40f, -1.30f),
+                Quaternion.LookRotation(Vector3.down + Vector3.forward * 0.35f, Vector3.right), new Vector2(6.0f, 0.10f), warmCove, 1.3f, 4.5f);
+
+            // Local pools.
+            BakedPoint(lightsRoot, "Alcove Reading Pool", new Vector3(2.05f, 1.45f, -1.05f), warmPool, 1.0f, 3.0f);
+            BakedPoint(lightsRoot, "Desk Lamp Pool", new Vector3(-2.9f, 1.15f, 2.3f), warmPool, 0.7f, 2.5f);
+            BakedPoint(lightsRoot, "Room Soft Fill", new Vector3(0f, 2.0f, 0.6f), new Color(1f, 0.88f, 0.72f), 1.1f, 8.0f);
+
+            // The only runtime light: cool starlight through the glazing, so
+            // ambience mode changes can tint the room subtly in later work.
+            var starlight = new GameObject("Starlight Fill (Mixed)");
+            starlight.transform.SetParent(lightsRoot);
+            starlight.transform.position = new Vector3(0f, 1.9f, -2.0f);
+            var mixed = starlight.AddComponent<Light>();
+            mixed.type = LightType.Point;
+            mixed.color = new Color(0.5f, 0.64f, 0.95f);
+            mixed.intensity = 0.5f;
+            mixed.range = 4.5f;
+            mixed.shadows = LightShadows.None;
+            mixed.lightmapBakeType = LightmapBakeType.Mixed;
         }
 
-        private static void PointLight(Transform parent, string name, Vector3 position, Color color, float intensity, float range)
+        private static void AreaLight(
+            Transform parent, string name, Vector3 position, Quaternion rotation,
+            Vector2 size, Color color, float intensity, float range)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent);
+            go.transform.position = position;
+            go.transform.rotation = rotation;
+            var light = go.AddComponent<Light>();
+            light.type = LightType.Rectangle; // baked-only: emits along local +Z
+            light.areaSize = size;
+            light.color = color;
+            light.intensity = intensity;
+            light.range = range;
+            light.shadows = LightShadows.Soft;
+            light.lightmapBakeType = LightmapBakeType.Baked;
+        }
+
+        private static void BakedPoint(Transform parent, string name, Vector3 position, Color color, float intensity, float range)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -389,6 +481,78 @@ namespace StarshipCabin.EditorTools
             light.color = color;
             light.intensity = intensity;
             light.range = range;
+            light.shadows = LightShadows.Soft;
+            light.lightmapBakeType = LightmapBakeType.Baked;
+        }
+
+        // ------------------------------------------------------------------
+        // URP pipeline + lighting settings
+        // ------------------------------------------------------------------
+
+        private static void ConfigureUrpPipeline()
+        {
+            Directory.CreateDirectory("Assets/Settings");
+
+            const string rendererPath = "Assets/Settings/Quarters Renderer.asset";
+            var rendererData = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rendererPath);
+            if (rendererData == null)
+            {
+                rendererData = ScriptableObject.CreateInstance<UniversalRendererData>();
+                AssetDatabase.CreateAsset(rendererData, rendererPath);
+            }
+
+            const string pipelinePath = "Assets/Settings/Quarters URP.asset";
+            var pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(pipelinePath);
+            if (pipeline == null)
+            {
+                pipeline = UniversalRenderPipelineAsset.Create(rendererData);
+                AssetDatabase.CreateAsset(pipeline, pipelinePath);
+            }
+
+            // Quest-friendly defaults: MSAA 4x, no HDR, no realtime shadow cost
+            // beyond the single mixed light (which casts none anyway).
+            pipeline.msaaSampleCount = 4;
+            pipeline.supportsHDR = false;
+            pipeline.shadowDistance = 8f;
+            EditorUtility.SetDirty(pipeline);
+
+            GraphicsSettings.defaultRenderPipeline = pipeline;
+
+            // Assign to every quality level so device tiers can't fall back to Built-in.
+            var originalLevel = QualitySettings.GetQualityLevel();
+            for (var i = 0; i < QualitySettings.names.Length; i++)
+            {
+                QualitySettings.SetQualityLevel(i, applyExpensiveChanges: false);
+                QualitySettings.renderPipeline = pipeline;
+            }
+            QualitySettings.SetQualityLevel(originalLevel, applyExpensiveChanges: false);
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void ConfigureLightingSettings()
+        {
+            const string path = "Assets/Settings/Quarters Lighting.lighting";
+            var settings = AssetDatabase.LoadAssetAtPath<LightingSettings>(path);
+            if (settings == null)
+            {
+                settings = new LightingSettings { name = "Quarters Lighting" };
+                AssetDatabase.CreateAsset(settings, path);
+            }
+
+            settings.lightmapper = LightingSettings.Lightmapper.ProgressiveGPU;
+            settings.bakedGI = true;
+            settings.realtimeGI = false;
+            settings.mixedBakeMode = MixedLightingMode.IndirectOnly;
+            settings.lightmapMaxSize = 1024;
+            settings.lightmapResolution = 16f; // texels/m — small room, crisp coves
+            settings.lightmapPadding = 2;
+            settings.ao = true;
+            settings.aoMaxDistance = 0.6f;
+            settings.lightmapCompression = LightmapCompression.NormalQuality;
+            EditorUtility.SetDirty(settings);
+
+            Lightmapping.lightingSettings = settings;
         }
 
         private static void AddXrRig()
@@ -447,7 +611,12 @@ namespace StarshipCabin.EditorTools
                 // the user stays physically seated throughout.
                 new SeatAnchor { anchorName = "Couch", eyePoint = new Vector3(-1.6f, 1.10f, -1.42f), yawDegrees = 0f },
                 new SeatAnchor { anchorName = "Bed (sitting)", eyePoint = new Vector3(1.42f, 1.22f, -0.10f), yawDegrees = 225f },
-                new SeatAnchor { anchorName = "Bed (lying)", eyePoint = new Vector3(2.05f, 0.78f, -0.85f), yawDegrees = 0f },
+                // Reworked from "lying" after headset feedback: eye at 0.78 m
+                // felt like sitting *inside* the mattress when physically
+                // seated. Reclining against the headboard reads naturally in a
+                // seated posture and keeps the up-through-the-glass view.
+                // (For true flat-on-your-back: set y back to ~0.78.)
+                new SeatAnchor { anchorName = "Bed (reclining)", eyePoint = new Vector3(2.05f, 0.95f, -1.00f), yawDegrees = 0f },
                 new SeatAnchor { anchorName = "Desk", eyePoint = new Vector3(-2.2f, 1.18f, 2.0f), yawDegrees = 270f }
             };
 
@@ -501,17 +670,30 @@ namespace StarshipCabin.EditorTools
         internal static Material CreateMaterial(string name, Color color)
         {
             var path = $"Assets/Materials/{name}.mat";
+            var urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            if (urpLit == null)
+            {
+                throw new InvalidOperationException(
+                    "URP Lit shader not found. Ensure com.unity.render-pipelines.universal is installed (Milestone 4).");
+            }
+
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing != null)
             {
+                // Milestone 4: upgrade any material generated under Built-in RP.
+                if (existing.shader != urpLit && existing.shader.name == "Standard")
+                {
+                    existing.shader = urpLit;
+                    existing.SetColor("_BaseColor", color);
+                    existing.SetFloat("_Smoothness", 0.25f);
+                    EditorUtility.SetDirty(existing);
+                }
                 return existing;
             }
 
-            var mat = new Material(Shader.Find("Standard"))
-            {
-                name = name,
-                color = color
-            };
+            var mat = new Material(urpLit) { name = name };
+            mat.SetColor("_BaseColor", color);
+            mat.SetFloat("_Smoothness", 0.25f); // matte interior surfaces
             AssetDatabase.CreateAsset(mat, path);
             return mat;
         }
@@ -528,13 +710,18 @@ namespace StarshipCabin.EditorTools
 
         private static Material CreateGlassMaterial(string name, Color color, Color emission, float intensity)
         {
+            // URP Lit transparent surface (Milestone 4).
             var mat = CreateEmissiveMaterial(name, color, emission, intensity);
-            mat.SetFloat("_Mode", 3f);
-            mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
-            mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+            mat.SetColor("_BaseColor", color);
+            mat.SetFloat("_Surface", 1f); // 0 = opaque, 1 = transparent
+            mat.SetFloat("_Blend", 0f);   // alpha blend
+            mat.SetOverrideTag("RenderType", "Transparent");
+            mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             mat.SetInt("_ZWrite", 0);
+            mat.SetFloat("_Smoothness", 0.85f); // glassy highlight
+            mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.DisableKeyword("_ALPHATEST_ON");
-            mat.EnableKeyword("_ALPHABLEND_ON");
             mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
             mat.renderQueue = (int)RenderQueue.Transparent;
             EditorUtility.SetDirty(mat);
