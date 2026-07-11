@@ -1,26 +1,33 @@
-// Procedural starfield for the quarters observation glass — V2 beauty pass.
-// One unlit quad. Three parallax star layers with per-star colour temperature,
-// soft halos on the brightest stars, a faint galactic band, occasional
-// shooting stars (frequency follows the ambience mode's motion), capped
-// twinkle (comfort: never strobes), and a slow two-tone nebula wash for the
-// Nebula mode. Works under Built-in RP and URP (single SRPDefaultUnlit pass).
+// Procedural starfield for the quarters observation glass — V3 "dark sky" pass.
+// Design goal (headset feedback): the awe of a truly dark night sky / Hubble
+// frames. That comes from MANY faint point stars with a power-law brightness
+// distribution and a rare brilliant few — never from large discs. V3:
+//  - stars are near-point cores; brightness varies wildly, size barely
+//  - four parallax layers down to a fine "dust of stars"
+//  - the brightest few get soft halos + 4-point diffraction spikes (the
+//    Hubble signature), on the nearest layer only
+//  - the galactic band gains dark dust lanes and much higher faint-star
+//    density inside it
+//  - soft filmic tone map so brilliant stars bloom instead of clipping
+// Motion (M5), shooting stars (M4), nebula mode, and the capped comfort
+// twinkle are preserved. Works under Built-in RP and URP (SRPDefaultUnlit).
 Shader "StarshipCabin/StarWindow"
 {
     Properties
     {
-        _DeepColor ("Deep Space", Color) = (0.012, 0.020, 0.045, 1)
-        _HazeColor ("Distant Haze", Color) = (0.045, 0.085, 0.160, 1)
+        _DeepColor ("Deep Space", Color) = (0.010, 0.016, 0.038, 1)
+        _HazeColor ("Distant Haze", Color) = (0.040, 0.075, 0.145, 1)
         _StarColor ("Star Color", Color) = (0.955, 0.970, 1.0, 1)
-        _TintWarm ("Warm Star Tint", Color) = (1.0, 0.83, 0.66, 1)
-        _TintCool ("Cool Star Tint", Color) = (0.70, 0.80, 1.0, 1)
-        _BandColor ("Galactic Band", Color) = (0.115, 0.125, 0.210, 1)
-        _BandStrength ("Band Strength", Range(0, 1)) = 0.55
+        _TintWarm ("Warm Star Tint", Color) = (1.0, 0.80, 0.60, 1)
+        _TintCool ("Cool Star Tint", Color) = (0.66, 0.78, 1.0, 1)
+        _BandColor ("Galactic Band", Color) = (0.135, 0.140, 0.215, 1)
+        _BandStrength ("Band Strength", Range(0, 1)) = 0.6
         _NebulaColor ("Nebula Color", Color) = (0.240, 0.170, 0.360, 1)
         _NebulaColorB ("Nebula Color B", Color) = (0.100, 0.220, 0.300, 1)
-        _Density ("Star Density", Range(0.1, 1.0)) = 0.55
+        _Density ("Star Density", Range(0.1, 1.0)) = 0.72
         _Speed ("Scroll Speed", Float) = 0.018
         _Drift ("Lateral Drift", Float) = 0.0
-        _Twinkle ("Twinkle Amount", Range(0, 0.35)) = 0.20
+        _Twinkle ("Twinkle Amount", Range(0, 0.35)) = 0.18
         _NebulaAmount ("Nebula Amount", Range(0, 1)) = 0.0
         _Meteors ("Shooting Stars", Range(0, 1)) = 1.0
     }
@@ -54,9 +61,6 @@ Shader "StarshipCabin/StarWindow"
             float _NebulaAmount;
             float _Meteors;
 
-            // Mode speeds arrive in the historical 0.006..0.095 range; this maps
-            // them to UV rates. Raised from 0.05 (V1) so Orbit visibly glides
-            // while Drift stays near-still.
             #define SPEED_SCALE 0.12
 
             struct appdata
@@ -117,60 +121,72 @@ Shader "StarshipCabin/StarWindow"
                 return value;
             }
 
-            // Signed distance from the galactic band spine (a tilted line in UV
-            // space, roughly matching the slope's visible region diagonal).
             float bandMask(float2 uv)
             {
                 float2 spineDir = normalize(float2(0.88, 0.47));
                 float2 rel = uv - float2(1.56, 1.05);
                 float s = dot(rel, float2(-spineDir.y, spineDir.x));
-                return exp(-s * s * 9.0);
+                return exp(-s * s * 7.0);
             }
 
-            // Per-star colour temperature: most stars near-white, tails of the
-            // hash distribution go warm or cool.
             float3 starTint(float t)
             {
                 float3 tint = float3(1.0, 1.0, 1.0);
-                tint = lerp(tint, _TintWarm.rgb, saturate((0.32 - t) * 4.0));
-                tint = lerp(tint, _TintCool.rgb, saturate((t - 0.68) * 4.0));
+                tint = lerp(tint, _TintWarm.rgb, saturate((0.30 - t) * 4.0));
+                tint = lerp(tint, _TintCool.rgb, saturate((t - 0.70) * 4.0));
                 return tint;
             }
 
-            float3 starLayer(float2 uv, float scale, float parallax, float t, float band)
+            // spikes: 1 = this layer's brilliant stars get halo + diffraction
+            // spikes (nearest layer only, so the sky doesn't get busy).
+            float3 starLayer(float2 uv, float scale, float parallax, float t, float band, float gain, float spikes)
             {
-                // Milestone 5: stars stream laterally toward +u (toward the
-                // sleep alcove) so the ship reads as flying forward past a side
-                // window, not descending. _Drift adds a touch more lateral
-                // motion in Orbit; there is no vertical component.
+                // M5 direction: lateral stream toward the sleep alcove.
                 float2 grid = uv * scale + float2(-(_Speed + _Drift * 0.35), 0.0) * (t * SPEED_SCALE * scale * parallax);
                 float2 cell = floor(grid);
                 float2 f = frac(grid);
 
                 float2 rnd = hash22(cell);
-                // Denser inside the galactic band.
-                float density = _Density * 0.55 * (1.0 + band * 1.3);
+                // Much denser inside the galactic band — that's what makes it a
+                // river of stars rather than a fog.
+                float density = saturate(_Density * 0.42 * (1.0 + band * 2.2));
                 float keep = step(1.0 - density, hash21(cell * 1.71 + 3.13));
                 float2 starPos = 0.18 + rnd * 0.64;
 
-                float d = length(f - starPos);
-                float sizeRand = hash21(cell + 7.77);
-                float size = lerp(0.030, 0.085, sizeRand * sizeRand);
-                float star = smoothstep(size, size * 0.25, d);
+                float2 offset = f - starPos;
+                float d = length(offset);
 
-                // Soft halo on the brightest stars only.
-                float bigness = smoothstep(0.55, 1.0, sizeRand);
-                float halo = smoothstep(size * 4.5, size * 0.8, d) * 0.20 * bigness;
+                // Power-law brightness: a dust of faint stars, a rare brilliant few.
+                float m = hash21(cell + 7.77);
+                float brightness = 0.07 + 2.6 * pow(m, 6.0);
 
-                // Slow, amplitude-capped twinkle: relaxation-safe, never strobes.
-                float twinkle = 1.0 - _Twinkle * (0.5 + 0.5 * sin(t * (0.6 + rnd.x * 0.9) + rnd.y * 6.2831));
+                // Near-point cores: size barely varies (real stars are points).
+                float size = lerp(0.012, 0.026, hash21(cell + 3.31));
+                float core = smoothstep(size, size * 0.25, d);
 
-                return starTint(hash21(cell + 21.3)) * (star + halo) * keep * twinkle;
+                // Bright stars barely twinkle; faint ones shimmer gently. Still
+                // amplitude-capped for comfort.
+                float steadiness = saturate(brightness * 0.8);
+                float twinkle = 1.0 - _Twinkle * (1.0 - steadiness) * (0.5 + 0.5 * sin(t * (0.6 + rnd.x * 0.9) + rnd.y * 6.2831));
+
+                float3 tint = starTint(hash21(cell + 21.3));
+                float3 col = tint * core * brightness;
+
+                // Hubble treatment for the brilliant few (top ~3.5%): soft halo
+                // + 4-point diffraction spikes.
+                float brilliant = step(0.965, m) * spikes;
+                if (brilliant > 0.5)
+                {
+                    float halo = smoothstep(0.15, 0.0, d) * 0.20;
+                    float spike =
+                        smoothstep(0.0035, 0.0, abs(offset.x)) * smoothstep(0.13, 0.0, abs(offset.y)) +
+                        smoothstep(0.0035, 0.0, abs(offset.y)) * smoothstep(0.13, 0.0, abs(offset.x));
+                    col += tint * (halo + spike * 0.55) * saturate(brightness);
+                }
+
+                return col * keep * twinkle * gain;
             }
 
-            // One shooting-star "lane": each period may (or may not) fire a
-            // single streak with a hashed start point and heading; the streak
-            // lives for the first ~9% of the period. Branchless.
             float meteorLane(float2 uv, float t, float lane, float period)
             {
                 float pt = t / period + lane * 0.37;
@@ -178,9 +194,9 @@ Shader "StarshipCabin/StarWindow"
                 float f = frac(pt);
 
                 float2 r = hash22(float2(idx * 3.71 + lane * 17.9, lane * 7.3 + 1.7));
-                float active = step(0.45, hash21(float2(idx * 5.13, lane * 11.1))); // ~55% of periods fire
+                float active = step(0.45, hash21(float2(idx * 5.13, lane * 11.1)));
 
-                float life = f / 0.09;                     // 0..1 across the flight
+                float life = f / 0.09;
                 float alive = step(life, 1.0);
 
                 float2 start = float2(lerp(0.35, 2.55, r.x), lerp(1.15, 2.25, r.y));
@@ -206,10 +222,14 @@ Shader "StarshipCabin/StarWindow"
                 float2 uv = i.uv;
                 float band = bandMask(uv);
 
-                // Base: deep space, faint large-scale haze, galactic band glow.
-                float haze = fbm(uv * 2.1 + 5.0) * 0.35;
+                // Base: deep space + faint haze.
+                float haze = fbm(uv * 2.1 + 5.0) * 0.32;
                 float3 col = lerp(_DeepColor.rgb, _HazeColor.rgb, haze);
-                col += _BandColor.rgb * band * (0.45 + fbm(uv * 6.3 + 11.0) * 0.55) * _BandStrength;
+
+                // Galactic band glow, carved by dark dust lanes — the structure
+                // that makes the Milky Way read as a river, not a smear.
+                float dust = smoothstep(0.52, 0.80, fbm(uv * 5.1 + 3.3)) * band;
+                col += _BandColor.rgb * band * (0.45 + fbm(uv * 6.3 + 11.0) * 0.55) * _BandStrength * (1.0 - dust * 0.8);
 
                 // Nebula mode: two-tone slow-drifting wash.
                 if (_NebulaAmount > 0.001)
@@ -222,19 +242,23 @@ Shader "StarshipCabin/StarWindow"
                     col += nebula * mask * _NebulaAmount * 0.85;
                 }
 
-                // Three parallax star layers: near/bright to far/dim.
+                // Four parallax layers: brilliant near field down to a fine dust
+                // of stars. Spikes on the nearest layer only.
                 float3 stars = float3(0.0, 0.0, 0.0);
-                stars += starLayer(uv, 14.0, 1.00, t, band) * 1.00;
-                stars += starLayer(uv + 11.31, 26.0, 0.62, t, band) * 0.62;
-                stars += starLayer(uv + 47.77, 46.0, 0.36, t, band) * 0.40;
+                stars += starLayer(uv, 14.0, 1.00, t, band, 1.00, 1.0);
+                stars += starLayer(uv + 11.31, 26.0, 0.62, t, band, 0.75, 0.0);
+                stars += starLayer(uv + 47.77, 46.0, 0.36, t, band, 0.50, 0.0);
+                stars += starLayer(uv + 73.21, 72.0, 0.22, t, band, 0.30, 0.0);
                 col += _StarColor.rgb * stars;
 
-                // Shooting stars: two staggered lanes; more motion in the
-                // ambience mode (higher _Speed) means more frequent meteors.
+                // Shooting stars (M4): frequency follows the mode's motion.
                 float period = lerp(30.0, 12.0, saturate(_Speed * 9.0));
                 float meteors = meteorLane(uv, t, 0.0, period)
                               + meteorLane(uv, t, 1.0, period * 1.31);
                 col += _StarColor.rgb * meteors * 1.6 * _Meteors;
+
+                // Soft filmic curve: brilliant stars bloom, blacks stay deep.
+                col = 1.0 - exp(-col * 1.35);
 
                 return fixed4(col, 1.0);
             }

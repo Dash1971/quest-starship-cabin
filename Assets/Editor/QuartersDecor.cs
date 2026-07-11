@@ -5,7 +5,8 @@ using UnityEngine;
 namespace StarshipCabin.EditorTools
 {
     /// <summary>
-    /// Milestone 6: personal decor.
+    /// Milestone 6: personal decor. Milestone 7: book labels are now fitted
+    /// to their books (the fixed character sizes overflowed the spines).
     ///
     /// Chess set on the low table showing the Morphy "Opera Game" (Morphy vs
     /// Duke Karl of Brunswick and Count Isouard, Paris 1858), position after
@@ -190,14 +191,14 @@ namespace StarshipCabin.EditorTools
 
             Book(parent, leatherRed, "Book: Holy Bible",
                 new Vector3(0.185f, 0.055f, 0.25f), new Vector3(stackX, deskTop + 0.0275f, stackZ), yaw: 4f);
-            Label(parent, "HOLY  BIBLE", gold, 0.0042f,
+            Label(parent, "HOLY BIBLE", gold, 0.20f,
                 new Vector3(stackX + 0.094f, deskTop + 0.0275f, stackZ),
                 Quaternion.Euler(0f, 4f, 0f) * Quaternion.LookRotation(Vector3.left, Vector3.up));
 
             var comedyY = deskTop + 0.055f + 0.0225f;
             Book(parent, teal, "Book: The Divine Comedy",
                 new Vector3(0.165f, 0.045f, 0.22f), new Vector3(stackX - 0.005f, comedyY, stackZ + 0.01f), yaw: -6f);
-            Label(parent, "LA DIVINA COMMEDIA · DANTE", cream, 0.0032f,
+            Label(parent, "LA DIVINA COMMEDIA\nDANTE", cream, 0.17f,
                 new Vector3(stackX - 0.005f + 0.084f, comedyY, stackZ + 0.01f),
                 Quaternion.Euler(0f, -6f, 0f) * Quaternion.LookRotation(Vector3.left, Vector3.up));
 
@@ -205,21 +206,21 @@ namespace StarshipCabin.EditorTools
             Book(parent, tan, "Book: Epitome Historiae Sacrae",
                 new Vector3(0.13f, 0.028f, 0.18f), new Vector3(stackX + 0.008f, epitomeY, stackZ - 0.008f), yaw: 9f);
             // Cover label faces up, top of the text toward the wall.
-            Label(parent, "EPITOME\nHISTORIAE  SACRAE", darkInk, 0.0036f,
+            Label(parent, "EPITOME\nHISTORIAE SACRAE", darkInk, 0.14f,
                 new Vector3(stackX + 0.008f, epitomeY + 0.0155f, stackZ - 0.008f),
                 Quaternion.Euler(0f, 9f, 0f) * Quaternion.LookRotation(Vector3.down, Vector3.left));
 
             // ---- Standing pair near the lamp: Fischer upright, Illich leaning on it.
             Book(parent, green, "Book: My 60 Memorable Games",
                 new Vector3(0.16f, 0.235f, 0.045f), new Vector3(-2.62f, deskTop + 0.1175f, 2.02f), yaw: 0f);
-            Label(parent, "MY 60 MEMORABLE GAMES", cream, 0.0028f,
+            Label(parent, "MY 60 MEMORABLE\nGAMES · FISCHER", cream, 0.19f,
                 new Vector3(-2.62f + 0.081f, deskTop + 0.1175f, 2.02f),
                 Quaternion.LookRotation(Vector3.left, Vector3.up) * Quaternion.Euler(0f, 0f, -90f));
 
             var illichTilt = Quaternion.Euler(8f, 0f, 0f); // leans toward Fischer
             Book(parent, orange, "Book: Tools for Conviviality",
                 new Vector3(0.14f, 0.21f, 0.04f), new Vector3(-2.63f, deskTop + 0.104f, 1.955f), illichTilt);
-            Label(parent, "TOOLS FOR CONVIVIALITY", cream, 0.0026f,
+            Label(parent, "TOOLS FOR\nCONVIVIALITY", cream, 0.17f,
                 new Vector3(-2.63f + 0.071f, deskTop + 0.104f, 1.958f),
                 illichTilt * Quaternion.LookRotation(Vector3.left, Vector3.up) * Quaternion.Euler(0f, 0f, -90f));
         }
@@ -243,9 +244,25 @@ namespace StarshipCabin.EditorTools
         /// <summary>
         /// Legacy TextMesh label with the built-in runtime font. Convention:
         /// the rotation's forward axis points AWAY from the reader.
+        ///
+        /// Milestone 7: character size is computed from the longest line and
+        /// the available length (fixed sizes previously overflowed the books).
+        /// Legacy TextMesh advances ~0.75 em per character at this font, so
+        /// width ≈ chars × fontSize × 0.1 × 0.75 × characterSize; solved for
+        /// characterSize with a 15% safety margin.
         /// </summary>
-        private static void Label(Transform parent, string text, Color color, float characterSize, Vector3 position, Quaternion rotation)
+        private static void Label(Transform parent, string text, Color color, float maxLineLength, Vector3 position, Quaternion rotation)
         {
+            const int fontSize = 64;
+
+            var longestLine = 1;
+            foreach (var line in text.Split('\n'))
+            {
+                longestLine = Mathf.Max(longestLine, line.Length);
+            }
+
+            var characterSize = 0.85f * maxLineLength / (longestLine * fontSize * 0.1f * 0.75f);
+
             var go = new GameObject($"Label: {text.Replace("\n", " ")}");
             go.transform.SetParent(parent);
             go.transform.position = position;
@@ -254,7 +271,7 @@ namespace StarshipCabin.EditorTools
             var textMesh = go.AddComponent<TextMesh>();
             textMesh.text = text;
             textMesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            textMesh.fontSize = 64;
+            textMesh.fontSize = fontSize;
             textMesh.characterSize = characterSize;
             textMesh.anchor = TextAnchor.MiddleCenter;
             textMesh.alignment = TextAlignment.Center;
