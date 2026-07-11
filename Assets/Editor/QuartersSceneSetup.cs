@@ -27,7 +27,11 @@ namespace StarshipCabin.EditorTools
     /// migration, baked cove lighting (area lights + emissive strips, one
     /// mixed runtime light), a bake menu item, star shader V2 (colour
     /// temperature, halos, galactic band, shooting stars), and the bed
-    /// anchor reworked to a reclining pose.
+    /// anchor reworked to a reclining pose. Milestone 5: ambient audio V2
+    /// (layered engine bed, brown noise, softer beeps), lateral star motion
+    /// (ship reads as flying forward), dimmer desk lamp, and a media wall
+    /// playing local video files (see MediaScreenController.cs; trigger =
+    /// play/pause, hold = next).
     ///
     /// Milestone 4 workflow: Setup Quarters Scene (V2) → Bake Quarters
     /// Lighting → Build Quarters APK. The build no longer regenerates the
@@ -436,7 +440,8 @@ namespace StarshipCabin.EditorTools
 
             // Local pools.
             BakedPoint(lightsRoot, "Alcove Reading Pool", new Vector3(2.05f, 1.45f, -1.05f), warmPool, 1.0f, 3.0f);
-            BakedPoint(lightsRoot, "Desk Lamp Pool", new Vector3(-2.9f, 1.15f, 2.3f), warmPool, 0.7f, 2.5f);
+            // Milestone 5: dimmed after headset feedback ("nice but too bright").
+            BakedPoint(lightsRoot, "Desk Lamp Pool", new Vector3(-2.9f, 1.15f, 2.3f), warmPool, 0.32f, 2.2f);
             BakedPoint(lightsRoot, "Room Soft Fill", new Vector3(0f, 2.0f, 0.6f), new Color(1f, 0.88f, 0.72f), 1.1f, 8.0f);
 
             // The only runtime light: cool starlight through the glazing, so

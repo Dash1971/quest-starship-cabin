@@ -139,7 +139,11 @@ Shader "StarshipCabin/StarWindow"
 
             float3 starLayer(float2 uv, float scale, float parallax, float t, float band)
             {
-                float2 grid = uv * scale + float2(_Drift, -_Speed) * (t * SPEED_SCALE * scale * parallax);
+                // Milestone 5: stars stream laterally toward +u (toward the
+                // sleep alcove) so the ship reads as flying forward past a side
+                // window, not descending. _Drift adds a touch more lateral
+                // motion in Orbit; there is no vertical component.
+                float2 grid = uv * scale + float2(-(_Speed + _Drift * 0.35), 0.0) * (t * SPEED_SCALE * scale * parallax);
                 float2 cell = floor(grid);
                 float2 f = frac(grid);
 
