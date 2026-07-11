@@ -269,8 +269,18 @@ namespace StarshipCabin.EditorTools
             return draft.ToMesh(name);
         }
 
-        /// <summary>Single quad with explicit 0..1 UVs (used by the star window surface).</summary>
+        /// <summary>Single quad with explicit 0..1 UVs (used by the fade overlay).</summary>
         public static Mesh UvQuad(string name, Vector3 p00, Vector3 p10, Vector3 p11, Vector3 p01)
+        {
+            return UvQuad(name, p00, p10, p11, p01, 1f, 1f);
+        }
+
+        /// <summary>
+        /// Single quad with UVs running 0..uMax / 0..vMax. Scaling UVs with the
+        /// quad's physical size keeps procedural star density constant per
+        /// metre when the star surface is enlarged (Milestone 3 coverage fix).
+        /// </summary>
+        public static Mesh UvQuad(string name, Vector3 p00, Vector3 p10, Vector3 p11, Vector3 p01, float uMax, float vMax)
         {
             var normal = Vector3.Cross(p10 - p00, p01 - p00).normalized;
             var mesh = new Mesh { name = name };
@@ -278,7 +288,7 @@ namespace StarshipCabin.EditorTools
             mesh.SetNormals(new List<Vector3> { normal, normal, normal, normal });
             mesh.SetUVs(0, new List<Vector2>
             {
-                new(0f, 0f), new(1f, 0f), new(1f, 1f), new(0f, 1f)
+                new(0f, 0f), new(uMax, 0f), new(uMax, vMax), new(0f, vMax)
             });
             mesh.SetTriangles(new[] { 0, 1, 2, 0, 2, 3 }, 0);
             mesh.RecalculateBounds();

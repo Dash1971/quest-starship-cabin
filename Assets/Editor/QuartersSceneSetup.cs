@@ -21,8 +21,11 @@ namespace StarshipCabin.EditorTools
     /// <summary>
     /// Concept V2 "Crew Quarters" scene generator.
     /// Milestone 1: shell + glazing. Milestone 2: furnishings (see
-    /// QuartersFurnishings.cs) — couch, sleep alcove, desk, console strips,
-    /// plants and set dressing, all beveled procedural meshes.
+    /// QuartersFurnishings.cs). Milestone 3: seat anchors — grip-cycled
+    /// comfort hops between couch / bed-sit / bed-lie / desk with a fade
+    /// overlay (see SeatAnchorController.cs), spawn seated on the couch,
+    /// and an enlarged star surface so every pane shows stars from every
+    /// seat (fixes the black alcove window seen from the couch).
     ///
     /// Room frame: X = width (±3.2), Y = up (0..2.5), outboard (glazed hull
     /// slope) toward -Z, inner/entry wall at +Z. The hull face rises from a
@@ -311,14 +314,21 @@ namespace StarshipCabin.EditorTools
             }
 
             // One big star surface 6 m behind the slope plane: head movement gives
-            // near-zero parallax, so the stars read as distant. Sized to cover the
-            // view frustum through every pane from anywhere in the room.
+            // near-zero parallax, so the stars read as distant.
+            //
+            // Milestone 3 coverage fix: oblique sight lines (e.g. couch →
+            // alcove pane) project ~5× beyond the pane edge onto the offset
+            // plane, so the quad must extend far past the slope bounds to
+            // cover every pane from every seat (the old ±8 quad left the
+            // alcove pane black from the couch). UVs scale with physical size
+            // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-8f, -4f, -6f),
-                SlopePoint(8f, -4f, -6f),
-                SlopePoint(8f, 6.5f, -6f),
-                SlopePoint(-8f, 6.5f, -6f));
+                SlopePoint(-25f, -10f, -6f),
+                SlopePoint(25f, -10f, -6f),
+                SlopePoint(25f, 18f, -6f),
+                SlopePoint(-25f, 18f, -6f),
+                3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
             return starObject.AddComponent<StarWindowSurface>();
@@ -383,12 +393,13 @@ namespace StarshipCabin.EditorTools
 
         private static void AddXrRig()
         {
-            // Origin sits on the floor at the couch anchor, facing the glazing.
-            // The tracked camera supplies real head height above it, and the
-            // Milestone 3 SeatAnchorController will move this origin between anchors.
+            // Milestone 3: the SeatAnchorController owns the origin transform at
+            // runtime (it applies the couch anchor on Start, fixing the old
+            // "sitting on the low table" spawn). The editor-time pose below is
+            // only a preview approximation of anchor 1.
             var origin = new GameObject("XR Origin (Quarters)");
-            origin.transform.position = new Vector3(-1.6f, 0f, -0.55f); // just in front of the couch
-            origin.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            origin.transform.position = new Vector3(-1.6f, 0f, -1.45f);
+            origin.transform.rotation = Quaternion.identity;
 
             var cameraObject = new GameObject("Main Camera");
             cameraObject.tag = "MainCamera";
@@ -406,6 +417,63 @@ namespace StarshipCabin.EditorTools
             trackedPose.updateType = TrackedPoseDriver.UpdateType.UpdateAndBeforeRender;
 
             cameraObject.AddComponent<AudioListener>();
+
+            AddSeatAnchors(origin, cameraObject.transform);
+        }
+
+        private static void AddSeatAnchors(GameObject origin, Transform cameraTransform)
+        {
+            // Comfort fade overlay: small quad in front of the camera, alpha
+            // driven by SeatAnchorController. Renders in the Overlay queue with
+            // ZTest Always, so it covers everything during hops.
+            var fadeMesh = QuartersMeshes.UvQuad(
+                "Quarters Fade Quad",
+                new Vector3(-1.2f, -1.2f, 0f),
+                new Vector3(1.2f, -1.2f, 0f),
+                new Vector3(1.2f, 1.2f, 0f),
+                new Vector3(-1.2f, 1.2f, 0f));
+            var fadeObject = MeshObject(cameraTransform, "Fade Overlay", fadeMesh, CreateFadeMaterial());
+            fadeObject.transform.localPosition = new Vector3(0f, 0f, 0.35f);
+            fadeObject.transform.localRotation = Quaternion.identity;
+            GameObjectUtility.SetStaticEditorFlags(fadeObject, 0); // follows the camera
+
+            var controller = origin.AddComponent<SeatAnchorController>();
+            controller.cameraTransform = cameraTransform;
+            controller.fadeRenderer = fadeObject.GetComponent<MeshRenderer>();
+            controller.anchors = new[]
+            {
+                // Eye points are world-space targets; y is the eye height at
+                // that seat, so each anchor is a distinct perspective even if
+                // the user stays physically seated throughout.
+                new SeatAnchor { anchorName = "Couch", eyePoint = new Vector3(-1.6f, 1.10f, -1.42f), yawDegrees = 0f },
+                new SeatAnchor { anchorName = "Bed (sitting)", eyePoint = new Vector3(1.42f, 1.22f, -0.10f), yawDegrees = 225f },
+                new SeatAnchor { anchorName = "Bed (lying)", eyePoint = new Vector3(2.05f, 0.78f, -0.85f), yawDegrees = 0f },
+                new SeatAnchor { anchorName = "Desk", eyePoint = new Vector3(-2.2f, 1.18f, 2.0f), yawDegrees = 270f }
+            };
+
+            EditorUtility.SetDirty(controller);
+        }
+
+        private static Material CreateFadeMaterial()
+        {
+            const string path = "Assets/Materials/Fade Overlay.mat";
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var shader = Shader.Find("StarshipCabin/FadeOverlay");
+            if (shader == null)
+            {
+                throw new InvalidOperationException(
+                    "StarshipCabin/FadeOverlay shader not found. Ensure Assets/Shaders/FadeOverlay.shader is imported.");
+            }
+
+            var mat = new Material(shader) { name = "Fade Overlay" };
+            mat.SetColor("_Color", new Color(0f, 0f, 0f, 0f));
+            AssetDatabase.CreateAsset(mat, path);
+            return mat;
         }
 
         private static void AddControllers(StarWindowSurface starSurface)
