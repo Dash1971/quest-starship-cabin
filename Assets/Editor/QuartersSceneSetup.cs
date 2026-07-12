@@ -372,10 +372,10 @@ namespace StarshipCabin.EditorTools
             // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-325f, -130f, -78f),
-                SlopePoint(325f, -130f, -78f),
-                SlopePoint(325f, 234f, -78f),
-                SlopePoint(-325f, 234f, -78f),
+                SlopePoint(-375f, -150f, -90f),
+                SlopePoint(375f, -150f, -90f),
+                SlopePoint(375f, 270f, -90f),
+                SlopePoint(-375f, 270f, -90f),
                 3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
@@ -388,8 +388,8 @@ namespace StarshipCabin.EditorTools
 
         // Planet "Jovian Dawn" -- explicit world position, outboard of the
         // glazing and above the room, in front of the star backdrop plane.
-        private static readonly Vector3 PlanetWorldPos = new(0.5f, 6.0f, -40.0f);
-        private const float PlanetRadius = 26.0f;
+        private static readonly Vector3 PlanetWorldPos = new(1.5f, 10.0f, -80.0f);
+        private const float PlanetRadius = 58.0f;
         private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
         private const float RingInnerMul = 1.55f;
         private const float RingOuterMul = 2.35f;
@@ -399,7 +399,7 @@ namespace StarshipCabin.EditorTools
         {
             // Use the explicit-position overload; the 4-arg overload sets world
             // position to Vector3.zero after parenting.
-            var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 160, 80);
+            var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 200, 100);
             var body = MeshObject(root, "Planet (Jovian Dawn)", sphere,
                 CreatePlanetMaterial(), PlanetWorldPos, Quaternion.identity);
             GameObjectUtility.SetStaticEditorFlags(body, 0); // spins + custom shader
@@ -766,7 +766,7 @@ namespace StarshipCabin.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
-            camera.farClipPlane = 200f;
+            camera.farClipPlane = 250f;
             var cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = true;
             cameraData.antialiasing = AntialiasingMode.None;
@@ -808,12 +808,9 @@ namespace StarshipCabin.EditorTools
                 // the user stays physically seated throughout.
                 new SeatAnchor { anchorName = "Couch", eyePoint = new Vector3(-1.6f, 1.10f, -1.42f), yawDegrees = 0f },
                 new SeatAnchor { anchorName = "Bed (sitting)", eyePoint = new Vector3(1.42f, 1.22f, -0.10f), yawDegrees = 225f },
-                // Reworked from "lying" after headset feedback: eye at 0.78 m
-                // felt like sitting *inside* the mattress when physically
-                // seated. Reclining against the headboard reads naturally in a
-                // seated posture and keeps the up-through-the-glass view.
-                // (For true flat-on-your-back: set y back to ~0.78.)
-                new SeatAnchor { anchorName = "Bed (reclining)", eyePoint = new Vector3(2.05f, 0.95f, -1.00f), yawDegrees = 0f },
+                // M9 fix v6: true flat lie-down posture looking up into the
+                // alcove pane, clear of the headboard reading strip.
+                new SeatAnchor { anchorName = "Bed (lying)", eyePoint = new Vector3(2.05f, 0.78f, -1.00f), yawDegrees = 0f },
                 new SeatAnchor { anchorName = "Desk", eyePoint = new Vector3(-2.2f, 1.18f, 2.0f), yawDegrees = 270f }
             };
 
