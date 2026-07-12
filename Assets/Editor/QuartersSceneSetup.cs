@@ -372,10 +372,10 @@ namespace StarshipCabin.EditorTools
             // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-200f, -80f, -48f),
-                SlopePoint(200f, -80f, -48f),
-                SlopePoint(200f, 144f, -48f),
-                SlopePoint(-200f, 144f, -48f),
+                SlopePoint(-325f, -130f, -78f),
+                SlopePoint(325f, -130f, -78f),
+                SlopePoint(325f, 234f, -78f),
+                SlopePoint(-325f, 234f, -78f),
                 3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
@@ -388,8 +388,8 @@ namespace StarshipCabin.EditorTools
 
         // Planet "Jovian Dawn" -- explicit world position, outboard of the
         // glazing and above the room, in front of the star backdrop plane.
-        private static readonly Vector3 PlanetWorldPos = new(1.6f, 7.0f, -30.0f);
-        private const float PlanetRadius = 11.0f;
+        private static readonly Vector3 PlanetWorldPos = new(0.5f, 6.0f, -40.0f);
+        private const float PlanetRadius = 26.0f;
         private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
         private const float RingInnerMul = 1.55f;
         private const float RingOuterMul = 2.35f;
@@ -399,7 +399,7 @@ namespace StarshipCabin.EditorTools
         {
             // Use the explicit-position overload; the 4-arg overload sets world
             // position to Vector3.zero after parenting.
-            var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 96, 48);
+            var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 160, 80);
             var body = MeshObject(root, "Planet (Jovian Dawn)", sphere,
                 CreatePlanetMaterial(), PlanetWorldPos, Quaternion.identity);
             GameObjectUtility.SetStaticEditorFlags(body, 0); // spins + custom shader
@@ -766,7 +766,7 @@ namespace StarshipCabin.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
-            camera.farClipPlane = 120f;
+            camera.farClipPlane = 200f;
             var cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = true;
             cameraData.antialiasing = AntialiasingMode.None;
