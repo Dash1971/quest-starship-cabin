@@ -1,16 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the tested Quarters V2 Milestone 7 build.
+This roadmap continues from the tested Quarters V2 Milestone 8 build.
 
-Current tested baseline:
+Current tested build:
 
-- Commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
-- Stable rollback tag: `quarters-v2-m7-tested-20260711`
+- Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-11
+- Installed/launched: 2026-07-12 12:47:28 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `4e65a1df79b4cb87fa7d9512757c624d0d8625ce65a02f239c89c6c8137572d4`
+- APK SHA-256: `0ac7ea7854e1c2ae110b2448d0e026501943b1b81c1a4c81f3c25e26c4e5a07a`
 
 ## Direction
 
@@ -39,7 +38,7 @@ Do not expand into movable objects, inventories, persistence, or room-memory fea
 
 ## Implemented
 
-Milestones 1-7 are shipped and tested:
+Milestones 1-8 are shipped and tested:
 
 1. Shell + glazing: procedural Crew Quarters V2 shell, 55 degree glazed hull slope, four rounded-trapezoid window panes, shader starfield.
 2. Furniture + palette: couch, bed, raised alcove, desk, console strips, plants, soft-bright material set.
@@ -48,22 +47,11 @@ Milestones 1-7 are shipped and tested:
 5. Audio V2 + media wall + star motion: layered ambient bed, brown noise, local video wall, lateral star motion, light fixes.
 6. Decor pass: procedural chess set and library decor.
 7. Book labels + starfield V3: fitted book labels and dark-sky star shader upgrade.
+8. Clear the deck + HDR trial: retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
 
-The M5 media/video wall remains in the M7 baseline but is being retired because Quest system overlays can provide media apps without distracting from star-gazing.
+The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 
 ## Active Milestones
-
-### M8 - Clear the Deck + HDR Trial
-
-- Retire the media/video wall.
-- Remove `MediaScreenController` and generated scene objects.
-- Enable HDR + bloom.
-- Pair the visual trial with fixed foveated rendering.
-- Build, install, and verify frame comfort on Quest before adding planet geometry.
-
-Pass condition: the existing V3 stars and cabin lighting look better on headset without a comfort/performance regression.
-
-Fallback: revert HDR/bloom and continue with emissive materials, shader halos, and tone-map tricks.
 
 ### M9 - Planet + Destination Engine
 

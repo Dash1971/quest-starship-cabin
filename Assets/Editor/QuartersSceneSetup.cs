@@ -30,8 +30,8 @@ namespace StarshipCabin.EditorTools
     /// anchor reworked to a reclining pose. Milestone 5: ambient audio V2
     /// (layered engine bed, brown noise, softer beeps), lateral star motion
     /// (ship reads as flying forward), dimmer desk lamp, and a media wall
-    /// playing local video files (see MediaScreenController.cs; trigger =
-    /// play/pause, hold = next).
+    /// later retired in Milestone 8. Milestone 8: HDR + bloom trial and fixed
+    /// foveated rendering.
     ///
     /// Milestone 4 workflow: Setup Quarters Scene (V2) → Bake Quarters
     /// Lighting → Build Quarters APK. The build no longer regenerates the
@@ -108,6 +108,7 @@ namespace StarshipCabin.EditorTools
             BuildBakedLightRig();
             AddXrRig();
             AddControllers(starSurface);
+            BuildPostProcessing();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -514,10 +515,11 @@ namespace StarshipCabin.EditorTools
                 AssetDatabase.CreateAsset(pipeline, pipelinePath);
             }
 
-            // Quest-friendly defaults: MSAA 4x, no HDR, no realtime shadow cost
-            // beyond the single mixed light (which casts none anyway).
+            // Quest defaults: MSAA 4x. HDR is ON for the Milestone 8 trial so
+            // emissive coves and bright stars can exceed 1.0 and bloom; fixed
+            // foveated rendering offsets the frame cost.
             pipeline.msaaSampleCount = 4;
-            pipeline.supportsHDR = false;
+            pipeline.supportsHDR = true;
             pipeline.shadowDistance = 8f;
             EditorUtility.SetDirty(pipeline);
 
@@ -560,6 +562,48 @@ namespace StarshipCabin.EditorTools
             Lightmapping.lightingSettings = settings;
         }
 
+        // ------------------------------------------------------------------
+        // Post-processing (Milestone 8): a single global bloom volume so the
+        // emissive coves and brightest stars glow under HDR.
+        //
+        // Threshold is below 1.0 on purpose: StarWindow.shader tone-maps its
+        // own output to <= 1.0 (1 - exp(-col)), so a >=1.0 threshold would not
+        // catch the stars. No Tonemapping override is added; the shader already
+        // tone-maps, and adding another pass would double it.
+        // ------------------------------------------------------------------
+
+        private static void BuildPostProcessing()
+        {
+            var profile = CreatePostFxProfile();
+
+            var volumeObject = new GameObject("Post Process Volume");
+            var volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.sharedProfile = profile;
+        }
+
+        private static VolumeProfile CreatePostFxProfile()
+        {
+            const string path = "Assets/Settings/Quarters PostFX.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+
+            var bloom = profile.Add<Bloom>(overrides: true);
+            bloom.threshold.Override(0.75f);
+            bloom.intensity.Override(0.9f);
+            bloom.scatter.Override(0.62f);
+
+            AssetDatabase.SaveAssets();
+            return profile;
+        }
+
         private static void AddXrRig()
         {
             // Milestone 3: the SeatAnchorController owns the origin transform at
@@ -579,6 +623,9 @@ namespace StarshipCabin.EditorTools
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
             camera.farClipPlane = 120f;
+            var cameraData = camera.GetUniversalAdditionalCameraData();
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.None;
 
             var trackedPose = cameraObject.AddComponent<TrackedPoseDriver>();
             trackedPose.SetPoseSource(TrackedPoseDriver.DeviceType.GenericXRDevice, TrackedPoseDriver.TrackedPose.Center);
@@ -586,6 +633,7 @@ namespace StarshipCabin.EditorTools
             trackedPose.updateType = TrackedPoseDriver.UpdateType.UpdateAndBeforeRender;
 
             cameraObject.AddComponent<AudioListener>();
+            cameraObject.AddComponent<FoveationController>();
 
             AddSeatAnchors(origin, cameraObject.transform);
         }

@@ -6,16 +6,16 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
-Current tested build: `Quarters V2 Milestone 7`
+Current tested build: `Quarters V2 Milestone 8`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
-- Commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
+- Baseline rollback commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
 - Tested on: Meta Quest 3
-- Installed/launched on device: 2026-07-11
+- Installed/launched on device: 2026-07-12 12:47:28 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `4e65a1df79b4cb87fa7d9512757c624d0d8625ce65a02f239c89c6c8137572d4`
+- APK SHA-256: `0ac7ea7854e1c2ae110b2448d0e026501943b1b81c1a4c81f3c25e26c4e5a07a`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
@@ -30,7 +30,7 @@ The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the
 - URP migration, baked cove lighting, and one mixed runtime light.
 - Star shader V3 dark-sky view: point stars, diffraction spikes, halos, galactic band, dust lanes, warm/cool tints, filmic tone map, capped twinkle, shooting stars, nebula mode, and lateral motion.
 - Ambient audio V2: layered engine bed, brown noise, air circulation, and softer panel beeps.
-- Media/video wall from M5 exists in the M7 baseline, but is being retired in M8 because Quest system overlays can provide media apps without distracting from star-gazing.
+- Media/video wall from M5 retired in M8 because Quest system overlays can provide media apps without distracting from star-gazing.
 
 ### Roadmap Discipline
 
@@ -83,10 +83,10 @@ Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quar
 5. **Audio V2 + media wall + star motion** — layered ambient bed, brown noise, lateral star motion, local video wall, and light fixes.
 6. **Decor pass** — procedural chess set and library decor.
 7. **Book labels + starfield V3** — fitted labels and the dark-sky star shader upgrade.
+8. **Clear the deck + HDR trial** — retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
 
 ### Active roadmap
 
-8. **Clear the deck + HDR trial** — retire the media/video wall, remove `MediaScreenController` and scene objects, enable HDR + bloom paired with fixed foveated rendering, then verify frame time on Quest before adding new geometry.
 9. **Planet + destination engine** — add one hero world, `Jovian Dawn`: a banded gas giant with storm, terminator, atmospheric limb, rings, and slow destination switching.
 10. **More worlds + per-scene sound** — add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`; add per-world audio layers on top of the M5 ambient bed.
 11. **Living sky** — extend the shooting-star system into a comfort-capped event pool: distant ships, comets, asteroids, moon transits, meteor showers, and aurora ripples.

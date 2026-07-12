@@ -32,7 +32,6 @@ namespace StarshipCabin.EditorTools
             public Material Deck;
             public Material Cove;
             public Material LampGlow;
-            public Material Screen;
             public Material Amber;
             public Material Teal;
             public Material Blue;
@@ -49,7 +48,6 @@ namespace StarshipCabin.EditorTools
             BuildSleepAlcove(parent, mats);
             BuildDesk(parent, mats);
             BuildEntryDoor(parent, mats);
-            BuildMediaScreen(parent, mats);
             BuildDecor(parent, mats);
             QuartersDecor.Build(parent); // Milestone 6: chess set + library
         }
@@ -75,36 +73,9 @@ namespace StarshipCabin.EditorTools
                 Cove = QuartersSceneSetup.CreateEmissiveMaterial("Warm White Cove", new Color(1.0f, 0.910f, 0.769f), new Color(1.0f, 0.882f, 0.702f), 2.1f),
 
                 // Milestone 5: dedicated dimmer glow for the desk lamp (the
-                // shared cove material at 2.1 was too bright on the desk), and
-                // the media wall's unlit screen surface.
-                LampGlow = QuartersSceneSetup.CreateEmissiveMaterial("Desk Lamp Glow", new Color(1.0f, 0.898f, 0.749f), new Color(1.0f, 0.86f, 0.68f), 1.0f),
-                Screen = CreateUnlitScreenMaterial()
+                // shared cove material at 2.1 was too bright on the desk.
+                LampGlow = QuartersSceneSetup.CreateEmissiveMaterial("Desk Lamp Glow", new Color(1.0f, 0.898f, 0.749f), new Color(1.0f, 0.86f, 0.68f), 1.0f)
             };
-        }
-
-        private static Material CreateUnlitScreenMaterial()
-        {
-            const string path = "Assets/Materials/Media Screen.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var shader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (shader == null)
-            {
-                throw new System.InvalidOperationException("URP Unlit shader not found (Milestone 5 media screen).");
-            }
-
-            var mat = new Material(shader) { name = "Media Screen" };
-            mat.SetColor("_BaseColor", Color.black);
-            // Video frames arrive with v = 0 at the top; the screen quad's UVs
-            // run the same way, flipped here so playback is upright.
-            mat.SetTextureScale("_BaseMap", new Vector2(1f, -1f));
-            mat.SetTextureOffset("_BaseMap", new Vector2(0f, 1f));
-            AssetDatabase.CreateAsset(mat, path);
-            return mat;
         }
 
         // ------------------------------------------------------------------
@@ -239,47 +210,6 @@ namespace StarshipCabin.EditorTools
                 new Vector3(-3.02f, 0.915f, 2.38f));
             Box(parent, mats.LampGlow, "Desk Lamp Head", 0.16f, 0.05f, 0.10f, 0.015f,
                 new Vector3(-2.96f, 1.09f, 2.34f), Quaternion.Euler(0f, 25f, -18f));
-        }
-
-        // ------------------------------------------------------------------
-        // Media wall on the inner wall, facing the couch
-        // ------------------------------------------------------------------
-
-        private static void BuildMediaScreen(Transform parent, FurnishingMaterials mats)
-        {
-            // Centered on the couch's sight line (couch faces +Z at x = -1.6).
-            // 16:9, 1.78 m wide, center 1.50 m up — clear of the desk (left
-            // wall) and the entry door (x 0.1..1.1).
-            Box(parent, mats.Graphite, "Media Screen Frame", 1.92f, 1.16f, 0.05f, 0.015f,
-                new Vector3(-1.6f, 1.50f, 2.565f));
-
-            var screenMesh = QuartersMeshes.UvQuad(
-                "Quarters Media Screen",
-                new Vector3(-0.89f, 0.50f, 0f),   // top-left
-                new Vector3(0.89f, 0.50f, 0f),    // top-right
-                new Vector3(0.89f, -0.50f, 0f),   // bottom-right
-                new Vector3(-0.89f, -0.50f, 0f)); // bottom-left → faces -Z (into the room)
-            var screen = QuartersSceneSetup.MeshObject(parent, "Media Screen", screenMesh, mats.Screen,
-                new Vector3(-1.6f, 1.50f, 2.532f), Quaternion.identity);
-            // Video texture + material color change at runtime: keep out of
-            // static batching and GI.
-            GameObjectUtility.SetStaticEditorFlags(screen, 0);
-
-            // Standby dot under the frame.
-            Box(parent, mats.Teal, "Media Screen Standby Dot", 0.04f, 0.04f, 0.02f, 0.006f,
-                new Vector3(-1.6f, 0.86f, 2.55f));
-
-            // Spatialized playback audio lives at the screen.
-            var audio = screen.AddComponent<AudioSource>();
-            audio.playOnAwake = false;
-            audio.spatialBlend = 0.7f;
-            audio.maxDistance = 9f;
-            audio.volume = 0.75f;
-
-            var controller = screen.AddComponent<MediaScreenController>();
-            controller.screenRenderer = screen.GetComponent<MeshRenderer>();
-            controller.audioSource = audio;
-            EditorUtility.SetDirty(controller);
         }
 
         // ------------------------------------------------------------------
