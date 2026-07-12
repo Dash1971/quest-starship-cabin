@@ -372,10 +372,10 @@ namespace StarshipCabin.EditorTools
             // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-25f, -10f, -6f),
-                SlopePoint(25f, -10f, -6f),
-                SlopePoint(25f, 18f, -6f),
-                SlopePoint(-25f, 18f, -6f),
+                SlopePoint(-200f, -80f, -48f),
+                SlopePoint(200f, -80f, -48f),
+                SlopePoint(200f, 144f, -48f),
+                SlopePoint(-200f, 144f, -48f),
                 3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
@@ -388,8 +388,8 @@ namespace StarshipCabin.EditorTools
 
         // Planet "Jovian Dawn" -- explicit world position, outboard of the
         // glazing and above the room, in front of the star backdrop plane.
-        private static readonly Vector3 PlanetWorldPos = new(-0.5f, 3.6f, -5.5f);
-        private const float PlanetRadius = 1.5f;
+        private static readonly Vector3 PlanetWorldPos = new(1.6f, 7.0f, -30.0f);
+        private const float PlanetRadius = 11.0f;
         private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
         private const float RingInnerMul = 1.55f;
         private const float RingOuterMul = 2.35f;
