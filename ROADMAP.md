@@ -1,15 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the Quarters V2 Milestone 9 recovery hotfix 2 headset build.
+This roadmap continues from the Quarters V2 Milestone 9 Opus fix beta headset build.
 
-Current headset build:
+Current beta headset build:
 
 - Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-12 18:15:23 JST
+- Installed/launched: 2026-07-12 18:57:54 JST
 - Unity: 6000.5.2f1
-- Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `45c10d006564f18219104e59c4c51c11c8bce24c380cd178322a0d13795409a0`
+- Package: `jp.openclaw.starshipcabin.beta`
+- APK SHA-256: `a73bca450c5c6f0533541457234bec8e683f05608ff33cbd0aece4716fb85f2a`
 
 ## Direction
 
@@ -48,7 +48,7 @@ Milestones 1-9 are shipped and tested:
 6. Decor pass: procedural chess set and library decor.
 7. Book labels + starfield V3: fitted book labels and dark-sky star shader upgrade.
 8. Clear the deck + HDR trial: retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
-9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10. Recovery hotfix 2 keeps the M7 `StarWindow.shader` path and M8 HDR enabled, and uses a bounded generated sky backing plane behind Jovian Dawn after headset testing showed the oversized hotfix-1 backing plane made the windows clip to white.
+9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10. Opus fix beta keeps the M7 star-plane geometry, makes the starfield a non-occluding background pass, keeps M8 HDR enabled, and lights Jovian Dawn toward the viewer.
 
 The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 

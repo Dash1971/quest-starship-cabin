@@ -34,9 +34,9 @@ Shader "StarshipCabin/StarWindow"
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "Queue" = "Geometry" }
+        Tags { "RenderType" = "Opaque" "Queue" = "Background" }
         Lighting Off
-        ZWrite On
+        ZWrite Off // M9 fix: the starfield is a backdrop — never occludes the planet. Render-order only; fragment output unchanged.
 
         Pass
         {

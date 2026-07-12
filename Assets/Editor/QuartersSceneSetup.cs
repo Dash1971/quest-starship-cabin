@@ -155,7 +155,7 @@ namespace StarshipCabin.EditorTools
             }
 
             Directory.CreateDirectory("Builds");
-            var buildPath = "Builds/StarshipCabin-Quarters.apk";
+            var buildPath = "Builds/StarshipCabin-Quarters-Beta.apk";
 
             var options = new BuildPlayerOptions
             {
@@ -361,23 +361,22 @@ namespace StarshipCabin.EditorTools
                 BuildWindow(glazingRoot, mats, i, u0, u1);
             }
 
-            // One big star surface behind Jovian Dawn: head movement gives
-            // near-zero parallax, so the stars read as distant while the
-            // planet depth-renders in front of the sky.
+            // One big star surface 6 m behind the slope plane: head movement gives
+            // near-zero parallax, so the stars read as distant.
             //
-            // Milestone 9 recovery: keep the handoff's "do not modify
-            // StarWindow" boundary. The earlier hotfix pushed this plane out
-            // to -80m and over-expanded the mesh/UV range; on Quest that
-            // over-drove the procedural sky. This backing plane sits just
-            // behind the planet's far edge, sized from the seat/window
-            // projection with modest margin and the same physical UV density.
+            // Milestone 3 coverage fix: oblique sight lines (e.g. couch →
+            // alcove pane) project ~5× beyond the pane edge onto the offset
+            // plane, so the quad must extend far past the slope bounds to
+            // cover every pane from every seat (the old ±8 quad left the
+            // alcove pane black from the couch). UVs scale with physical size
+            // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-205f, -46f, -45f),
-                SlopePoint(280f, -46f, -45f),
-                SlopePoint(280f, 66f, -45f),
-                SlopePoint(-205f, 66f, -45f),
-                30.313f, 10.667f);
+                SlopePoint(-25f, -10f, -6f),
+                SlopePoint(25f, -10f, -6f),
+                SlopePoint(25f, 18f, -6f),
+                SlopePoint(-25f, 18f, -6f),
+                3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
             return starObject.AddComponent<StarWindowSurface>();
@@ -392,7 +391,7 @@ namespace StarshipCabin.EditorTools
 
         private static readonly Vector3 PlanetCenter = new(2.4f, -3.2f, -34f);
         private const float PlanetRadius = 13.5f;
-        private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.35f, -0.76f);
+        private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
         private const bool PlanetHasRing = true;
         private const float RingInnerMul = 1.55f;
         private const float RingOuterMul = 2.35f;
@@ -953,6 +952,7 @@ namespace StarshipCabin.EditorTools
             }
 
             mat.SetFloat("_Twinkle", 0.10f);
+            mat.renderQueue = -1; // follow the shader (Background) — clears any stale serialized queue
             EditorUtility.SetDirty(mat);
             return mat;
         }
@@ -1040,8 +1040,8 @@ namespace StarshipCabin.EditorTools
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
             PlayerSettings.companyName = "OpenClaw";
-            PlayerSettings.productName = "Starship Cabin";
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin");
+            PlayerSettings.productName = "Starship Cabin Beta";
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.beta");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
