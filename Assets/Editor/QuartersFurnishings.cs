@@ -74,7 +74,7 @@ namespace StarshipCabin.EditorTools
 
                 // Milestone 5: dedicated dimmer glow for the desk lamp (the
                 // shared cove material at 2.1 was too bright on the desk.
-                LampGlow = QuartersSceneSetup.CreateEmissiveMaterial("Desk Lamp Glow", new Color(1.0f, 0.898f, 0.749f), new Color(1.0f, 0.86f, 0.68f), 0.55f)
+                LampGlow = QuartersSceneSetup.CreateEmissiveMaterial("Desk Lamp Glow", new Color(1.0f, 0.898f, 0.749f), new Color(1.0f, 0.86f, 0.68f), 1.0f)
             };
         }
 

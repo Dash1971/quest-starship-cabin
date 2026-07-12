@@ -6,16 +6,16 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
-Current headset build: `Quarters V2 Milestone 9 recovery hotfix 2`
+Current headset build: `Quarters V2 Milestone 8 rollback`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 - Baseline rollback commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
 - Tested on: Meta Quest 3
-- Installed/launched on device: 2026-07-12 18:15:23 JST
+- Installed/launched on device: 2026-07-12 18:33:05 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `45c10d006564f18219104e59c4c51c11c8bce24c380cd178322a0d13795409a0`
+- APK SHA-256: `97ec2a0a804f8db99e34c300b920baaa5eed251c6ee5eef5a4c0905b1b0e768b`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
@@ -31,8 +31,6 @@ The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the
 - Star shader V3 dark-sky view: point stars, diffraction spikes, halos, galactic band, dust lanes, warm/cool tints, filmic tone map, capped twinkle, shooting stars, nebula mode, and lateral motion.
 - Ambient audio V2: layered engine bed, brown noise, air circulation, and softer panel beeps.
 - Media/video wall from M5 retired in M8 because Quest system overlays can provide media apps without distracting from star-gazing.
-- Jovian Dawn planet view from M9: procedural banded gas giant, great storm, dawn terminator, atmospheric limb, and thin ring rendered behind the glass.
-- M9 recovery hotfix 2 keeps the M7 `StarWindow.shader` path, keeps M8 HDR enabled, and moves only the generated sky backing plane behind Jovian Dawn with bounded mesh/UV coverage after headset testing showed the oversized hotfix-1 backing plane made the windows clip to white.
 
 ### Roadmap Discipline
 
@@ -86,10 +84,10 @@ Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quar
 6. **Decor pass** — procedural chess set and library decor.
 7. **Book labels + starfield V3** — fitted labels and the dark-sky star shader upgrade.
 8. **Clear the deck + HDR trial** — retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
-9. **The planet: Jovian Dawn** — add a procedural banded gas giant with storm, dawn limb, atmosphere glow, and ring; reduce star twinkle; dim the desk lamp glow; soften hot glass reflection; keep destination switching out of scope.
 
 ### Active roadmap
 
+9. **Planet + destination engine** — add one hero world, `Jovian Dawn`: a banded gas giant with storm, terminator, atmospheric limb, rings, and slow destination switching.
 10. **More worlds + per-scene sound** — add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`; add per-world audio layers on top of the M5 ambient bed.
 11. **Living sky** — extend the shooting-star system into a comfort-capped event pool: distant ships, comets, asteroids, moon transits, meteor showers, and aurora ripples.
 12. **Awe pass** — add `Binary Eclipse`, `Nebula Drift`, a very rare `Leviathan` event, and a final comfort/perf verification sweep on device.

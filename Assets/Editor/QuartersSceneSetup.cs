@@ -31,7 +31,7 @@ namespace StarshipCabin.EditorTools
     /// (layered engine bed, brown noise, softer beeps), lateral star motion
     /// (ship reads as flying forward), dimmer desk lamp, and a media wall
     /// later retired in Milestone 8. Milestone 8: HDR + bloom trial and fixed
-    /// foveated rendering. Milestone 9: Jovian Dawn planet and ring.
+    /// foveated rendering.
     ///
     /// Milestone 4 workflow: Setup Quarters Scene (V2) → Bake Quarters
     /// Lighting → Build Quarters APK. The build no longer regenerates the
@@ -104,7 +104,6 @@ namespace StarshipCabin.EditorTools
             var root = new GameObject("Quarters Shell").transform;
             BuildQuartersShell(root, materials);
             var starSurface = BuildGlazing(root, materials);
-            BuildPlanet(root);
             QuartersFurnishings.BuildAll(root);
             BuildBakedLightRig();
             AddXrRig();
@@ -361,178 +360,25 @@ namespace StarshipCabin.EditorTools
                 BuildWindow(glazingRoot, mats, i, u0, u1);
             }
 
-            // One big star surface behind Jovian Dawn: head movement gives
-            // near-zero parallax, so the stars read as distant while the
-            // planet depth-renders in front of the sky.
+            // One big star surface 6 m behind the slope plane: head movement gives
+            // near-zero parallax, so the stars read as distant.
             //
-            // Milestone 9 recovery: keep the handoff's "do not modify
-            // StarWindow" boundary. The earlier hotfix pushed this plane out
-            // to -80m and over-expanded the mesh/UV range; on Quest that
-            // over-drove the procedural sky. This backing plane sits just
-            // behind the planet's far edge, sized from the seat/window
-            // projection with modest margin and the same physical UV density.
+            // Milestone 3 coverage fix: oblique sight lines (e.g. couch →
+            // alcove pane) project ~5× beyond the pane edge onto the offset
+            // plane, so the quad must extend far past the slope bounds to
+            // cover every pane from every seat (the old ±8 quad left the
+            // alcove pane black from the couch). UVs scale with physical size
+            // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-205f, -46f, -45f),
-                SlopePoint(280f, -46f, -45f),
-                SlopePoint(280f, 66f, -45f),
-                SlopePoint(-205f, 66f, -45f),
-                30.313f, 10.667f);
+                SlopePoint(-25f, -10f, -6f),
+                SlopePoint(25f, -10f, -6f),
+                SlopePoint(25f, 18f, -6f),
+                SlopePoint(-25f, 18f, -6f),
+                3.125f, 2.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
             return starObject.AddComponent<StarWindowSurface>();
-        }
-
-        // ------------------------------------------------------------------
-        // Planet (Milestone 9): "Jovian Dawn", the first hero world.
-        //
-        // TUNE constants. Outboard is -Z; couch eye is roughly
-        // (-1.6, 1.1, -1.42) facing -Z.
-        // ------------------------------------------------------------------
-
-        private static readonly Vector3 PlanetCenter = new(2.4f, -3.2f, -34f);
-        private const float PlanetRadius = 13.5f;
-        private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.35f, -0.76f);
-        private const bool PlanetHasRing = true;
-        private const float RingInnerMul = 1.55f;
-        private const float RingOuterMul = 2.35f;
-        private static readonly Vector3 RingTiltEuler = new(74f, 12f, 0f);
-
-        private static void BuildPlanet(Transform root)
-        {
-            var planetRoot = new GameObject("Planet (Jovian Dawn)").transform;
-            planetRoot.SetParent(root);
-            planetRoot.position = PlanetCenter;
-
-            var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 96, 48);
-            var body = MeshObject(planetRoot, "Planet Body", sphere, CreatePlanetMaterial());
-            GameObjectUtility.SetStaticEditorFlags(body, 0);
-            body.AddComponent<PlanetSurface>().sunDirection = PlanetSunDir;
-
-            if (PlanetHasRing)
-            {
-                var ring = BuildRingMesh("Quarters Planet Ring", PlanetRadius * RingInnerMul, PlanetRadius * RingOuterMul, 128);
-                var ringObject = MeshObject(planetRoot, "Planet Ring", ring, CreateRingMaterial());
-                ringObject.transform.localPosition = Vector3.zero;
-                ringObject.transform.localRotation = Quaternion.Euler(RingTiltEuler);
-                GameObjectUtility.SetStaticEditorFlags(ringObject, 0);
-            }
-        }
-
-        private static Mesh BuildUvSphere(string name, float radius, int lon, int lat)
-        {
-            var verts = new List<Vector3>();
-            var normals = new List<Vector3>();
-            var uvs = new List<Vector2>();
-            var tris = new List<int>();
-
-            for (var y = 0; y <= lat; y++)
-            {
-                var v = (float)y / lat;
-                var theta = v * Mathf.PI;
-                float sinT = Mathf.Sin(theta), cosT = Mathf.Cos(theta);
-                for (var x = 0; x <= lon; x++)
-                {
-                    var u = (float)x / lon;
-                    var phi = u * Mathf.PI * 2f;
-                    var dir = new Vector3(Mathf.Cos(phi) * sinT, cosT, Mathf.Sin(phi) * sinT);
-                    verts.Add(dir * radius);
-                    normals.Add(dir);
-                    uvs.Add(new Vector2(u, v));
-                }
-            }
-
-            var stride = lon + 1;
-            for (var y = 0; y < lat; y++)
-            {
-                for (var x = 0; x < lon; x++)
-                {
-                    var a = y * stride + x;
-                    var b = a + stride;
-                    tris.Add(a); tris.Add(b); tris.Add(a + 1);
-                    tris.Add(a + 1); tris.Add(b); tris.Add(b + 1);
-                }
-            }
-
-            var mesh = new Mesh { name = name, indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
-            mesh.SetVertices(verts);
-            mesh.SetNormals(normals);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(tris, 0);
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
-        private static Mesh BuildRingMesh(string name, float inner, float outer, int seg)
-        {
-            var verts = new List<Vector3>();
-            var uvs = new List<Vector2>();
-            var tris = new List<int>();
-
-            for (var i = 0; i <= seg; i++)
-            {
-                var ang = (float)i / seg * Mathf.PI * 2f;
-                var dir = new Vector3(Mathf.Cos(ang), 0f, Mathf.Sin(ang));
-                verts.Add(dir * inner);
-                uvs.Add(new Vector2(0f, (float)i / seg));
-                verts.Add(dir * outer);
-                uvs.Add(new Vector2(1f, (float)i / seg));
-            }
-
-            for (var i = 0; i < seg; i++)
-            {
-                var a = i * 2;
-                tris.Add(a); tris.Add(a + 1); tris.Add(a + 2);
-                tris.Add(a + 1); tris.Add(a + 3); tris.Add(a + 2);
-            }
-
-            var mesh = new Mesh { name = name };
-            mesh.SetVertices(verts);
-            mesh.SetUVs(0, uvs);
-            mesh.SetTriangles(tris, 0);
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            return mesh;
-        }
-
-        private static Material CreatePlanetMaterial()
-        {
-            const string path = "Assets/Materials/Planet Jovian Dawn.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var shader = Shader.Find("StarshipCabin/Planet");
-            if (shader == null)
-            {
-                throw new InvalidOperationException("StarshipCabin/Planet shader not found.");
-            }
-
-            var mat = new Material(shader) { name = "Planet Jovian Dawn" };
-            AssetDatabase.CreateAsset(mat, path);
-            return mat;
-        }
-
-        private static Material CreateRingMaterial()
-        {
-            const string path = "Assets/Materials/Planet Ring.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
-
-            var shader = Shader.Find("StarshipCabin/PlanetRing");
-            if (shader == null)
-            {
-                throw new InvalidOperationException("StarshipCabin/PlanetRing shader not found.");
-            }
-
-            var mat = new Material(shader) { name = "Planet Ring" };
-            AssetDatabase.CreateAsset(mat, path);
-            return mat;
         }
 
         private static void BuildWindow(Transform parent, QuartersMaterials mats, int index, float u0, float u1)
@@ -926,7 +772,7 @@ namespace StarshipCabin.EditorTools
             mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             mat.SetInt("_ZWrite", 0);
-            mat.SetFloat("_Smoothness", 0.6f); // softened after HDR made the alcove reflection hot
+            mat.SetFloat("_Smoothness", 0.85f); // glassy highlight
             mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
             mat.DisableKeyword("_ALPHATEST_ON");
             mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
@@ -938,22 +784,21 @@ namespace StarshipCabin.EditorTools
         private static Material CreateStarMaterial()
         {
             const string path = "Assets/Materials/Star Window Surface.mat";
-            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (mat == null)
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (existing != null)
             {
-                var shader = Shader.Find("StarshipCabin/StarWindow");
-                if (shader == null)
-                {
-                    throw new InvalidOperationException(
-                        "StarshipCabin/StarWindow shader not found. Ensure Assets/Shaders/StarWindow.shader is imported.");
-                }
-
-                mat = new Material(shader) { name = "Star Window Surface" };
-                AssetDatabase.CreateAsset(mat, path);
+                return existing;
             }
 
-            mat.SetFloat("_Twinkle", 0.10f);
-            EditorUtility.SetDirty(mat);
+            var shader = Shader.Find("StarshipCabin/StarWindow");
+            if (shader == null)
+            {
+                throw new InvalidOperationException(
+                    "StarshipCabin/StarWindow shader not found. Ensure Assets/Shaders/StarWindow.shader is imported.");
+            }
+
+            var mat = new Material(shader) { name = "Star Window Surface" };
+            AssetDatabase.CreateAsset(mat, path);
             return mat;
         }
 
