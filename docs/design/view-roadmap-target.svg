@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Target view: Jovian Dawn from the cabin couch</title>
+  <desc id="desc">A concept panel showing a sloped cabin window looking out at a banded gas giant with rings, stars, and a seated figure in silhouette.</desc>
+  <defs>
+    <radialGradient id="sky" cx="55%" cy="20%" r="95%">
+      <stop offset="0" stop-color="#17243a"/>
+      <stop offset="0.55" stop-color="#0b1424"/>
+      <stop offset="1" stop-color="#04070f"/>
+    </radialGradient>
+    <linearGradient id="planetBands" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#efe0bd"/>
+      <stop offset="0.12" stop-color="#c79c70"/>
+      <stop offset="0.24" stop-color="#e5cfaa"/>
+      <stop offset="0.37" stop-color="#a86f51"/>
+      <stop offset="0.50" stop-color="#d5ab7c"/>
+      <stop offset="0.63" stop-color="#b47a55"/>
+      <stop offset="0.76" stop-color="#e2c49a"/>
+      <stop offset="0.90" stop-color="#a36b4d"/>
+      <stop offset="1" stop-color="#6b4538"/>
+    </linearGradient>
+    <radialGradient id="planetShade" cx="34%" cy="22%" r="80%">
+      <stop offset="0" stop-color="#fff4d4" stop-opacity="0.22"/>
+      <stop offset="0.48" stop-color="#fff4d4" stop-opacity="0"/>
+      <stop offset="0.82" stop-color="#050813" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#02040a" stop-opacity="0.92"/>
+    </radialGradient>
+    <radialGradient id="limb" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0.84" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0.93" stop-color="#88d8e8" stop-opacity="0.48"/>
+      <stop offset="0.99" stop-color="#ffbf88" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="windowClip">
+      <path d="M174 72 Q176 48 204 46 L756 46 Q785 49 787 78 L807 426 Q808 454 778 456 L182 456 Q153 455 154 426 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect width="960" height="560" fill="#16171a"/>
+  <g clip-path="url(#windowClip)">
+    <rect width="960" height="560" fill="url(#sky)"/>
+    <g fill="#f4f8ff">
+      <circle cx="218" cy="92" r="1.7"/>
+      <circle cx="295" cy="126" r="1.2"/>
+      <circle cx="384" cy="88" r="1.6"/>
+      <circle cx="511" cy="110" r="1.1"/>
+      <circle cx="658" cy="86" r="1.4"/>
+      <circle cx="718" cy="136" r="1.1"/>
+      <circle cx="260" cy="210" r="1.4"/>
+      <circle cx="424" cy="184" r="1.0"/>
+      <circle cx="706" cy="214" r="1.3"/>
+    </g>
+    <g stroke="#ffffff" stroke-width="1.2" opacity="0.92">
+      <line x1="275" y1="139" x2="275" y2="166"/>
+      <line x1="262" y1="152" x2="288" y2="152"/>
+      <line x1="706" y1="130" x2="706" y2="154"/>
+      <line x1="694" y1="142" x2="718" y2="142"/>
+    </g>
+
+    <ellipse cx="620" cy="418" rx="420" ry="72" fill="none" stroke="#d6c5a4" stroke-width="11" stroke-opacity="0.30"/>
+    <ellipse cx="620" cy="418" rx="384" ry="62" fill="none" stroke="#bba886" stroke-width="4" stroke-opacity="0.28"/>
+    <circle cx="620" cy="500" r="282" fill="url(#planetBands)"/>
+    <ellipse cx="510" cy="381" rx="56" ry="32" fill="#a85b50" transform="rotate(-10 510 381)"/>
+    <ellipse cx="510" cy="381" rx="33" ry="17" fill="#d08b70" transform="rotate(-10 510 381)"/>
+    <circle cx="620" cy="500" r="282" fill="url(#planetShade)"/>
+    <circle cx="620" cy="500" r="295" fill="url(#limb)"/>
+    <path d="M210 418 A420 72 0 0 0 1030 418" fill="none" stroke="#eadbbf" stroke-width="13" stroke-opacity="0.62"/>
+    <path d="M238 418 A390 62 0 0 0 1002 418" fill="none" stroke="#c7b48d" stroke-width="4" stroke-opacity="0.42"/>
+    <path d="M388 458 A380 50 0 0 0 872 456" fill="none" stroke="#3b271d" stroke-width="8" stroke-opacity="0.30"/>
+  </g>
+
+  <path fill-rule="evenodd" fill="#d9d2c4" d="M0 0 H960 V560 H0 Z M174 72 Q176 48 204 46 L756 46 Q785 49 787 78 L807 426 Q808 454 778 456 L182 456 Q153 455 154 426 Z"/>
+  <path d="M174 72 Q176 48 204 46 L756 46 Q785 49 787 78 L807 426 Q808 454 778 456 L182 456 Q153 455 154 426 Z" fill="none" stroke="#1b1d20" stroke-width="8"/>
+  <path d="M174 72 Q176 48 204 46 L756 46 Q785 49 787 78 L807 426 Q808 454 778 456 L182 456 Q153 455 154 426 Z" fill="none" stroke="#9b968c" stroke-width="1.6"/>
+  <rect x="198" y="462" width="558" height="7" rx="3.5" fill="#ffe8c4" opacity="0.56"/>
+  <rect x="154" y="472" width="654" height="14" rx="4" fill="#2a2622"/>
+  <path d="M312 560 L312 514 Q312 496 332 496 H628 Q648 496 648 514 V560 Z" fill="#211f1c"/>
+  <rect x="340" y="486" width="280" height="18" rx="9" fill="#2e2a25"/>
+  <g stroke="#75604c" stroke-width="4" fill="none" stroke-linecap="round">
+    <circle cx="480" cy="464" r="13"/>
+    <path d="M480 477 L480 522 L520 522 L520 560"/>
+    <path d="M480 490 L454 510 M480 490 L507 508"/>
+  </g>
+  <text x="480" y="30" fill="#e8e4dc" font-family="-apple-system, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">TARGET VIEW - JOVIAN DAWN FROM THE COUCH</text>
+</svg>

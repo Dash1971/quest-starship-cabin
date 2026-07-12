@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" role="img" aria-labelledby="title desc">
+  <title id="title">Crew Quarters V2 roadmap milestones from M7 to M12</title>
+  <desc id="desc">A horizontal roadmap showing the tested M7 baseline followed by M8 clear deck and HDR trial, M9 planet engine, M10 more worlds and sound, M11 living sky, and M12 awe pass.</desc>
+  <rect width="960" height="300" fill="#16171a"/>
+  <text x="480" y="34" fill="#e8e4dc" font-family="-apple-system, Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">ROADMAP FROM TESTED M7 BASELINE</text>
+  <line x1="80" y1="145" x2="880" y2="145" stroke="#33363c" stroke-width="3"/>
+
+  <g font-family="-apple-system, Segoe UI, Arial, sans-serif" text-anchor="middle">
+    <g transform="translate(100 145)">
+      <circle r="15" fill="#2cc7b8"/>
+      <text y="-36" fill="#2cc7b8" font-size="14" font-weight="700">M7</text>
+      <text y="42" fill="#e8e4dc" font-size="13">tested baseline</text>
+      <text y="60" fill="#9a958a" font-size="12">starfield V3</text>
+    </g>
+    <g transform="translate(255 145)">
+      <circle r="15" fill="#ffb35c"/>
+      <text y="-36" fill="#ffb35c" font-size="14" font-weight="700">M8</text>
+      <text y="42" fill="#e8e4dc" font-size="13">clear deck</text>
+      <text y="60" fill="#9a958a" font-size="12">HDR + bloom trial</text>
+    </g>
+    <g transform="translate(410 145)">
+      <circle r="15" fill="#ffb35c"/>
+      <text y="-36" fill="#ffb35c" font-size="14" font-weight="700">M9</text>
+      <text y="42" fill="#e8e4dc" font-size="13">planet engine</text>
+      <text y="60" fill="#9a958a" font-size="12">Jovian Dawn</text>
+    </g>
+    <g transform="translate(565 145)">
+      <circle r="15" fill="#ffb35c"/>
+      <text y="-36" fill="#ffb35c" font-size="14" font-weight="700">M10</text>
+      <text y="42" fill="#e8e4dc" font-size="13">more worlds</text>
+      <text y="60" fill="#9a958a" font-size="12">per-scene sound</text>
+    </g>
+    <g transform="translate(720 145)">
+      <circle r="15" fill="#ffb35c"/>
+      <text y="-36" fill="#ffb35c" font-size="14" font-weight="700">M11</text>
+      <text y="42" fill="#e8e4dc" font-size="13">living sky</text>
+      <text y="60" fill="#9a958a" font-size="12">event pool</text>
+    </g>
+    <g transform="translate(875 145)">
+      <circle r="15" fill="#6d4a52" stroke="#ffb35c" stroke-width="3"/>
+      <text y="-36" fill="#ffb35c" font-size="14" font-weight="700">M12</text>
+      <text y="42" fill="#e8e4dc" font-size="13">awe pass</text>
+      <text y="60" fill="#9a958a" font-size="12">final scenes + QA</text>
+    </g>
+  </g>
+
+  <rect x="176" y="226" width="708" height="30" rx="15" fill="none" stroke="#2cc7b8" stroke-width="2" stroke-dasharray="8 7"/>
+  <text x="530" y="246" fill="#2cc7b8" font-family="-apple-system, Segoe UI, Arial, sans-serif" font-size="13" text-anchor="middle">Each milestone: procedural/code-reviewable package, Quest build, install, comfort + perf verification, README status update</text>
+</svg>

@@ -23,6 +23,20 @@ The next phase is tightly focused on visual awe and ambience:
 
 Do not expand into movable objects, inventories, persistence, or room-memory features. The cabin should remain a comfort-first star-gazing space.
 
+## Concept Panels
+
+### Target View
+
+![Target view concept: Jovian Dawn through the cabin glass](docs/design/view-roadmap-target.svg)
+
+### Destination Moods
+
+![Six destination mood concepts](docs/design/view-roadmap-destinations.svg)
+
+### Roadmap Flow
+
+![Roadmap from tested M7 baseline through M12](docs/design/view-roadmap-milestones.svg)
+
 ## Implemented
 
 Milestones 1-7 are shipped and tested:

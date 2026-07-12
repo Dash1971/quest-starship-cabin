@@ -46,6 +46,18 @@ Movement uses seat anchors plus real walking: natural head-tracked walking withi
 
 Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quarters-concept-v2.html) (open locally in a browser).
 
+### The View - target concept
+
+![Target view concept: Jovian Dawn through the cabin glass](docs/design/view-roadmap-target.svg)
+
+### Destination moods
+
+![Six destination mood concepts](docs/design/view-roadmap-destinations.svg)
+
+### Roadmap from M7
+
+![Roadmap from tested M7 baseline through M12](docs/design/view-roadmap-milestones.svg)
+
 ### Section — glass in the slope
 
 ![Section through the lounge](docs/design/section.svg)
