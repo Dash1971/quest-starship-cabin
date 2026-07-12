@@ -1,15 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the tested Quarters V2 Milestone 8 build.
+This roadmap continues from the tested Quarters V2 Milestone 9 build.
 
 Current tested build:
 
 - Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-12 12:47:28 JST
+- Installed/launched: 2026-07-12 13:22:23 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `0ac7ea7854e1c2ae110b2448d0e026501943b1b81c1a4c81f3c25e26c4e5a07a`
+- APK SHA-256: `e6c137e9be4f714a7bd4bc2765f96b33a5cfc3c54e9da2aeab2afffef9ede725`
 
 ## Direction
 
@@ -38,7 +38,7 @@ Do not expand into movable objects, inventories, persistence, or room-memory fea
 
 ## Implemented
 
-Milestones 1-8 are shipped and tested:
+Milestones 1-9 are shipped and tested:
 
 1. Shell + glazing: procedural Crew Quarters V2 shell, 55 degree glazed hull slope, four rounded-trapezoid window panes, shader starfield.
 2. Furniture + palette: couch, bed, raised alcove, desk, console strips, plants, soft-bright material set.
@@ -48,23 +48,17 @@ Milestones 1-8 are shipped and tested:
 6. Decor pass: procedural chess set and library decor.
 7. Book labels + starfield V3: fitted book labels and dark-sky star shader upgrade.
 8. Clear the deck + HDR trial: retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
+9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10.
 
 The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 
 ## Active Milestones
 
-### M9 - Planet + Destination Engine
-
-- Add one hero world: `Jovian Dawn`.
-- Build a procedural gas-giant view with banded clouds, storm, terminator, atmospheric limb, rings, and slow destination switching.
-- Composite the planet in front of the existing V3 starfield.
-
-Pass condition: the view is genuinely more awe-inspiring on Quest, not just more complex.
-
 ### M10 - More Worlds + Per-Scene Sound
 
 - Add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`.
 - Add per-world audio layers on top of the M5 ambient bed.
+- Add the destination-switching framework now that one hero world exists.
 - Cross-fade view, palette, mixed runtime light, and sound together.
 
 Pass condition: each destination feels emotionally distinct and remains calm.
