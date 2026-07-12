@@ -12,7 +12,7 @@ namespace StarshipCabin
         public float spinDegreesPerSecond = 0.4f;
 
         [Tooltip("World-space direction the sunlight comes from.")]
-        public Vector3 sunDirection = new(-0.55f, 0.30f, 0.78f);
+        public Vector3 sunDirection = new Vector3(-0.55f, 0.30f, 0.78f);
 
         private static readonly int SunDirId = Shader.PropertyToID("_SunDir");
 

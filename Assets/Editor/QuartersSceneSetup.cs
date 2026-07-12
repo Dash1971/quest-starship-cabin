@@ -384,15 +384,20 @@ namespace StarshipCabin.EditorTools
 
         // ------------------------------------------------------------------
         // Planet (Milestone 9): "Jovian Dawn", the first hero world.
-        //
-        // TUNE constants. Outboard is -Z; couch eye is roughly
-        // (-1.6, 1.1, -1.42) facing -Z.
         // ------------------------------------------------------------------
 
-        private static readonly Vector3 PlanetCenter = new(2.4f, -3.2f, -34f);
-        private const float PlanetRadius = 13.5f;
+        // Planet sits BETWEEN the glass and the star backdrop plane (which is at
+        // slope offset -6). Opaque + normal depth composites it: it occludes the
+        // stars it covers, the field fills the rest. No render-order tricks.
+        // Placement is slope space (see SlopePoint): u along the window wall,
+        // v up the slope, offset = metres out from the slope (0 = glass line;
+        // must stay between 0 and -6). >>> TUNE u / v / offset / radius on device.
+        private const float PlanetSlopeU = 0.2f;    // ~centre lounge window
+        private const float PlanetSlopeV = 1.60f;   // high in the panes
+        private const float PlanetOffset = -4.0f;   // out from the slope; keep > -6
+        private const float PlanetRadius = 1.6f;
         private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
-        private const bool PlanetHasRing = true;
+        private const bool PlanetHasRing = false;   // off until placement is confirmed; re-enable later
         private const float RingInnerMul = 1.55f;
         private const float RingOuterMul = 2.35f;
         private static readonly Vector3 RingTiltEuler = new(74f, 12f, 0f);
@@ -401,7 +406,7 @@ namespace StarshipCabin.EditorTools
         {
             var planetRoot = new GameObject("Planet (Jovian Dawn)").transform;
             planetRoot.SetParent(root);
-            planetRoot.position = PlanetCenter;
+            planetRoot.position = SlopePoint(PlanetSlopeU, PlanetSlopeV, PlanetOffset);
 
             var sphere = BuildUvSphere("Quarters Planet", PlanetRadius, 96, 48);
             var body = MeshObject(planetRoot, "Planet Body", sphere, CreatePlanetMaterial());
@@ -497,20 +502,24 @@ namespace StarshipCabin.EditorTools
         private static Material CreatePlanetMaterial()
         {
             const string path = "Assets/Materials/Planet Jovian Dawn.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null)
             {
-                return existing;
+                var shader = Shader.Find("StarshipCabin/Planet");
+                if (shader == null)
+                {
+                    throw new InvalidOperationException("StarshipCabin/Planet shader not found (Milestone 9).");
+                }
+                mat = new Material(shader) { name = "Planet Jovian Dawn" };
+                AssetDatabase.CreateAsset(mat, path);
             }
 
-            var shader = Shader.Find("StarshipCabin/Planet");
-            if (shader == null)
-            {
-                throw new InvalidOperationException("StarshipCabin/Planet shader not found.");
-            }
-
-            var mat = new Material(shader) { name = "Planet Jovian Dawn" };
-            AssetDatabase.CreateAsset(mat, path);
+            // M9 fix v2: calm the exposure so bands are visible and the sunlit
+            // face doesn't clip to a white blob under HDR bloom.
+            mat.SetFloat("_DayBoost", 1.15f);
+            mat.SetFloat("_RimStrength", 0.7f);
+            mat.SetFloat("_NightLevel", 0.05f);
+            EditorUtility.SetDirty(mat);
             return mat;
         }
 
@@ -952,7 +961,7 @@ namespace StarshipCabin.EditorTools
             }
 
             mat.SetFloat("_Twinkle", 0.10f);
-            mat.renderQueue = -1; // follow the shader (Background) — clears any stale serialized queue
+            mat.renderQueue = -1; // follow the shader (Geometry)
             EditorUtility.SetDirty(mat);
             return mat;
         }
