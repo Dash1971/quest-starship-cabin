@@ -1,15 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the tested Quarters V2 Milestone 9 hotfix 1 build.
+This roadmap continues from the Quarters V2 Milestone 9 recovery hotfix 2 headset build.
 
-Current tested build:
+Current headset build:
 
 - Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-12 13:41:24 JST
+- Installed/launched: 2026-07-12 18:15:23 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `2c27de443a27f7114ba94d6507d1ddde0082a8a86b453046b2f19420b75931af`
+- APK SHA-256: `45c10d006564f18219104e59c4c51c11c8bce24c380cd178322a0d13795409a0`
 
 ## Direction
 
@@ -48,7 +48,7 @@ Milestones 1-9 are shipped and tested:
 6. Decor pass: procedural chess set and library decor.
 7. Book labels + starfield V3: fitted book labels and dark-sky star shader upgrade.
 8. Clear the deck + HDR trial: retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
-9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10. Hotfix 1 restores the M7 starfield render path and moves the star surface far beyond the planet after headset testing showed the first M9 render-queue attempt made the four panes appear as opaque color blocks.
+9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10. Recovery hotfix 2 keeps the M7 `StarWindow.shader` path and M8 HDR enabled, and uses a bounded generated sky backing plane behind Jovian Dawn after headset testing showed the oversized hotfix-1 backing plane made the windows clip to white.
 
 The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 

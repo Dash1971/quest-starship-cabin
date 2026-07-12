@@ -6,16 +6,16 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
-Current tested build: `Quarters V2 Milestone 9 hotfix 1`
+Current headset build: `Quarters V2 Milestone 9 recovery hotfix 2`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 - Baseline rollback commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
 - Tested on: Meta Quest 3
-- Installed/launched on device: 2026-07-12 13:41:24 JST
+- Installed/launched on device: 2026-07-12 18:15:23 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `2c27de443a27f7114ba94d6507d1ddde0082a8a86b453046b2f19420b75931af`
+- APK SHA-256: `45c10d006564f18219104e59c4c51c11c8bce24c380cd178322a0d13795409a0`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
@@ -32,7 +32,7 @@ The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the
 - Ambient audio V2: layered engine bed, brown noise, air circulation, and softer panel beeps.
 - Media/video wall from M5 retired in M8 because Quest system overlays can provide media apps without distracting from star-gazing.
 - Jovian Dawn planet view from M9: procedural banded gas giant, great storm, dawn terminator, atmospheric limb, and thin ring rendered behind the glass.
-- M9 hotfix 1 restores the M7 starfield render path after headset testing showed the first M9 render-queue attempt made the four panes appear as opaque color blocks.
+- M9 recovery hotfix 2 keeps the M7 `StarWindow.shader` path, keeps M8 HDR enabled, and moves only the generated sky backing plane behind Jovian Dawn with bounded mesh/UV coverage after headset testing showed the oversized hotfix-1 backing plane made the windows clip to white.
 
 ### Roadmap Discipline
 

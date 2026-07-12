@@ -361,21 +361,23 @@ namespace StarshipCabin.EditorTools
                 BuildWindow(glazingRoot, mats, i, u0, u1);
             }
 
-            // One big star surface far beyond the planet: head movement gives
-            // near-zero parallax, so the stars read as distant while Jovian
-            // Dawn can depth-render in front of the sky.
+            // One big star surface behind Jovian Dawn: head movement gives
+            // near-zero parallax, so the stars read as distant while the
+            // planet depth-renders in front of the sky.
             //
-            // Milestone 9 hotfix: keep the star shader on the normal opaque
-            // geometry path that rendered correctly in M7, and solve planet
-            // occlusion with actual scene depth instead of render-queue tricks.
-            // The expanded UV scale preserves roughly the same star density.
+            // Milestone 9 recovery: keep the handoff's "do not modify
+            // StarWindow" boundary. The earlier hotfix pushed this plane out
+            // to -80m and over-expanded the mesh/UV range; on Quest that
+            // over-drove the procedural sky. This backing plane sits just
+            // behind the planet's far edge, sized from the seat/window
+            // projection with modest margin and the same physical UV density.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-320f, -128f, -80f),
-                SlopePoint(320f, -128f, -80f),
-                SlopePoint(320f, 240f, -80f),
-                SlopePoint(-320f, 240f, -80f),
-                40.0f, 35.0f);
+                SlopePoint(-205f, -46f, -45f),
+                SlopePoint(280f, -46f, -45f),
+                SlopePoint(280f, 66f, -45f),
+                SlopePoint(-205f, 66f, -45f),
+                30.313f, 10.667f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
             return starObject.AddComponent<StarWindowSurface>();
