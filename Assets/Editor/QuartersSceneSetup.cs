@@ -361,22 +361,21 @@ namespace StarshipCabin.EditorTools
                 BuildWindow(glazingRoot, mats, i, u0, u1);
             }
 
-            // One big star surface 6 m behind the slope plane: head movement gives
-            // near-zero parallax, so the stars read as distant.
+            // One big star surface far beyond the planet: head movement gives
+            // near-zero parallax, so the stars read as distant while Jovian
+            // Dawn can depth-render in front of the sky.
             //
-            // Milestone 3 coverage fix: oblique sight lines (e.g. couch →
-            // alcove pane) project ~5× beyond the pane edge onto the offset
-            // plane, so the quad must extend far past the slope bounds to
-            // cover every pane from every seat (the old ±8 quad left the
-            // alcove pane black from the couch). UVs scale with physical size
-            // (u: 50/16, v: 28/10.5) so star density per metre is unchanged.
+            // Milestone 9 hotfix: keep the star shader on the normal opaque
+            // geometry path that rendered correctly in M7, and solve planet
+            // occlusion with actual scene depth instead of render-queue tricks.
+            // The expanded UV scale preserves roughly the same star density.
             var starMesh = QuartersMeshes.UvQuad(
                 "Quarters Star Surface",
-                SlopePoint(-25f, -10f, -6f),
-                SlopePoint(25f, -10f, -6f),
-                SlopePoint(25f, 18f, -6f),
-                SlopePoint(-25f, 18f, -6f),
-                3.125f, 2.667f);
+                SlopePoint(-320f, -128f, -80f),
+                SlopePoint(320f, -128f, -80f),
+                SlopePoint(320f, 240f, -80f),
+                SlopePoint(-320f, 240f, -80f),
+                40.0f, 35.0f);
             var starObject = MeshObject(glazingRoot, "Star Window Surface", starMesh, mats.Stars);
             GameObjectUtility.SetStaticEditorFlags(starObject, 0); // animated shader: keep out of batching/GI
             return starObject.AddComponent<StarWindowSurface>();

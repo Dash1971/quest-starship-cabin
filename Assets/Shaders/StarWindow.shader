@@ -34,9 +34,9 @@ Shader "StarshipCabin/StarWindow"
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "Queue" = "Background" }
+        Tags { "RenderType" = "Opaque" "Queue" = "Geometry" }
         Lighting Off
-        ZWrite Off
+        ZWrite On
 
         Pass
         {

@@ -1,15 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the tested Quarters V2 Milestone 9 build.
+This roadmap continues from the tested Quarters V2 Milestone 9 hotfix 1 build.
 
 Current tested build:
 
 - Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-12 13:22:23 JST
+- Installed/launched: 2026-07-12 13:41:24 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin`
-- APK SHA-256: `e6c137e9be4f714a7bd4bc2765f96b33a5cfc3c54e9da2aeab2afffef9ede725`
+- APK SHA-256: `2c27de443a27f7114ba94d6507d1ddde0082a8a86b453046b2f19420b75931af`
 
 ## Direction
 
@@ -48,7 +48,7 @@ Milestones 1-9 are shipped and tested:
 6. Decor pass: procedural chess set and library decor.
 7. Book labels + starfield V3: fitted book labels and dark-sky star shader upgrade.
 8. Clear the deck + HDR trial: retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
-9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10.
+9. The planet: add `Jovian Dawn`, a procedural banded gas giant with storm, dawn terminator, atmospheric limb, and ring; reduce HDR-busy twinkle/lamp/reflection; keep destination switching for M10. Hotfix 1 restores the M7 starfield render path and moves the star surface far beyond the planet after headset testing showed the first M9 render-queue attempt made the four panes appear as opaque color blocks.
 
 The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 
