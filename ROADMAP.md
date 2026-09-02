@@ -1,15 +1,15 @@
 # Roadmap - Crew Quarters V2: The View
 
-This roadmap continues from the Quarters V2 Milestone 9 Opus fix beta headset build.
+This roadmap continues from the Quarters V2 Milestone 9 fix6 beta headset build.
 
 Current beta headset build:
 
 - Stable rollback tag: `quarters-v2-m7-tested-20260711` points to the pre-M8 tested M7 build.
 - Tested on: Meta Quest 3
-- Installed/launched: 2026-07-12 18:57:54 JST
+- Installed/launched: 2026-07-12 22:55:28 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin.beta`
-- APK SHA-256: `a73bca450c5c6f0533541457234bec8e683f05608ff33cbd0aece4716fb85f2a`
+- APK SHA-256: `77bd70d78426ca31c2f24b03d886a1c9e5534861b7ea0a5200c64319d360e17e`
 
 ## Direction
 
@@ -23,6 +23,8 @@ The next phase is tightly focused on visual awe and ambience:
 Do not expand into movable objects, inventories, persistence, or room-memory features. The cabin should remain a comfort-first star-gazing space.
 
 ## Concept Panels
+
+New Hope vision: [`docs/design/vision-the-getaway.html`](docs/design/vision-the-getaway.html)
 
 ### Target View
 
@@ -70,6 +72,34 @@ Status: code-integrated on beta; editor regeneration and on-device pass conditio
 - Still needed: weighting, moon transits, meteor showers, and aurora ripples.
 
 Status: code-integrated on beta; editor regeneration and on-device pass condition remain pending.
+
+## New Hope — Quarters V2.0
+
+The `newhope` branch extends the current beta as a third, independently installable Quest app:
+
+- Product: `Starship Cabin New Hope`
+- Android package: `jp.openclaw.starshipcabin.newhope`
+- Build output: `Builds/StarshipCabin-Quarters-NewHope.apk`
+- Base: beta commit `966e242`
+
+### Integrated in code
+
+- Destination colours now spill into the cabin through the mixed runtime light.
+- A sleeping cat rests on the left couch cushion and breathes subtly.
+- A warm sill-cove light pulses at approximately 5.5 breaths per minute.
+- Arrival fades gently up from black; `SleepSession.BeginWindDown(minutes)` provides an opt-in fade/audio wind-down hook.
+- An isolated experimental procedural drone sits underneath the existing ambient bed.
+
+Status: code-integrated only. Unity regeneration, APK build, acoustic tuning, visual placement checks, comfort/performance QA, and Quest installation remain pending.
+
+### Vision backlog
+
+- Per-world generative spatial music and distinct sound layers.
+- Moonrise, eclipse, aurora, ring-shadow, and other slow signature spectacles.
+- Additional micro-motion and optional rest rituals.
+- Passthrough portal and hand tracking as a focused OpenXR/device-side milestone.
+
+The vision document is directional, not a claim that every depicted feature is implemented.
 
 ## Remaining Milestone
 

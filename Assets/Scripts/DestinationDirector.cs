@@ -17,12 +17,14 @@ namespace StarshipCabin
         public Color atmoCool;
         public Vector3 sunDir;
         public float calmVolume;
+        public Color roomTint;
+        public float roomIntensity;
     }
 
     /// <summary>
     /// Slowly blends the observation planet between destination moods.
-    /// It changes only the planet material, planet/ring scale, and calm audio
-    /// volume; the room and star window remain fixed for comfort.
+    /// It changes the planet material, planet/ring scale, calm audio volume,
+    /// and the mixed room light. The star window remains fixed for comfort.
     /// </summary>
     public class DestinationDirector : MonoBehaviour
     {
@@ -30,6 +32,7 @@ namespace StarshipCabin
         public Transform planetTransform;
         public Transform ringTransform;
         public AmbientAudioController audioController;
+        public Light roomLight;
 
         public Destination[] destinations;
         public float dwellSeconds = 150f;
@@ -68,6 +71,12 @@ namespace StarshipCabin
             if (audioController == null)
             {
                 audioController = FindAnyObjectByType<AmbientAudioController>();
+            }
+
+            if (roomLight == null)
+            {
+                var lightObject = GameObject.Find("Starlight Fill (Mixed)");
+                if (lightObject != null) roomLight = lightObject.GetComponent<Light>();
             }
         }
 
@@ -178,6 +187,12 @@ namespace StarshipCabin
             if (audioController != null)
             {
                 audioController.SetMasterCalmVolume(Mathf.Lerp(from.calmVolume, to.calmVolume, progress));
+            }
+
+            if (roomLight != null && (from.roomIntensity > 0.001f || to.roomIntensity > 0.001f))
+            {
+                roomLight.color = Color.Lerp(from.roomTint, to.roomTint, progress);
+                roomLight.intensity = Mathf.Lerp(from.roomIntensity, to.roomIntensity, progress);
             }
         }
     }

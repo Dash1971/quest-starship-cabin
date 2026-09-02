@@ -108,6 +108,8 @@ namespace StarshipCabin.EditorTools
             BuildSkyEvents(root);
             BuildDestinations(root);
             QuartersFurnishings.BuildAll(root);
+            BuildLivingCabin(root);
+            BuildV2Systems(root);
             BuildBakedLightRig();
             AddXrRig();
             AddControllers(starSurface);
@@ -157,7 +159,7 @@ namespace StarshipCabin.EditorTools
             }
 
             Directory.CreateDirectory("Builds");
-            var buildPath = "Builds/StarshipCabin-Quarters-Beta.apk";
+            var buildPath = "Builds/StarshipCabin-Quarters-NewHope.apk";
 
             var options = new BuildPlayerOptions
             {
@@ -535,29 +537,106 @@ namespace StarshipCabin.EditorTools
                 new Destination { name = "Jovian Dawn", planetScale = 1.0f, ringScale = 1.0f,
                     bandHi = new Color(0.925f, 0.847f, 0.741f), bandMid = new Color(0.784f, 0.541f, 0.373f), bandLo = new Color(0.482f, 0.322f, 0.251f),
                     storm = new Color(0.70f, 0.38f, 0.34f), atmoWarm = new Color(1f, 0.77f, 0.55f), atmoCool = new Color(0.47f, 0.80f, 0.86f),
-                    sunDir = new Vector3(-0.55f, 0.30f, 0.78f), calmVolume = 1.0f },
+                    sunDir = new Vector3(-0.55f, 0.30f, 0.78f), calmVolume = 1.0f,
+                    roomTint = new Color(1f, 0.80f, 0.55f), roomIntensity = 0.7f },
                 new Destination { name = "The Ringed Giant", planetScale = 1.05f, ringScale = 1.3f,
                     bandHi = new Color(0.95f, 0.92f, 0.82f), bandMid = new Color(0.82f, 0.75f, 0.58f), bandLo = new Color(0.60f, 0.54f, 0.40f),
                     storm = new Color(0.72f, 0.64f, 0.46f), atmoWarm = new Color(0.95f, 0.88f, 0.70f), atmoCool = new Color(0.60f, 0.80f, 0.88f),
-                    sunDir = new Vector3(-0.50f, 0.34f, 0.79f), calmVolume = 0.9f },
+                    sunDir = new Vector3(-0.50f, 0.34f, 0.79f), calmVolume = 0.9f,
+                    roomTint = new Color(0.92f, 0.86f, 0.70f), roomIntensity = 0.6f },
                 new Destination { name = "Ember", planetScale = 0.95f, ringScale = 0f,
                     bandHi = new Color(0.90f, 0.52f, 0.32f), bandMid = new Color(0.70f, 0.28f, 0.18f), bandLo = new Color(0.40f, 0.15f, 0.12f),
                     storm = new Color(0.90f, 0.42f, 0.20f), atmoWarm = new Color(1f, 0.50f, 0.30f), atmoCool = new Color(0.60f, 0.40f, 0.50f),
-                    sunDir = new Vector3(-0.60f, 0.28f, 0.75f), calmVolume = 0.85f },
+                    sunDir = new Vector3(-0.60f, 0.28f, 0.75f), calmVolume = 0.85f,
+                    roomTint = new Color(1f, 0.46f, 0.30f), roomIntensity = 0.7f },
                 new Destination { name = "Pale Blue", planetScale = 0.92f, ringScale = 0.7f,
                     bandHi = new Color(0.82f, 0.90f, 0.96f), bandMid = new Color(0.50f, 0.70f, 0.86f), bandLo = new Color(0.28f, 0.44f, 0.62f),
                     storm = new Color(0.60f, 0.76f, 0.92f), atmoWarm = new Color(0.82f, 0.90f, 1f), atmoCool = new Color(0.50f, 0.82f, 0.96f),
-                    sunDir = new Vector3(-0.50f, 0.32f, 0.80f), calmVolume = 0.9f },
+                    sunDir = new Vector3(-0.50f, 0.32f, 0.80f), calmVolume = 0.9f,
+                    roomTint = new Color(0.55f, 0.70f, 0.95f), roomIntensity = 0.6f },
                 new Destination { name = "Nebula Drift", planetScale = 0.72f, ringScale = 0f,
                     bandHi = new Color(0.60f, 0.55f, 0.70f), bandMid = new Color(0.42f, 0.36f, 0.55f), bandLo = new Color(0.24f, 0.20f, 0.34f),
                     storm = new Color(0.52f, 0.40f, 0.62f), atmoWarm = new Color(0.72f, 0.60f, 0.82f), atmoCool = new Color(0.42f, 0.62f, 0.82f),
-                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.8f },
+                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.8f,
+                    roomTint = new Color(0.60f, 0.50f, 0.80f), roomIntensity = 0.5f },
                 new Destination { name = "Deep Quiet", planetScale = 0.02f, ringScale = 0f,
                     bandHi = new Color(0.50f, 0.50f, 0.55f), bandMid = new Color(0.30f, 0.30f, 0.35f), bandLo = new Color(0.15f, 0.15f, 0.20f),
                     storm = new Color(0.40f, 0.40f, 0.45f), atmoWarm = new Color(0.60f, 0.60f, 0.70f), atmoCool = new Color(0.40f, 0.50f, 0.70f),
-                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.7f }
+                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.7f,
+                    roomTint = new Color(0.42f, 0.52f, 0.75f), roomIntensity = 0.35f }
             };
             EditorUtility.SetDirty(director);
+        }
+
+        private static void BuildLivingCabin(Transform root)
+        {
+            // A curled companion on the left couch cushion.
+            var catPosition = new Vector3(-2.36f, 0.66f, -1.50f);
+            var cat = new GameObject("Cabin Cat");
+            cat.transform.SetParent(root);
+            cat.transform.position = catPosition;
+
+            var fur = CreateMaterial("Cabin Cat Fur", new Color(0.17f, 0.15f, 0.14f));
+            var body = MeshObject(cat.transform, "Cat Body",
+                BuildUvSphere("Cat Body Mesh", 0.18f, 20, 12), fur,
+                catPosition, Quaternion.identity);
+            body.transform.localScale = new Vector3(1.9f, 1.0f, 1.25f);
+            GameObjectUtility.SetStaticEditorFlags(body, 0);
+
+            var head = MeshObject(cat.transform, "Cat Head",
+                BuildUvSphere("Cat Head Mesh", 0.115f, 16, 10), fur,
+                catPosition + new Vector3(0.28f, 0.05f, 0.02f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(head, 0);
+
+            var leftEar = MeshObject(cat.transform, "Cat Ear L",
+                QuartersMeshes.ChamferedBox("Cat Ear L Mesh", 0.05f, 0.07f, 0.03f, 0.01f), fur,
+                catPosition + new Vector3(0.30f, 0.15f, -0.05f), Quaternion.Euler(0f, 0f, -12f));
+            GameObjectUtility.SetStaticEditorFlags(leftEar, 0);
+            var rightEar = MeshObject(cat.transform, "Cat Ear R",
+                QuartersMeshes.ChamferedBox("Cat Ear R Mesh", 0.05f, 0.07f, 0.03f, 0.01f), fur,
+                catPosition + new Vector3(0.30f, 0.15f, 0.09f), Quaternion.Euler(0f, 0f, -12f));
+            GameObjectUtility.SetStaticEditorFlags(rightEar, 0);
+
+            var tail = MeshObject(cat.transform, "Cat Tail",
+                QuartersMeshes.ChamferedBox("Cat Tail Mesh", 0.34f, 0.06f, 0.06f, 0.02f), fur,
+                catPosition + new Vector3(-0.18f, 0.02f, 0.14f), Quaternion.Euler(0f, 40f, 0f));
+            GameObjectUtility.SetStaticEditorFlags(tail, 0);
+
+            var breath = cat.AddComponent<PulseComponent>();
+            breath.mode = PulseComponent.Mode.TransformScale;
+            breath.breathsPerMinute = 20f;
+            breath.min = 0.99f;
+            breath.max = 1.02f;
+
+            // A warm sill-cove pacer at roughly 5.5 breaths per minute.
+            var pacer = new GameObject("Breathing Pacer Light");
+            pacer.transform.SetParent(root);
+            pacer.transform.position = new Vector3(0f, 0.90f, -2.30f);
+            var light = pacer.AddComponent<Light>();
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.85f, 0.62f);
+            light.intensity = 0.4f;
+            light.range = 3.2f;
+            light.shadows = LightShadows.None;
+
+            var pulse = pacer.AddComponent<PulseComponent>();
+            pulse.mode = PulseComponent.Mode.LightIntensity;
+            pulse.targetLight = light;
+            pulse.breathsPerMinute = 5.5f;
+            pulse.min = 0.25f;
+            pulse.max = 0.55f;
+        }
+
+        private static void BuildV2Systems(Transform root)
+        {
+            var ambience = new GameObject("Generative Ambience");
+            ambience.transform.SetParent(root);
+            ambience.AddComponent<AudioSource>();
+            ambience.AddComponent<GenerativeAmbience>();
+
+            var sleep = new GameObject("Sleep Session");
+            sleep.transform.SetParent(root);
+            sleep.AddComponent<SleepSession>();
         }
 
         private static Mesh BuildUvSphere(string name, float radius, int lon, int lat)
@@ -1181,8 +1260,9 @@ namespace StarshipCabin.EditorTools
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
             PlayerSettings.companyName = "OpenClaw";
-            PlayerSettings.productName = "Starship Cabin Beta";
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.beta");
+            PlayerSettings.productName = "Starship Cabin New Hope";
+            PlayerSettings.bundleVersion = "2.0.0";
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.newhope");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;

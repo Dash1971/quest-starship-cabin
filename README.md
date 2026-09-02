@@ -6,16 +6,24 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
-Current beta headset build: `Quarters V2 Milestone 9 Opus fix beta`
+Current development branch: `newhope` — Quarters V2.0 "The Cabin Comes Alive"
+
+- Product: `Starship Cabin New Hope`
+- Package: `jp.openclaw.starshipcabin.newhope`
+- Planned APK: `Builds/StarshipCabin-Quarters-NewHope.apk`
+- Base: beta commit `966e242`
+- Status: code-integrated; Unity regeneration, APK build, and Quest testing pending
+
+Latest tested headset build: `Quarters V2 Milestone 9 fix6 beta`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 - Baseline rollback commit: `6ae1bf3` (`Add Quarters V2 milestone 7: fitted book labels + starfield V3`)
 - Tested on: Meta Quest 3
-- Installed/launched on device: 2026-07-12 18:57:54 JST
+- Installed/launched on device: 2026-07-12 22:55:28 JST
 - Unity: 6000.5.2f1
 - Package: `jp.openclaw.starshipcabin.beta`
-- APK SHA-256: `a73bca450c5c6f0533541457234bec8e683f05608ff33cbd0aece4716fb85f2a`
+- APK SHA-256: `77bd70d78426ca31c2f24b03d886a1c9e5534861b7ea0a5200c64319d360e17e`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
@@ -33,6 +41,8 @@ The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the
 - Media/video wall from M5 retired in M8 because Quest system overlays can provide media apps without distracting from star-gazing.
 - Jovian Dawn planet view from M9: procedural banded gas giant, great storm, dawn terminator, atmospheric limb, and thin ring rendered behind the glass.
 - M9 Opus fix beta keeps the M7 star-plane geometry, makes the starfield a non-occluding background pass, keeps M8 HDR enabled, and lights Jovian Dawn toward the viewer. It is packaged separately as `jp.openclaw.starshipcabin.beta` so the stable M8 app remains installed.
+- New Hope adds destination-coloured room light, a sleeping companion cat with subtle breathing, a warm 5.5-breaths-per-minute light pacer, a gentle arrival/wind-down system, and an isolated experimental generative drone.
+- New Hope uses `jp.openclaw.starshipcabin.newhope`, allowing stable, beta, and New Hope to coexist on one Quest.
 
 ### Roadmap Discipline
 
@@ -47,6 +57,8 @@ The defining architectural move remains the steeply sloped glazed hull wall: the
 Movement uses seat anchors plus real walking: natural head-tracked walking within the playspace, and point-to-teleport hops (with a short fade, never visible translation) between couch, bed, and desk anchors. The seated, no-artificial-motion comfort baseline is preserved.
 
 Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quarters-concept-v2.html) (open locally in a browser).
+
+New Hope vision document: [`docs/design/vision-the-getaway.html`](docs/design/vision-the-getaway.html) — "warm within, vast without," covering the living cabin, deeper view, soundscape, rest rituals, and longer-term Quest 3 ideas.
 
 ### The View - target concept
 
@@ -94,6 +106,12 @@ Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quar
 11. **Living sky expansion** — the comfort-capped event pool now includes a distant ship, comet, asteroid, lit station, and a very rare, slower `Leviathan`.
 
 This work is integrated on the beta branch but has not yet been regenerated or tested in the Unity editor or on Quest. Remaining roadmap work includes `Aurora World`, `Binary Eclipse`, distinct per-world audio layers, additional sky-event types, and the final on-device comfort/performance sweep.
+
+### New Hope 2.0 branch
+
+12. **The cabin comes alive** — destination-coloured room light, sleeping companion, breathing-pacer light, arrival/wind-down fade, and experimental generative ambience.
+
+Passthrough and hand tracking are deliberately not claimed here; both require a focused OpenXR/device-side milestone and on-device validation.
 
 All geometry remains procedural C#; the design is code-reviewable. Original, generic sci-fi only — see the IP Boundary section below.
 
@@ -154,9 +172,9 @@ To build the Quarters APK from the editor menu, use `Starship Cabin -> Build Qua
   -executeMethod StarshipCabin.EditorTools.QuartersSceneSetup.BuildQuartersApk
 ```
 
-The Quarters build output is:
+The New Hope branch build output is:
 
-`Builds/StarshipCabin-Quarters.apk`
+`Builds/StarshipCabin-Quarters-NewHope.apk`
 
 ## Sideload
 
@@ -167,11 +185,11 @@ adb install -r Builds/StarshipCabin-MVP.apk
 adb shell monkey -p jp.openclaw.starshipcabin 1
 ```
 
-For the current Quarters build:
+For the New Hope build:
 
 ```bash
-adb install -r Builds/StarshipCabin-Quarters.apk
-adb shell monkey -p jp.openclaw.starshipcabin 1
+adb install -r Builds/StarshipCabin-Quarters-NewHope.apk
+adb shell monkey -p jp.openclaw.starshipcabin.newhope 1
 ```
 
 ## IP Boundary
