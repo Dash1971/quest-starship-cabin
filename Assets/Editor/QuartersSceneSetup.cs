@@ -106,6 +106,7 @@ namespace StarshipCabin.EditorTools
             var starSurface = BuildGlazing(root, materials);
             BuildPlanet(root);
             BuildSkyEvents(root);
+            BuildDestinations(root);
             QuartersFurnishings.BuildAll(root);
             BuildBakedLightRig();
             AddXrRig();
@@ -392,9 +393,11 @@ namespace StarshipCabin.EditorTools
         private static readonly Vector3 PlanetWorldPos = new(1.5f, 10.0f, -80.0f);
         private const float PlanetRadius = 58.0f;
         private static readonly Vector3 PlanetSunDir = new(-0.55f, 0.30f, 0.78f);
-        private const float RingInnerMul = 1.55f;
-        private const float RingOuterMul = 2.35f;
+        private const float RingInnerMul = 1.25f;
+        private const float RingOuterMul = 1.65f;
         private static readonly Vector3 RingTiltEuler = new(74f, 12f, 0f);
+        private static GameObject _planetBody;
+        private static GameObject _planetRing;
 
         private static void BuildPlanet(Transform root)
         {
@@ -405,7 +408,14 @@ namespace StarshipCabin.EditorTools
                 CreatePlanetMaterial(), PlanetWorldPos, Quaternion.identity);
             GameObjectUtility.SetStaticEditorFlags(body, 0); // spins + custom shader
             body.AddComponent<PlanetSurface>().sunDirection = PlanetSunDir;
-            // Ring omitted this pass; re-add once placement is confirmed.
+            _planetBody = body;
+
+            var ring = MeshObject(root, "Planet Ring",
+                BuildRingMesh("Quarters Planet Ring", PlanetRadius * RingInnerMul,
+                    PlanetRadius * RingOuterMul, 160),
+                CreateRingMaterial(), PlanetWorldPos, Quaternion.Euler(RingTiltEuler));
+            GameObjectUtility.SetStaticEditorFlags(ring, 0);
+            _planetRing = ring;
         }
 
         // ------------------------------------------------------------------
@@ -459,12 +469,95 @@ namespace StarshipCabin.EditorTools
                 Vector3.zero, Quaternion.identity);
             GameObjectUtility.SetStaticEditorFlags(rock, 0);
 
+            // Station: a structure with lit windows and a mast.
+            var station = new GameObject("Sky Event Station");
+            station.transform.SetParent(eventsRoot);
+            station.transform.position = Vector3.zero;
+            var core = MeshObject(station.transform, "Station Core",
+                QuartersMeshes.ChamferedBox("Sky Station Core", 2.2f, 1.4f, 1.4f, 0.3f),
+                CreateMaterial("Sky Station Core", new Color(0.18f, 0.19f, 0.22f)),
+                Vector3.zero, Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(core, 0);
+            var stationWindows = MeshObject(station.transform, "Station Windows",
+                QuartersMeshes.ChamferedBox("Sky Station Windows", 2.3f, 0.25f, 0.25f, 0.05f),
+                CreateEmissiveMaterial("Sky Station Windows", new Color(1f, 0.85f, 0.55f),
+                    new Color(1f, 0.8f, 0.45f), 2.2f),
+                new Vector3(0f, 0.35f, 0f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(stationWindows, 0);
+            var mast = MeshObject(station.transform, "Station Mast",
+                QuartersMeshes.ChamferedBox("Sky Station Mast", 0.2f, 2.4f, 0.2f, 0.05f),
+                CreateMaterial("Sky Station Mast", new Color(0.16f, 0.17f, 0.2f)),
+                new Vector3(0.8f, 0f, 0f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(mast, 0);
+
+            // Leviathan: a rare, vast bioluminescent silhouette.
+            var leviathan = new GameObject("Sky Event Leviathan");
+            leviathan.transform.SetParent(eventsRoot);
+            leviathan.transform.position = Vector3.zero;
+            var leviathanBody = MeshObject(leviathan.transform, "Leviathan Body",
+                BuildUvSphere("Sky Leviathan", 2.0f, 24, 14),
+                CreateMaterial("Sky Leviathan Body", new Color(0.10f, 0.16f, 0.18f)),
+                Vector3.zero, Quaternion.identity);
+            leviathanBody.transform.localScale = new Vector3(3.6f, 1.1f, 1.1f);
+            GameObjectUtility.SetStaticEditorFlags(leviathanBody, 0);
+            var leviathanGlow = CreateEmissiveMaterial("Sky Leviathan Glow",
+                new Color(0.4f, 1f, 0.8f), new Color(0.3f, 1f, 0.75f), 3.0f);
+            for (var i = 0; i < 5; i++)
+            {
+                var spot = MeshObject(leviathan.transform, $"Leviathan Spot {i}",
+                    BuildUvSphere($"Sky Leviathan Spot {i}", 0.22f, 8, 6), leviathanGlow,
+                    new Vector3(3.0f - i * 1.4f, 0.35f, 0f), Quaternion.identity);
+                GameObjectUtility.SetStaticEditorFlags(spot, 0);
+            }
+
             var controller = eventsRoot.gameObject.AddComponent<SkyEventController>();
-            controller.events = new[] { ship, comet, asteroid };
-            ship.SetActive(false);
-            comet.SetActive(false);
-            asteroid.SetActive(false);
+            controller.events = new[] { ship, comet, asteroid, station, leviathan };
+            foreach (var skyEvent in controller.events)
+            {
+                skyEvent.SetActive(false);
+            }
             EditorUtility.SetDirty(controller);
+        }
+
+        private static void BuildDestinations(Transform root)
+        {
+            var go = new GameObject("Destination Director");
+            go.transform.SetParent(root);
+            var director = go.AddComponent<DestinationDirector>();
+            director.planetRenderer = _planetBody.GetComponent<Renderer>();
+            director.planetTransform = _planetBody.transform;
+            director.ringTransform = _planetRing.transform;
+            director.dwellSeconds = 150f;
+            director.fadeSeconds = 6f;
+            director.autoCycle = true;
+            director.destinations = new[]
+            {
+                new Destination { name = "Jovian Dawn", planetScale = 1.0f, ringScale = 1.0f,
+                    bandHi = new Color(0.925f, 0.847f, 0.741f), bandMid = new Color(0.784f, 0.541f, 0.373f), bandLo = new Color(0.482f, 0.322f, 0.251f),
+                    storm = new Color(0.70f, 0.38f, 0.34f), atmoWarm = new Color(1f, 0.77f, 0.55f), atmoCool = new Color(0.47f, 0.80f, 0.86f),
+                    sunDir = new Vector3(-0.55f, 0.30f, 0.78f), calmVolume = 1.0f },
+                new Destination { name = "The Ringed Giant", planetScale = 1.05f, ringScale = 1.3f,
+                    bandHi = new Color(0.95f, 0.92f, 0.82f), bandMid = new Color(0.82f, 0.75f, 0.58f), bandLo = new Color(0.60f, 0.54f, 0.40f),
+                    storm = new Color(0.72f, 0.64f, 0.46f), atmoWarm = new Color(0.95f, 0.88f, 0.70f), atmoCool = new Color(0.60f, 0.80f, 0.88f),
+                    sunDir = new Vector3(-0.50f, 0.34f, 0.79f), calmVolume = 0.9f },
+                new Destination { name = "Ember", planetScale = 0.95f, ringScale = 0f,
+                    bandHi = new Color(0.90f, 0.52f, 0.32f), bandMid = new Color(0.70f, 0.28f, 0.18f), bandLo = new Color(0.40f, 0.15f, 0.12f),
+                    storm = new Color(0.90f, 0.42f, 0.20f), atmoWarm = new Color(1f, 0.50f, 0.30f), atmoCool = new Color(0.60f, 0.40f, 0.50f),
+                    sunDir = new Vector3(-0.60f, 0.28f, 0.75f), calmVolume = 0.85f },
+                new Destination { name = "Pale Blue", planetScale = 0.92f, ringScale = 0.7f,
+                    bandHi = new Color(0.82f, 0.90f, 0.96f), bandMid = new Color(0.50f, 0.70f, 0.86f), bandLo = new Color(0.28f, 0.44f, 0.62f),
+                    storm = new Color(0.60f, 0.76f, 0.92f), atmoWarm = new Color(0.82f, 0.90f, 1f), atmoCool = new Color(0.50f, 0.82f, 0.96f),
+                    sunDir = new Vector3(-0.50f, 0.32f, 0.80f), calmVolume = 0.9f },
+                new Destination { name = "Nebula Drift", planetScale = 0.72f, ringScale = 0f,
+                    bandHi = new Color(0.60f, 0.55f, 0.70f), bandMid = new Color(0.42f, 0.36f, 0.55f), bandLo = new Color(0.24f, 0.20f, 0.34f),
+                    storm = new Color(0.52f, 0.40f, 0.62f), atmoWarm = new Color(0.72f, 0.60f, 0.82f), atmoCool = new Color(0.42f, 0.62f, 0.82f),
+                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.8f },
+                new Destination { name = "Deep Quiet", planetScale = 0.02f, ringScale = 0f,
+                    bandHi = new Color(0.50f, 0.50f, 0.55f), bandMid = new Color(0.30f, 0.30f, 0.35f), bandLo = new Color(0.15f, 0.15f, 0.20f),
+                    storm = new Color(0.40f, 0.40f, 0.45f), atmoWarm = new Color(0.60f, 0.60f, 0.70f), atmoCool = new Color(0.40f, 0.50f, 0.70f),
+                    sunDir = new Vector3(-0.50f, 0.30f, 0.80f), calmVolume = 0.7f }
+            };
+            EditorUtility.SetDirty(director);
         }
 
         private static Mesh BuildUvSphere(string name, float radius, int lon, int lat)

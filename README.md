@@ -88,11 +88,12 @@ Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quar
 8. **Clear the deck + HDR trial** — retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
 9. **The planet: Jovian Dawn** — add a procedural banded gas giant with storm, dawn limb, atmosphere glow, and ring; reduce star twinkle; dim the desk lamp glow; soften hot glass reflection; keep destination switching out of scope.
 
-### Active roadmap
+### Beta-integrated roadmap work
 
-10. **More worlds + per-scene sound** — add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`; add per-world audio layers on top of the M5 ambient bed.
-11. **Living sky** — extend the shooting-star system into a comfort-capped event pool: distant ships, comets, asteroids, moon transits, meteor showers, and aurora ripples.
-12. **Awe pass** — add `Binary Eclipse`, `Nebula Drift`, a very rare `Leviathan` event, and a final comfort/perf verification sweep on device.
+10. **Destination framework** — six slowly cross-faded gas-giant moods (`Jovian Dawn`, `The Ringed Giant`, `Ember`, `Pale Blue`, `Nebula Drift`, and `Deep Quiet`), per-destination planet/ring scale and palette, and ambient-volume changes. Distinct per-world audio layers and bespoke world geometry remain future work.
+11. **Living sky expansion** — the comfort-capped event pool now includes a distant ship, comet, asteroid, lit station, and a very rare, slower `Leviathan`.
+
+This work is integrated on the beta branch but has not yet been regenerated or tested in the Unity editor or on Quest. Remaining roadmap work includes `Aurora World`, `Binary Eclipse`, distinct per-world audio layers, additional sky-event types, and the final on-device comfort/performance sweep.
 
 All geometry remains procedural C#; the design is code-reviewable. Original, generic sci-fi only — see the IP Boundary section below.
 

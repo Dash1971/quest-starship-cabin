@@ -52,30 +52,32 @@ Milestones 1-9 are shipped and tested:
 
 The M5 media/video wall was retired because Quest system overlays can provide media apps without distracting from star-gazing.
 
-## Active Milestones
+## Beta-Integrated Milestones
 
-### M10 - More Worlds + Per-Scene Sound
+### M10 - Destination Framework
 
-- Add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`.
-- Add per-world audio layers on top of the M5 ambient bed.
-- Add the destination-switching framework now that one hero world exists.
-- Cross-fade view, palette, mixed runtime light, and sound together.
+- Added six slowly cross-faded gas-giant moods: `Jovian Dawn`, `The Ringed Giant`, `Ember`, `Pale Blue`, `Nebula Drift`, and `Deep Quiet`.
+- Added per-destination planet/ring scale, palette, atmosphere, sun direction, and ambient-volume changes.
+- Added public `Next()` and `SetDestination()` hooks for future controls.
+- Still needed: bespoke world geometry, `Aurora World`, distinct per-world audio layers, and mixed-light integration.
 
-Pass condition: each destination feels emotionally distinct and remains calm.
+Status: code-integrated on beta; editor regeneration and on-device pass condition remain pending.
 
-### M11 - Living Sky
+### M11 - Living Sky Expansion
 
-- Extend the shooting-star system into a weighted event pool.
-- Add comfort-capped distant ships, comets, asteroids, moon transits, meteor showers, and aurora ripples.
-- Keep events slow, distant, sparse, and never head-triggered.
+- Expanded the comfort-capped pool to a distant ship, comet, asteroid, lit station, and rare, slower Leviathan.
+- Events remain slow, distant, sparse, and never head-triggered.
+- Still needed: weighting, moon transits, meteor showers, and aurora ripples.
 
-Pass condition: the sky feels alive without demanding attention or inducing vection.
+Status: code-integrated on beta; editor regeneration and on-device pass condition remain pending.
+
+## Remaining Milestone
 
 ### M12 - Awe Pass
 
 - Add `Binary Eclipse`.
-- Add `Nebula Drift`.
-- Add a very rare `Leviathan` event only if the core planet/sky experience already works without it.
+- Replace the current `Nebula Drift` gas-giant mood with a bespoke destination if the frame budget permits.
+- Keep the integrated rare `Leviathan` only if the core planet/sky experience works without it.
 - Run a final comfort and performance sweep on Quest.
 
 Pass condition: the full scene set still respects the comfort baseline and feels original, not derivative.

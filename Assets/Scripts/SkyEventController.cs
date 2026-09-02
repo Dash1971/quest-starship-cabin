@@ -4,21 +4,11 @@ using UnityEngine;
 namespace StarshipCabin
 {
     /// <summary>
-    /// Milestone 10 — the living sky. On a long random timer, one distant
-    /// object drifts slowly across the view far beyond the glass, then hides
-    /// until the next. Everything here is comfort-first:
-    ///   - far away (tens of metres) and slow (well under ~1.5°/s angular),
-    ///   - rare (a minute or more between events),
-    ///   - never triggered by the viewer, never rushes, never flickers.
-    ///
-    /// The event objects are built by QuartersSceneSetup.BuildSkyEvents and
-    /// handed to this controller as `events`, oriented for travel along +X
-    /// (front features at +X, trailing features at -X). This controller only
-    /// moves/orients/toggles them.
+    /// One distant object occasionally drifts across the view. Asteroids and
+    /// the Leviathan tumble; the Leviathan crosses much more slowly.
     /// </summary>
     public class SkyEventController : MonoBehaviour
     {
-        [Tooltip("Distant objects to cycle through (built by the scene generator, oriented for +X travel).")]
         public GameObject[] events;
 
         [Header("Timing (seconds)")]
@@ -41,10 +31,7 @@ namespace StarshipCabin
             {
                 foreach (var skyEvent in events)
                 {
-                    if (skyEvent != null)
-                    {
-                        skyEvent.SetActive(false);
-                    }
+                    if (skyEvent != null) skyEvent.SetActive(false);
                 }
             }
 
@@ -82,15 +69,15 @@ namespace StarshipCabin
             var start = new Vector3(-direction * spanHalfWidth, height, z);
             var end = new Vector3(direction * spanHalfWidth, height, z);
 
-            // Geometry is authored for +X travel; a 180-degree yaw flips it for -X.
             skyEvent.transform.localPosition = start;
             skyEvent.transform.localRotation = goingRight
                 ? Quaternion.identity
                 : Quaternion.Euler(0f, 180f, 0f);
             skyEvent.SetActive(true);
 
-            var isAsteroid = skyEvent.name.Contains("Asteroid");
-            var cross = Random.Range(crossMin, crossMax);
+            var tumbles = skyEvent.name.Contains("Asteroid") || skyEvent.name.Contains("Leviathan");
+            var isLeviathan = skyEvent.name.Contains("Leviathan");
+            var cross = Random.Range(crossMin, crossMax) * (isLeviathan ? 2.4f : 1f);
             var elapsed = 0f;
 
             while (elapsed < cross)
@@ -99,9 +86,12 @@ namespace StarshipCabin
                 var progress = Mathf.Clamp01(elapsed / cross);
                 skyEvent.transform.localPosition = Vector3.Lerp(start, end, progress);
 
-                if (isAsteroid)
+                if (tumbles)
                 {
-                    skyEvent.transform.Rotate(new Vector3(7f, 5f, 3f) * Time.deltaTime, Space.Self);
+                    var rate = isLeviathan ? 1.5f : 7f;
+                    skyEvent.transform.Rotate(
+                        new Vector3(rate, rate * 0.7f, rate * 0.4f) * Time.deltaTime,
+                        Space.Self);
                 }
 
                 yield return null;
