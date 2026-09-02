@@ -105,6 +105,7 @@ namespace StarshipCabin.EditorTools
             BuildQuartersShell(root, materials);
             var starSurface = BuildGlazing(root, materials);
             BuildPlanet(root);
+            BuildSkyEvents(root);
             QuartersFurnishings.BuildAll(root);
             BuildBakedLightRig();
             AddXrRig();
@@ -405,6 +406,65 @@ namespace StarshipCabin.EditorTools
             GameObjectUtility.SetStaticEditorFlags(body, 0); // spins + custom shader
             body.AddComponent<PlanetSurface>().sunDirection = PlanetSunDir;
             // Ring omitted this pass; re-add once placement is confirmed.
+        }
+
+        // ------------------------------------------------------------------
+        // Living sky (Milestone 10): a few distant objects that cross the view
+        // rarely and slowly, far beyond the glass. Built here, animated by
+        // SkyEventController. Authored for +X travel (nose at +X). Non-static.
+        // ------------------------------------------------------------------
+        private static void BuildSkyEvents(Transform root)
+        {
+            var eventsRoot = new GameObject("Sky Events").transform;
+            eventsRoot.SetParent(root);
+            eventsRoot.position = Vector3.zero;
+
+            // Distant ship: dark hull (long axis +X) + a warm nav light at the nose.
+            var ship = new GameObject("Sky Event Ship");
+            ship.transform.SetParent(eventsRoot);
+            ship.transform.position = Vector3.zero;
+            var hull = MeshObject(ship.transform, "Ship Hull",
+                QuartersMeshes.ChamferedBox("Sky Ship Hull", 3.2f, 0.7f, 0.9f, 0.22f),
+                CreateMaterial("Sky Ship Hull", new Color(0.12f, 0.13f, 0.15f)),
+                Vector3.zero, Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(hull, 0);
+            var nav = MeshObject(ship.transform, "Ship Nav Light",
+                BuildUvSphere("Sky Ship Nav", 0.16f, 12, 8),
+                CreateEmissiveMaterial("Sky Ship Nav", new Color(1f, 0.6f, 0.3f), new Color(1f, 0.5f, 0.2f), 3.0f),
+                new Vector3(1.7f, 0f, 0f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(nav, 0);
+
+            // Comet: bright head at the nose (+X), a faded tail behind (-X).
+            var comet = new GameObject("Sky Event Comet");
+            comet.transform.SetParent(eventsRoot);
+            comet.transform.position = Vector3.zero;
+            var head = MeshObject(comet.transform, "Comet Head",
+                BuildUvSphere("Sky Comet Head", 0.5f, 16, 10),
+                CreateEmissiveMaterial("Sky Comet Head", new Color(0.85f, 0.92f, 1f), new Color(0.75f, 0.88f, 1f), 4.0f),
+                new Vector3(1.6f, 0f, 0f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(head, 0);
+            var tail = MeshObject(comet.transform, "Comet Tail",
+                QuartersMeshes.ChamferedBox("Sky Comet Tail", 5.0f, 0.22f, 0.22f, 0.1f),
+                CreateEmissiveMaterial("Sky Comet Tail", new Color(0.6f, 0.8f, 1f), new Color(0.4f, 0.6f, 1f), 1.3f),
+                new Vector3(-1.1f, 0f, 0f), Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(tail, 0);
+
+            // Asteroid: a small rock that tumbles (SkyEventController spins names containing "Asteroid").
+            var asteroid = new GameObject("Sky Event Asteroid");
+            asteroid.transform.SetParent(eventsRoot);
+            asteroid.transform.position = Vector3.zero;
+            var rock = MeshObject(asteroid.transform, "Asteroid Rock",
+                BuildUvSphere("Sky Asteroid", 0.8f, 14, 9),
+                CreateMaterial("Sky Asteroid Rock", new Color(0.30f, 0.27f, 0.23f)),
+                Vector3.zero, Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(rock, 0);
+
+            var controller = eventsRoot.gameObject.AddComponent<SkyEventController>();
+            controller.events = new[] { ship, comet, asteroid };
+            ship.SetActive(false);
+            comet.SetActive(false);
+            asteroid.SetActive(false);
+            EditorUtility.SetDirty(controller);
         }
 
         private static Mesh BuildUvSphere(string name, float radius, int lon, int lat)
