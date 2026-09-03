@@ -10,7 +10,7 @@ Active development branch: `v2/quiet-watch`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: M0 architecture and the M1 `First Question` playable are implemented; Quest installation is pending USB-debug authorization
+- Current branch status: M0 architecture and the M1 `First Question` playable are implemented and installed; headset visual/performance sign-off remains open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
 Current headset build: `Quarters V2 Milestone 8 rollback`
@@ -35,7 +35,7 @@ Built and desktop-render validated on 2026-09-03 with Unity 6000.5.2f1:
 - Version: `2.0.0-m1` (`20001`)
 - APK: `Builds/StarshipCabin-QuietWatch-M1.apk`
 - APK SHA-256: `e94391e2240b04d763b0265b2cef5e015ff3d4e0380d18555c3a633a44f49b46`
-- Installation status: pending; the connected Quest was visible to ADB but had not re-authorized USB debugging
+- Installation status: installed successfully on Meta Quest 3 at 2026-09-03 17:07:49 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
 
 This first playable adds:
 
