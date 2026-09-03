@@ -10,7 +10,7 @@ Active development branch: `v2/quiet-watch`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: M0 architecture and the M1 `First Question` playable are implemented and installed; headset visual/performance sign-off remains open
+- Current branch status: M0 architecture and the corrected M1.1 `First Question` playable are implemented and installed; headset visual/performance sign-off remains open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
 Current headset build: `Quarters V2 Milestone 8 rollback`
@@ -32,10 +32,10 @@ Built and desktop-render validated on 2026-09-03 with Unity 6000.5.2f1:
 
 - Product: `Starship Cabin - The Quiet Watch`
 - Package: `jp.openclaw.starshipcabin.quietwatch`
-- Version: `2.0.0-m1` (`20001`)
+- Version: `2.0.0-m1.1` (`20002`)
 - APK: `Builds/StarshipCabin-QuietWatch-M1.apk`
-- APK SHA-256: `e94391e2240b04d763b0265b2cef5e015ff3d4e0380d18555c3a633a44f49b46`
-- Installation status: installed successfully on Meta Quest 3 at 2026-09-03 17:07:49 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
+- APK SHA-256: `8f8ba36849952e7417560d5daf4275e7494726d087f145c39b7ef951aa08b157`
+- Installation status: installed successfully on Meta Quest 3 at 2026-09-03 17:47 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
 
 This first playable adds:
 
@@ -47,6 +47,8 @@ This first playable adds:
 - Lightweight ten-second CPU/GPU/frame telemetry for `adb logcat` evidence.
 - `The First Question`: a camera-ray-anchored deep-space field with galactic structure, dust, three stellar depth layers, colour variation, and true negative space.
 - `Quiet` plus `Still` as the default; optional extremely slow drift; one deterministic comet after twelve minutes only in `Living` mode.
+
+M1.1 incorporates the first headset review: it removes diffraction spikes and the over-bright blue wash, restores the stronger V3-style brightness distribution at direction-space density, corrects equirectangular star shape, and prevents procedural cell boundaries from leaking as line artifacts. The result is a darker field of clean point stars that remains anchored beyond the glass.
 
 The selector currently contains one vista. The Harbour, Blue Morning, Great Weather, and Long Formation remain roadmap work, not hidden or inactive claims.
 

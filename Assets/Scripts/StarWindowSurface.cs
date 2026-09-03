@@ -61,7 +61,7 @@ namespace StarshipCabin
         public void SetQuietWatchComfort(bool living, bool drifting)
         {
             SetMotion(drifting ? 0.010f : 0f, drifting ? 0.003f : 0f);
-            SetFloat(TwinkleId, living ? 0.07f : 0.025f);
+            SetFloat(TwinkleId, living ? 0.045f : 0.012f);
             SetFloat(MeteorsId, 0f);
             SetNebula(0f);
         }

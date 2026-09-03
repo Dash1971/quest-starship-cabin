@@ -42,7 +42,7 @@ The historical `beta/m9-opus-fix` and `newhope` branches remain available for co
 ## Delivery status
 
 - **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
-- **M1 first playable — installed, validation open:** `The First Question`, the one-vista diegetic selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. Fixed-seat desktop renders and Quest installation pass. Meta's controller-required launch confirmation, live telemetry, and the required sustained comfort/performance sessions remain before M1 exit.
+- **M1 first playable — corrected and installed, validation open:** `The First Question`, the one-vista diegetic selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. The first headset review rejected sparse, spike-shaped stars and excessive blue haze. M1.1 replaces them with a darker, denser, point-star field; fixed-seat renders, GLES3/Vulkan compilation, and Quest installation pass. Second headset review, live telemetry, and the required sustained comfort/performance sessions remain before M1 exit.
 - **M2–M6 — not started:** the four later vistas and release-unification work remain roadmap items.
 
 ## The five living windows
@@ -129,7 +129,7 @@ Planning range: 2–4 focused days.
 
 Exit: the view reads as space beyond glass rather than a texture on glass; it holds attention without a planet; selection works within five seconds; Quest 3 sustains the performance target.
 
-Status: first playable built, fixed-seat desktop renders validated, and installed on Quest 3 on 2026-09-03. Manual continuation past Meta's controller launch check, live 72 Hz evidence, and sustained headset review remain open exit checks.
+Status: M1.1 built, fixed-seat desktop renders validated, and installed on Quest 3 on 2026-09-03 after correcting the first on-device star-quality failure. Manual continuation past Meta's controller launch check, second headset visual review, live 72 Hz evidence, and sustained comfort review remain open exit checks.
 
 Planning range: 4–7 focused days.
 

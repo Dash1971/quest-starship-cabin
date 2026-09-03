@@ -1,18 +1,23 @@
-// The Quiet Watch M1: The First Question.
+// The Quiet Watch: The First Question.
+//
 // The field is sampled from the camera ray, not the window mesh UV, so it
 // remains celestial space beyond the glass as the officer moves their head.
+// The visual distribution deliberately follows the proven V3 starfield:
+// many clean point sources, a wide brightness range, and only rare circular
+// halos. Diffraction spikes were removed after Quest testing because they
+// resolved as HUD-like scratches rather than stars.
 Shader "StarshipCabin/QuietWatchStarWindow"
 {
     Properties
     {
-        _DeepColor ("Deep Space", Color) = (0.0008, 0.0015, 0.0045, 1)
-        _HazeColor ("Galactic Haze", Color) = (0.055, 0.075, 0.135, 1)
-        _BandColor ("Galactic River", Color) = (0.16, 0.17, 0.25, 1)
+        _DeepColor ("Deep Space", Color) = (0.0004, 0.0008, 0.0022, 1)
+        _HazeColor ("Distant Haze", Color) = (0.018, 0.026, 0.050, 1)
+        _BandColor ("Galactic River", Color) = (0.075, 0.082, 0.120, 1)
         _StarColor ("Star Color", Color) = (0.96, 0.98, 1.0, 1)
         _WarmColor ("Warm Stars", Color) = (1.0, 0.72, 0.48, 1)
         _CoolColor ("Cool Stars", Color) = (0.58, 0.76, 1.0, 1)
-        _Density ("Density", Range(0.2, 1.0)) = 0.74
-        _Twinkle ("Twinkle", Range(0, 0.12)) = 0.025
+        _Density ("Density", Range(0.2, 1.0)) = 0.78
+        _Twinkle ("Twinkle", Range(0, 0.12)) = 0.012
         _Speed ("Comfort Drift", Float) = 0
         _Drift ("Comfort Rise", Float) = 0
         _NebulaAmount ("Legacy Nebula", Range(0, 1)) = 0
@@ -138,7 +143,16 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 return tint;
             }
 
-            float3 starLayer(float2 sky, float scale, float parallax, float band, float gain, float allowSpikes, float elapsed)
+            float3 starLayer(
+                float2 sky,
+                float scale,
+                float radius,
+                float occupancy,
+                float parallax,
+                float band,
+                float gain,
+                float allowHalo,
+                float elapsed)
             {
                 float2 layerSky = sky;
                 layerSky.x += _Speed * elapsed * 0.00065 * parallax;
@@ -149,28 +163,51 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float2 local = frac(grid);
                 float2 random = hash22(cell + scale * 0.173);
 
-                float density = saturate(_Density * 0.32 * (1.0 + band * 1.8));
+                // Direction-space covers much less area than the old mesh UVs.
+                // A higher grid frequency restores the proven dense-sky read
+                // without making individual stars larger or streak-like.
+                float density = saturate(_Density * occupancy * (1.0 + band * 1.15));
                 float keep = step(1.0 - density, hash21(cell * 1.71 + 3.13));
-                float2 starPoint = 0.13 + random * 0.74;
+                float2 starPoint = 0.16 + random * 0.68;
                 float2 offset = local - starPoint;
-                float distanceToPoint = length(offset);
+
+                // Equirectangular longitude spans 360 degrees while latitude
+                // spans 180. Correct that metric before measuring the core or
+                // stars become horizontal ovals on the window.
+                float latitude = (sky.y - 0.5) * 3.14159265;
+                float longitudeMetric = 2.0 * max(0.35, cos(latitude));
+                float2 sphericalOffset = offset;
+                sphericalOffset.x *= longitudeMetric;
+                float distanceToPoint = length(sphericalOffset);
 
                 float magnitude = hash21(cell + 7.77);
-                float brightness = 0.055 + 2.9 * pow(magnitude, 7.0);
-                float radius = lerp(0.010, 0.024, hash21(cell + 3.31));
-                float antialias = max(fwidth(distanceToPoint) * 1.2, 0.0025);
-                float core = smoothstep(radius + antialias, max(0.0, radius - antialias), distanceToPoint);
+                float brightness = 0.10 + 3.45 * pow(magnitude, 6.0);
+                float sizeVariation = 0.78 + 1.15 * pow(magnitude, 10.0);
+                float coreRadius = radius * sizeVariation;
+
+                // Never derive the filter width from frac(grid): its jump at a
+                // cell edge produces false horizontal/vertical strokes. The
+                // continuous grid derivatives give one stable pixel footprint.
+                float2 gridDx = ddx(grid);
+                float2 gridDy = ddy(grid);
+                gridDx.x *= longitudeMetric;
+                gridDy.x *= longitudeMetric;
+                float antialias = max(min(length(gridDx), length(gridDy)) * 0.62, 0.0030);
+                float core = smoothstep(
+                    coreRadius + antialias,
+                    max(0.0, coreRadius - antialias),
+                    distanceToPoint);
 
                 float shimmer = 1.0 - _Twinkle * (1.0 - saturate(brightness))
                     * (0.5 + 0.5 * sin(elapsed * (0.42 + random.x * 0.65) + random.y * 6.2831853));
                 float3 tint = stellarTint(hash21(cell + 21.3));
                 float3 color = tint * core * brightness;
 
-                float brilliant = step(0.974, magnitude) * allowSpikes;
-                float halo = smoothstep(0.12, 0.0, distanceToPoint) * 0.12 * brilliant;
-                float spikeX = smoothstep(0.0045, 0.0, abs(offset.x)) * smoothstep(0.105, 0.0, abs(offset.y));
-                float spikeY = smoothstep(0.0045, 0.0, abs(offset.y)) * smoothstep(0.105, 0.0, abs(offset.x));
-                color += tint * (halo + (spikeX + spikeY) * 0.33) * brilliant;
+                // A rare circular bloom cue gives a few stars hierarchy while
+                // remaining a light source, never a crosshair or line.
+                float brilliant = step(0.982, magnitude) * allowHalo;
+                float halo = smoothstep(coreRadius * 4.8, coreRadius * 1.1, distanceToPoint);
+                color += tint * halo * 0.32 * brilliant;
 
                 return color * keep * shimmer * gain;
             }
@@ -204,22 +241,23 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float band = galacticMask(sky);
 
                 float hazeStructure = fbm(sky * float2(4.0, 7.0) + 2.7);
-                float3 color = lerp(_DeepColor.rgb, _HazeColor.rgb, hazeStructure * 0.13);
+                float3 color = lerp(_DeepColor.rgb, _HazeColor.rgb, hazeStructure * 0.035);
 
                 float dust = smoothstep(0.48, 0.78, fbm(sky * float2(18.0, 11.0) + 9.2));
-                float river = band * (0.32 + fbm(sky * float2(12.0, 17.0) + 21.0) * 0.52);
-                color += _BandColor.rgb * river * (1.0 - dust * 0.88);
+                float river = band * (0.10 + fbm(sky * float2(12.0, 17.0) + 21.0) * 0.18);
+                color += _BandColor.rgb * river * (1.0 - dust * 0.90);
 
                 float3 stars = 0.0;
-                stars += starLayer(sky, 22.0, 1.00, band, 1.00, 1.0, elapsed);
-                stars += starLayer(sky + 9.17, 43.0, 0.62, band, 0.66, 0.0, elapsed);
-                stars += starLayer(sky + 37.51, 78.0, 0.31, band, 0.38, 0.0, elapsed);
+                stars += starLayer(sky,         48.0, 0.010, 0.46, 1.00, band, 1.00, 1.0, elapsed);
+                stars += starLayer(sky + 9.17,  92.0, 0.017, 0.38, 0.68, band, 0.76, 0.0, elapsed);
+                stars += starLayer(sky + 37.51, 176.0, 0.030, 0.26, 0.40, band, 0.52, 0.0, elapsed);
+                stars += starLayer(sky + 73.21, 320.0, 0.050, 0.10, 0.22, band, 0.31, 0.0, elapsed);
                 color += stars;
                 color += firstQuestionComet(sky, _Time.y);
 
                 // Filmic response keeps true negative space while preserving
                 // brilliant stellar cores for the existing restrained bloom.
-                color = 1.0 - exp(-color * 1.32);
+                color = 1.0 - exp(-color * 1.52);
                 return half4(color, 1.0);
             }
             ENDHLSL
