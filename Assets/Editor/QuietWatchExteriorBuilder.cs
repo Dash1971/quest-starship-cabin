@@ -17,67 +17,23 @@ namespace StarshipCabin.EditorTools
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
             var vista = NewVistaRoot("Vista 2 - Harbour of Ten Thousand Lights");
-            var station = new GameObject("Kilometre Station Composition").transform;
-            station.SetParent(vista.transform, false);
-            station.localPosition = new Vector3(2.0f, 4.2f, -39f);
-            station.localRotation = Quaternion.Euler(8f, -9f, -7f);
-
-            var hull = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Harbour Hull", new Color(0.075f, 0.090f, 0.110f), new Color(0.08f, 0.13f, 0.19f), 0.72f);
-            hull.SetFloat("_Metallic", 0.72f);
-            hull.SetFloat("_Smoothness", 0.48f);
-            var armour = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Harbour Armour", new Color(0.22f, 0.235f, 0.245f), new Color(0.18f, 0.23f, 0.28f), 0.58f);
-            armour.SetFloat("_Metallic", 0.48f);
-            var windows = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Harbour Windows", new Color(0.04f, 0.12f, 0.18f), new Color(0.32f, 0.78f, 1.0f), 3.2f);
-            var amber = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Harbour Amber Beacons", new Color(0.15f, 0.07f, 0.02f), new Color(1.0f, 0.44f, 0.12f), 3.5f);
-
-            ExteriorMesh(station, "Outer Habitat Ring", Annulus("Harbour Outer Ring", 10.8f, 9.0f, 0.72f, 64), hull);
-            ExteriorMesh(station, "Inner Light Ring", Annulus("Harbour Inner Light Ring", 8.85f, 8.45f, 0.80f, 64), windows);
-            ExteriorMesh(station, "Rear Habitat Ring", Annulus("Harbour Rear Ring", 7.3f, 6.2f, 0.62f, 56), armour,
-                new Vector3(0f, 0f, 3.0f), Quaternion.Euler(0f, 0f, 18f));
-
-            var superstructure = new MeshDraft();
-            QuartersMeshes.AppendChamferedBox(superstructure, Vector3.zero, new Vector3(2.2f, 2.2f, 9.5f), 0.34f);
-            QuartersMeshes.AppendChamferedBox(superstructure, new Vector3(0f, 0f, -5.6f), new Vector3(4.6f, 1.25f, 2.1f), 0.28f);
-            QuartersMeshes.AppendChamferedBox(superstructure, new Vector3(0f, 0f, 5.3f), new Vector3(3.2f, 1.5f, 1.8f), 0.30f);
-            for (var i = 0; i < 8; i++)
-            {
-                var angle = i * 45f;
-                var direction = Quaternion.Euler(0f, 0f, angle) * Vector3.up;
-                QuartersMeshes.AppendChamferedBox(
-                    superstructure,
-                    direction * 5.3f,
-                    new Vector3(0.48f, 8.4f, 0.55f),
-                    0.12f,
-                    Quaternion.Euler(0f, 0f, angle));
-            }
-            ExteriorMesh(station, "Station Spindle and Spokes", superstructure.ToMesh("Harbour Superstructure"), armour);
-
-            var docking = new MeshDraft();
-            QuartersMeshes.AppendChamferedBox(docking, new Vector3(-13.8f, -1.8f, 1.4f), new Vector3(9.0f, 0.55f, 0.80f), 0.16f, Quaternion.Euler(0f, 0f, -7f));
-            QuartersMeshes.AppendChamferedBox(docking, new Vector3(12.6f, 2.6f, -0.8f), new Vector3(7.6f, 0.52f, 0.78f), 0.15f, Quaternion.Euler(0f, 0f, 9f));
-            QuartersMeshes.AppendChamferedBox(docking, new Vector3(3.8f, -11.1f, 0.2f), new Vector3(0.58f, 6.4f, 0.72f), 0.15f, Quaternion.Euler(0f, 0f, -4f));
-            ExteriorMesh(station, "Docking Spars", docking.ToMesh("Harbour Docking Spars"), hull);
-
-            var lights = new MeshDraft();
-            for (var i = 0; i < 32; i++)
-            {
-                var angle = i * Mathf.PI * 2f / 32f;
-                var p = new Vector3(Mathf.Cos(angle) * 9.75f, Mathf.Sin(angle) * 9.75f, -0.48f);
-                QuartersMeshes.AppendChamferedBox(lights, p, new Vector3(0.28f, 0.28f, 0.20f), 0.06f);
-            }
-            ExteriorMesh(station, "Habitat Light Rhythm", lights.ToMesh("Harbour Habitat Lights"), windows);
+            var station = QuietWatchArtAssetBuilder.InstantiateLod(
+                vista.transform, "HarbourSector", "Kilometre Harbour Sector",
+                new Vector3(1.5f, 3.2f, -44f), Quaternion.Euler(8f, -5f, -7f), 0.88f);
+            QuietWatchArtAssetBuilder.AddExteriorSun(
+                vista.transform, "Harbour Distant Sun", Quaternion.Euler(32f, -38f, -18f),
+                new Color(0.74f, 0.84f, 1.0f), 1.35f, true);
 
             var travellers = new List<Transform>();
-            travellers.Add(BuildShip(vista.transform, "Inbound Courier", ShipKind.Spear, hull, windows,
-                new Vector3(8.8f, -0.8f, -28f), Quaternion.Euler(4f, -16f, 3f), 0.82f));
-            travellers.Add(BuildShip(vista.transform, "Docking Tender", ShipKind.Wing, armour, amber,
-                new Vector3(-13f, 8.5f, -48f), Quaternion.Euler(-5f, 12f, -2f), 0.64f));
-            travellers.Add(BuildShip(vista.transform, "Distant Shuttle", ShipKind.Spear, hull, windows,
-                new Vector3(12f, 10f, -64f), Quaternion.Euler(0f, -20f, 0f), 0.45f));
+            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
+                vista.transform, "EscortWing", "Inbound Customs Cutter",
+                new Vector3(9.8f, 0.4f, -29f), Quaternion.Euler(3f, -16f, 2f), 0.38f));
+            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
+                vista.transform, "EscortSpear", "Docking Tender",
+                new Vector3(-14f, 8.5f, -50f), Quaternion.Euler(-4f, 12f, -2f), 0.34f, false));
+            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
+                vista.transform, "EscortSpear", "Distant Shuttle",
+                new Vector3(12f, 11f, -66f), Quaternion.Euler(0f, -20f, 0f), 0.24f, false));
 
             return Configure(vista, "harbour", "HARBOUR OF TEN THOUSAND LIGHTS", "ORBITAL SAFE HARBOUR",
                 AuthoredVistaKind.Harbour, stars, fill, audio, station, travellers.ToArray(), new Color(0.32f, 0.66f, 0.92f));
@@ -123,23 +79,24 @@ namespace StarshipCabin.EditorTools
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
             var vista = NewVistaRoot("Vista 5 - The Long Formation");
-            var hull = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Formation Hull", new Color(0.12f, 0.15f, 0.18f), new Color(0.08f, 0.16f, 0.23f), 0.72f);
-            hull.SetFloat("_Metallic", 0.62f);
-            hull.SetFloat("_Smoothness", 0.44f);
-            var paleHull = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Formation Pale Armour", new Color(0.34f, 0.37f, 0.39f), new Color(0.22f, 0.29f, 0.34f), 0.72f);
-            var engines = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Formation Engines", new Color(0.03f, 0.12f, 0.18f), new Color(0.22f, 0.76f, 1.0f), 4.2f);
+            QuietWatchArtAssetBuilder.AddExteriorSun(
+                vista.transform, "Formation Distant Sun", Quaternion.Euler(26f, -44f, -12f),
+                new Color(0.78f, 0.88f, 1.0f), 1.45f, true);
 
             var ships = new List<Transform>
             {
-                BuildShip(vista.transform, "Command Ship", ShipKind.Wing, paleHull, engines, new Vector3(0f, 2f, -34f), Quaternion.Euler(0f, 0f, 0f), 3.8f),
-                BuildShip(vista.transform, "Port Escort Near", ShipKind.Spear, hull, engines, new Vector3(-9f, 5.2f, -43f), Quaternion.Euler(0f, 4f, -2f), 2.35f),
-                BuildShip(vista.transform, "Starboard Escort Near", ShipKind.Spear, hull, engines, new Vector3(9.5f, 5.7f, -45f), Quaternion.Euler(0f, -4f, 2f), 2.35f),
-                BuildShip(vista.transform, "Port Escort Far", ShipKind.Wing, paleHull, engines, new Vector3(-15f, 10.5f, -61f), Quaternion.Euler(0f, 7f, -3f), 1.65f),
-                BuildShip(vista.transform, "Starboard Escort Far", ShipKind.Wing, paleHull, engines, new Vector3(16f, 11.2f, -64f), Quaternion.Euler(0f, -7f, 3f), 1.60f),
-                BuildShip(vista.transform, "High Scout", ShipKind.Spear, hull, engines, new Vector3(0f, 15f, -72f), Quaternion.identity, 1.18f)
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "CommandShip", "Command Ship Resolute",
+                    new Vector3(3.5f, 1.4f, -29f), Quaternion.Euler(0f, -3f, 0f), 0.96f),
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "Port Escort Near",
+                    new Vector3(-14f, 5.4f, -44f), Quaternion.Euler(0f, 5f, -2f), 0.68f),
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "Starboard Escort Near",
+                    new Vector3(7.5f, 6.2f, -47f), Quaternion.Euler(0f, -5f, 2f), 0.68f),
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortWing", "Port Escort Far",
+                    new Vector3(-16f, 10.5f, -61f), Quaternion.Euler(0f, 7f, -3f), 0.42f, false),
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortWing", "Starboard Escort Far",
+                    new Vector3(17f, 11.2f, -64f), Quaternion.Euler(0f, -7f, 3f), 0.41f, false),
+                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "High Scout",
+                    new Vector3(0f, 15f, -72f), Quaternion.identity, 0.30f, false)
             };
 
             return Configure(vista, "long-formation", "THE LONG FORMATION", "THE FLEET HOLDS STATION",

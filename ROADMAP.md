@@ -1,6 +1,6 @@
 # Starship Cabin 2.0 Roadmap — The Quiet Watch
 
-This is the active roadmap on branch `v2/quiet-watch`. It replaces the previous palette-swap destination and random-event direction.
+This is the active roadmap on branch `v2/visual-benchmark`. It replaces the previous palette-swap destination and random-event direction.
 
 Full vision:
 
@@ -43,7 +43,7 @@ The historical `beta/m9-opus-fix` and `newhope` branches remain available for co
 
 - **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
 - **M1 first playable — corrected and installed, validation open:** `The First Question`, the selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. M1.1 replaced the rejected sparse/spiked first star pass with the darker point-star field. Second headset review, live telemetry, and sustained comfort/performance sessions remain before M1 exit.
-- **M2–M5 authored review slices — implemented and installed, milestone exits open:** the multi-vista review build adds original station geometry and service craft, an Earth-like dawn horizon, a storm giant with authored rings/moons, and two original ship families in a six-vessel formation. Twenty fixed-seat desktop captures, GLES3/Vulkan compilation, ARM64/OpenXR build, and Quest installation pass. These are art-direction candidates, not completed milestone claims; destination audio, full grace notes, headset visual tuning, frame evidence, and comfort sessions remain.
+- **M2–M5 authored review slices — implemented and installed, milestone exits open:** the multi-vista review build adds an Earth-like dawn horizon and a storm giant with authored rings/moons. Its M2/M5 programmer-art blockouts have now been replaced by an original Blender-authored station sector, command ship, and two escort families with bevelled geometry, functional scale cues, shared PBR maps, and three LOD tiers. Twenty fixed-seat desktop captures, ARM64/OpenXR build, and Quest installation pass. These remain art-direction candidates; destination audio, full grace notes, headset visual tuning, live frame evidence, and comfort sessions remain.
 - **M6 — not started:** release unification and final QA remain roadmap work.
 
 ## The five living windows
@@ -146,7 +146,7 @@ Build the station before another planet. This is the first proof of original art
 
 Exit: the station reads as kilometres wide within five seconds; service craft provide scale; traffic is calm; no hero object reads as a primitive.
 
-Status: authored first-pass station kit, dual habitat rings, spindle/spokes, docking spars, light rhythm, and three service craft are installed in the multi-vista review build. Headset scale/silhouette review and the remaining audio, traffic, LOD, night-cycle, comfort, and performance gates remain open.
+Status: the primitive station blockout has been replaced by a Blender-authored inhabited sector with 8,508/4,080/1,596-face LODs, layered torus structure, axial core, trusses, docking causeways, hangars, traffic masts, PBR maps, and three authored service craft. The `2.0.0-m5-art-benchmark` build is installed. Headset scale/material review and the remaining audio, traffic, night-cycle, comfort, and performance gates remain open.
 
 Planning range: 1.5–2.5 focused weeks.
 
@@ -185,7 +185,7 @@ Planning range: 1–2 focused weeks.
 
 Exit: ships read as designed vessels rather than boxes or specks; formation depth is immediate; motion does not feel like sprites sliding across the window.
 
-Status: two original procedural ship families, six vessels across three depth tiers, shared engine lights, and restrained station-keeping are installed. Headset silhouette/depth review, richer surface detail, destination sound, authored turn, and performance/comfort gates remain open.
+Status: the procedural ship blockouts have been replaced by an original Blender-authored command ship and two related escort families. The command vessel adds a lofted naval hull, layered armour, bridge crown, radiators, docking collars, service manifolds, antennae, scale lights, and triple engines; all families have Quest LODs and shared PBR/normal/metallic/AO/emissive maps. The recomposed six-vessel formation is installed as `2.0.0-m5-art-benchmark`. Headset material/depth review, destination sound, authored turn, and performance/comfort gates remain open.
 
 Planning range: 1–2 focused weeks.
 
