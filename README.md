@@ -10,7 +10,7 @@ Active development branch: `v2/quiet-watch`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: M0 architecture and the corrected M1.1 `First Question` playable are implemented and installed; headset visual/performance sign-off remains open
+- Current branch status: M0/M1 foundation plus authored M2–M5 review slices are implemented and installed; headset art-direction, comfort, and performance sign-off remain open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
 Current headset build: `Quarters V2 Milestone 8 rollback`
@@ -26,18 +26,18 @@ Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
-### Quiet Watch first playable
+### Quiet Watch multi-vista review build
 
 Built and desktop-render validated on 2026-09-03 with Unity 6000.5.2f1:
 
 - Product: `Starship Cabin - The Quiet Watch`
 - Package: `jp.openclaw.starshipcabin.quietwatch`
-- Version: `2.0.0-m1.1` (`20002`)
-- APK: `Builds/StarshipCabin-QuietWatch-M1.apk`
-- APK SHA-256: `8f8ba36849952e7417560d5daf4275e7494726d087f145c39b7ef951aa08b157`
-- Installation status: installed successfully on Meta Quest 3 at 2026-09-03 17:47 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
+- Version: `2.0.0-m4-preview` (`20003`)
+- APK: `Builds/StarshipCabin-QuietWatch-MultiVista.apk`
+- APK SHA-256: `b0d565efc4646f85f5dae3706972710012831f5924bdd8b5b5dd192cd24dab76`
+- Installation status: installed successfully on Meta Quest 3 at 2026-09-03 22:27 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
 
-This first playable adds:
+The review build contains:
 
 - A reusable `VistaEnvironment` lifecycle and deterministic `VistaDirector`.
 - One shared comfort blackout owner for seat hops and future vista changes.
@@ -46,11 +46,15 @@ This first playable adds:
 - Four named fixed-seat capture points and repeatable editor renders.
 - Lightweight ten-second CPU/GPU/frame telemetry for `adb logcat` evidence.
 - `The First Question`: a camera-ray-anchored deep-space field with galactic structure, dust, three stellar depth layers, colour variation, and true negative space.
+- `Harbour of Ten Thousand Lights`: a modular dual-ring station, spindle, radial structure, docking spars, habitat-light rhythm, and three scale-reference service craft.
+- `Blue Morning`: a curved Earth-like dawn horizon with procedural ocean, continent breakup, clouds, night lights, atmospheric limb, and sunrise.
+- `The Great Weather`: a dimensional storm giant, authored layered ring system, coherent terminator, and two moons.
+- `The Long Formation`: two original ship families, six vessels across three distance tiers, shared engine-light grammar, and restrained station-keeping motion.
 - `Quiet` plus `Still` as the default; optional extremely slow drift; one deterministic comet after twelve minutes only in `Living` mode.
 
 M1.1 incorporates the first headset review: it removes diffraction spikes and the over-bright blue wash, restores the stronger V3-style brightness distribution at direction-space density, corrects equirectangular star shape, and prevents procedural cell boundaries from leaking as line artifacts. The result is a darker field of clean point stars that remains anchored beyond the glass.
 
-The selector currently contains one vista. The Harbour, Blue Morning, Great Weather, and Long Formation remain roadmap work, not hidden or inactive claims.
+All five vistas are immediately selectable with the controller's primary button. The four new environments are substantial authored first passes for headset art-direction review; they do not claim the full M2–M5 milestone exits, which still require destination-specific audio, completed grace notes, live frame evidence, and sustained comfort testing.
 
 ### Implemented
 
@@ -145,11 +149,11 @@ These images establish composition, shelter, scale, light, and mood. They are ar
 ### Active 2.0 roadmap
 
 0. **Clean break** — environment lifecycle, capture harness, frame-time evidence, and removal of weak/inactive 2.0 claims.
-1. **The First Question** — rebuild stars-only space as the benchmark and ship the real selector. First playable built; Quest performance and comfort sign-off remain.
-2. **The Harbour** — prove original station art direction and readable kilometre scale before building another planet.
-3. **Blue Morning** — build the atmospheric view and validate `Still`/`Drift` comfort.
-4. **The Great Weather** — replace the experimental gas giant with dimensional storms, rings, moons, and coherent light.
-5. **The Long Formation** — build a dedicated fleet-at-rest composition with one authored formation turn.
+1. **The First Question** — rebuild stars-only space as the benchmark and ship the real selector. Corrected playable built; Quest performance and comfort sign-off remain.
+2. **The Harbour** — authored review slice built; refine station silhouette/scale, destination sound, traffic, and night-cycle grace note from headset feedback.
+3. **Blue Morning** — authored review slice built; refine atmosphere/cloud art and validate `Still`/`Drift` comfort.
+4. **The Great Weather** — authored review slice built; refine storm depth, ring shadow, moons, sound, and moonrise grace note.
+5. **The Long Formation** — authored review slice built; refine vessel designs, formation depth, sound, and the slow formation-turn grace note.
 6. **The Quiet Watch** — unify sound, light, persistence, timing, comfort, thermal performance, and release QA.
 
 Every milestone ends with a regenerated APK, Quest installation, fixed-seat captures, frame-time evidence, and on-device review. Procedural code remains useful but is no longer a purity rule: compatibly licensed authored meshes, textures, matte layers, and baked assets are allowed when they materially improve the headset result.
@@ -215,7 +219,7 @@ To build the Quarters APK from the editor menu, use `Starship Cabin -> Build Qua
 
 The Quiet Watch build output is:
 
-`Builds/StarshipCabin-QuietWatch-M1.apk`
+`Builds/StarshipCabin-QuietWatch-MultiVista.apk`
 
 ## Sideload
 
@@ -229,7 +233,7 @@ adb shell monkey -p jp.openclaw.starshipcabin 1
 For the Quiet Watch build:
 
 ```bash
-adb install -r Builds/StarshipCabin-QuietWatch-M1.apk
+adb install -r Builds/StarshipCabin-QuietWatch-MultiVista.apk
 adb shell monkey -p jp.openclaw.starshipcabin.quietwatch 1
 ```
 

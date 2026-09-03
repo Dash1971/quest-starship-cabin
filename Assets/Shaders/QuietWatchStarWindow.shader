@@ -28,9 +28,9 @@ Shader "StarshipCabin/QuietWatchStarWindow"
 
     SubShader
     {
-        Tags { "RenderType"="Opaque" "Queue"="Geometry" "RenderPipeline"="UniversalPipeline" }
+        Tags { "RenderType"="Background" "Queue"="Background" "RenderPipeline"="UniversalPipeline" }
         Cull Back
-        ZWrite On
+        ZWrite Off
         Lighting Off
 
         Pass

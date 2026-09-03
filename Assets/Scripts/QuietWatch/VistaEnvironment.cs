@@ -17,6 +17,13 @@ namespace StarshipCabin.QuietWatch
         public string DisplayName => displayName;
         public string Subtitle => subtitle;
 
+        public void ConfigureIdentity(string id, string title, string description)
+        {
+            vistaId = id;
+            displayName = title;
+            subtitle = description;
+        }
+
         public abstract void Enter(LifeMode lifeMode, MotionMode motionMode);
         public abstract void ApplyComfort(LifeMode lifeMode, MotionMode motionMode);
         public abstract void Exit();

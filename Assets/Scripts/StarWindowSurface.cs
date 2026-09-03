@@ -18,6 +18,7 @@ namespace StarshipCabin
         private static readonly int MeteorsId = Shader.PropertyToID("_Meteors");
         private static readonly int GraceStartId = Shader.PropertyToID("_GraceStart");
         private static readonly int VistaClockId = Shader.PropertyToID("_VistaClock");
+        private static readonly int DensityId = Shader.PropertyToID("_Density");
 
         [SerializeField] private float nebulaBlendSeconds = 3.5f;
 
@@ -64,6 +65,17 @@ namespace StarshipCabin
             SetFloat(TwinkleId, living ? 0.045f : 0.012f);
             SetFloat(MeteorsId, 0f);
             SetNebula(0f);
+            SetFloat(DensityId, 0.78f);
+        }
+
+        public void SetAuthoredVistaBackdrop(float density)
+        {
+            SetMotion(0f, 0f);
+            SetFloat(TwinkleId, 0.008f);
+            SetFloat(MeteorsId, 0f);
+            SetNebula(0f);
+            SetFloat(DensityId, Mathf.Clamp(density, 0.2f, 1f));
+            ClearGraceNote();
         }
 
         public void ResetVistaClock()

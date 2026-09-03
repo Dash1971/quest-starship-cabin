@@ -156,7 +156,7 @@ namespace StarshipCabin.EditorTools
             }
 
             Directory.CreateDirectory("Builds");
-            var buildPath = "Builds/StarshipCabin-QuietWatch-M1.apk";
+            var buildPath = "Builds/StarshipCabin-QuietWatch-MultiVista.apk";
 
             var options = new BuildPlayerOptions
             {
@@ -625,7 +625,7 @@ namespace StarshipCabin.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
-            camera.farClipPlane = 120f;
+            camera.farClipPlane = 180f;
             var cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = true;
             cameraData.antialiasing = AntialiasingMode.None;
@@ -711,11 +711,25 @@ namespace StarshipCabin.EditorTools
             var audio = new GameObject("CabinAudio");
             var audioController = audio.AddComponent<AmbientAudioController>();
 
-            var firstQuestion = starSurface.gameObject.AddComponent<FirstQuestionVista>();
+            var firstQuestionRoot = new GameObject("Vista 1 - The First Question");
+            var firstQuestion = firstQuestionRoot.AddComponent<FirstQuestionVista>();
+            firstQuestion.ConfigureIdentity("first-question", "THE FIRST QUESTION", "STARS ONLY");
             firstQuestion.Configure(starSurface, exteriorFill, audioController);
 
+            var harbour = QuietWatchExteriorBuilder.BuildHarbour(starSurface, exteriorFill, audioController);
+            var blueMorning = QuietWatchExteriorBuilder.BuildBlueMorning(starSurface, exteriorFill, audioController);
+            var greatWeather = QuietWatchExteriorBuilder.BuildGreatWeather(starSurface, exteriorFill, audioController);
+            var formation = QuietWatchExteriorBuilder.BuildLongFormation(starSurface, exteriorFill, audioController);
+
             var director = controller.AddComponent<VistaDirector>();
-            director.Configure(new VistaEnvironment[] { firstQuestion }, screenFader);
+            director.Configure(new VistaEnvironment[]
+            {
+                firstQuestion,
+                harbour,
+                blueMorning,
+                greatWeather,
+                formation
+            }, screenFader);
             controller.AddComponent<FrameTimeTelemetry>();
             controller.AddComponent<QuietWatchInputController>().Configure(director);
 
@@ -956,8 +970,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m1.1";
-            PlayerSettings.Android.bundleVersionCode = 20002;
+            PlayerSettings.bundleVersion = "2.0.0-m4-preview";
+            PlayerSettings.Android.bundleVersionCode = 20003;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

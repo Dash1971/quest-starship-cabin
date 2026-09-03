@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using StarshipCabin.QuietWatch;
+using System.Linq;
 
 namespace StarshipCabin.EditorTools
 {
@@ -45,22 +46,37 @@ namespace StarshipCabin.EditorTools
             var target = new RenderTexture(1536, 1024, 24, RenderTextureFormat.ARGB32);
             var pixels = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
 
+            var vistas = UnityEngine.Object.FindObjectsByType<VistaEnvironment>(FindObjectsInactive.Include)
+                .OrderBy(vista => vista.VistaId)
+                .ToArray();
+
             try
             {
                 camera.transform.SetParent(null, true);
                 camera.targetTexture = target;
 
-                foreach (var point in points)
+                foreach (var vista in vistas)
                 {
-                    camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
-                    camera.Render();
-                    RenderTexture.active = target;
-                    pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
-                    pixels.Apply(false);
+                    foreach (var candidate in vistas)
+                    {
+                        candidate.gameObject.SetActive(candidate == vista);
+                    }
+                    vista.Enter(LifeMode.Quiet, MotionMode.Still);
 
-                    var path = Path.Combine(OutputFolder, $"first-question-{Slug(point.CaptureName)}.png");
-                    File.WriteAllBytes(path, pixels.EncodeToPNG());
-                    Debug.Log("Quiet Watch capture: " + Path.GetFullPath(path));
+                    foreach (var point in points)
+                    {
+                        camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
+                        camera.Render();
+                        RenderTexture.active = target;
+                        pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                        pixels.Apply(false);
+
+                        var path = Path.Combine(OutputFolder, $"{Slug(vista.VistaId)}-{Slug(point.CaptureName)}.png");
+                        File.WriteAllBytes(path, pixels.EncodeToPNG());
+                        Debug.Log("Quiet Watch capture: " + Path.GetFullPath(path));
+                    }
+
+                    vista.Exit();
                 }
             }
             finally

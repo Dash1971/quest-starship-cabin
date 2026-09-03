@@ -42,8 +42,9 @@ The historical `beta/m9-opus-fix` and `newhope` branches remain available for co
 ## Delivery status
 
 - **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
-- **M1 first playable — corrected and installed, validation open:** `The First Question`, the one-vista diegetic selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. The first headset review rejected sparse, spike-shaped stars and excessive blue haze. M1.1 replaces them with a darker, denser, point-star field; fixed-seat renders, GLES3/Vulkan compilation, and Quest installation pass. Second headset review, live telemetry, and the required sustained comfort/performance sessions remain before M1 exit.
-- **M2–M6 — not started:** the four later vistas and release-unification work remain roadmap items.
+- **M1 first playable — corrected and installed, validation open:** `The First Question`, the selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. M1.1 replaced the rejected sparse/spiked first star pass with the darker point-star field. Second headset review, live telemetry, and sustained comfort/performance sessions remain before M1 exit.
+- **M2–M5 authored review slices — implemented and installed, milestone exits open:** the multi-vista review build adds original station geometry and service craft, an Earth-like dawn horizon, a storm giant with authored rings/moons, and two original ship families in a six-vessel formation. Twenty fixed-seat desktop captures, GLES3/Vulkan compilation, ARM64/OpenXR build, and Quest installation pass. These are art-direction candidates, not completed milestone claims; destination audio, full grace notes, headset visual tuning, frame evidence, and comfort sessions remain.
+- **M6 — not started:** release unification and final QA remain roadmap work.
 
 ## The five living windows
 
@@ -145,6 +146,8 @@ Build the station before another planet. This is the first proof of original art
 
 Exit: the station reads as kilometres wide within five seconds; service craft provide scale; traffic is calm; no hero object reads as a primitive.
 
+Status: authored first-pass station kit, dual habitat rings, spindle/spokes, docking spars, light rhythm, and three service craft are installed in the multi-vista review build. Headset scale/silhouette review and the remaining audio, traffic, LOD, night-cycle, comfort, and performance gates remain open.
+
 Planning range: 1.5–2.5 focused weeks.
 
 ### M3 — Blue Morning
@@ -155,6 +158,8 @@ Planning range: 1.5–2.5 focused weeks.
 - Author the sunrise grace note.
 
 Exit: `Still` and `Drift` pass a 20-minute seated comfort test; horizon/cloud layers remain stable under head movement; motion never starts unexpectedly.
+
+Status: authored first-pass curved horizon with procedural ocean/land breakup, clouds, night lights, atmospheric limb, and sunrise is installed. Headset art review, separate `Still`/`Drift` tuning, cabin-light coupling, sound, comfort, and performance gates remain open.
 
 Planning range: 1.5–2.5 focused weeks.
 
@@ -167,6 +172,8 @@ Planning range: 1.5–2.5 focused weeks.
 
 Exit: the world is visibly different from a flat striped sphere; rings and moons establish scale; the night side and reflected cabin light remain coherent.
 
+Status: authored first-pass storm shader, three-dimensional planet, banded ring geometry, terminator, and two moons are installed. Ring shadow, destination sound, moonrise grace note, headset tuning, and performance/comfort gates remain open.
+
 Planning range: 1–2 focused weeks.
 
 ### M5 — The Long Formation
@@ -177,6 +184,8 @@ Planning range: 1–2 focused weeks.
 - Author one slow formation turn; no combat or patrol loop.
 
 Exit: ships read as designed vessels rather than boxes or specks; formation depth is immediate; motion does not feel like sprites sliding across the window.
+
+Status: two original procedural ship families, six vessels across three depth tiers, shared engine lights, and restrained station-keeping are installed. Headset silhouette/depth review, richer surface detail, destination sound, authored turn, and performance/comfort gates remain open.
 
 Planning range: 1–2 focused weeks.
 
