@@ -6,6 +6,13 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current Status
 
+Active development branch: `v2/quiet-watch`
+
+- Foundation: tested Milestone 8 `main` commit `25e1d818`
+- Direction: exterior-first 2.0 replacement vision
+- Current branch status: vision and roadmap only; M0 implementation has not started
+- Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
+
 Current headset build: `Quarters V2 Milestone 8 rollback`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
@@ -36,29 +43,53 @@ The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the
 
 This README is the source of truth for what is implemented versus still roadmap. Each future milestone should update this section in the same commit that implements the feature.
 
-## Design Direction: Crew Quarters V2 - The View
+## Design Direction: Starship Cabin 2.0 — The Quiet Watch
 
-The next major iteration keeps the current room as the stable foundation and focuses tightly on visual awe and ambience. The goal is not more objects or room state. The goal is to make sitting in the cabin feel like being truly adrift in space, looking through the glass at something vast and beautiful.
+The room is shelter. The view is vocation.
 
-The defining architectural move remains the steeply sloped glazed hull wall: the windows sit *in* the slope, so the starfield hangs above you from the couch, and lying on the bed you look straight up into space. The next roadmap adds a world in that view, destinations, a living sky, and per-world sound.
+The next major iteration keeps the tested cabin as its stable foundation and rebuilds the exterior experience. The player is an off-duty starship officer returning to a warm private room after the mission. The view should restore awe, peace, and a sense of why this life was chosen.
 
-Movement uses seat anchors plus real walking: natural head-tracked walking within the playspace, and point-to-teleport hops (with a short fade, never visible translation) between couch, bed, and desk anchors. The seated, no-artificial-motion comfort baseline is preserved.
+Version 2.0 is five genuinely distinct living vistas rather than one planet with material presets:
 
-Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quarters-concept-v2.html) (open locally in a browser).
+- **The First Question** — stars only; curiosity
+- **The Great Weather** — a dimensional ringed gas giant; wonder
+- **The Long Formation** — original ships at rest; fellowship
+- **Harbour of Ten Thousand Lights** — a colossal orbital station; belonging
+- **Blue Morning** — an Earth-like horizon entering dawn; home
 
-### The View - target concept
+Each vista gets its own composition, scale ladder, lighting, sound, physical event logic, and comfort behaviour. Manual selection is immediate. Auto-tour is optional and off by default. Each normal session contains long stillness and at most one authored destination-specific grace note.
 
-![Target view concept: Jovian Dawn through the cabin glass](docs/design/view-roadmap-target.svg)
+Full replacement vision:
 
-### Destination moods
+- [The Quiet Watch — browser document](docs/design/the-quiet-watch.html)
+- [The Quiet Watch — shareable PDF](docs/design/starship-cabin-2.0-the-quiet-watch.pdf)
+- [Detailed implementation roadmap](ROADMAP.md)
 
-![Six destination mood concepts](docs/design/view-roadmap-destinations.svg)
+The older [Crew Quarters V2 concept](docs/design/quarters-concept-v2.html) remains useful for cabin geometry and interior design, but no longer defines the exterior roadmap.
 
-### Roadmap from M7
+### Concept targets
 
-![Roadmap from tested M7 baseline through M12](docs/design/view-roadmap-milestones.svg)
+These images establish composition, shelter, scale, light, and mood. They are art-direction targets, not gameplay screenshots or asset-fidelity promises.
 
-### Section — glass in the slope
+#### The First Question
+
+![Warm cabin looking into a deep galactic star field](docs/design/quiet-watch/first-question.jpg)
+
+#### Harbour of Ten Thousand Lights
+
+![Warm cabin docked beside a colossal orbital station](docs/design/quiet-watch/harbour-ten-thousand-lights.jpg)
+
+#### The Great Weather
+
+![Warm cabin overlooking a close ringed gas giant with moons](docs/design/quiet-watch/great-weather.jpg)
+
+#### Blue Morning and The Long Formation
+
+![Warm cabin above an Earth-like dawn with a distant ship formation](docs/design/quiet-watch/blue-morning.jpg)
+
+### Existing cabin design references
+
+#### Section — glass in the slope
 
 ![Section through the lounge](docs/design/section.svg)
 
@@ -85,14 +116,19 @@ Full concept document: [`docs/design/quarters-concept-v2.html`](docs/design/quar
 7. **Book labels + starfield V3** — fitted labels and the dark-sky star shader upgrade.
 8. **Clear the deck + HDR trial** — retire the media/video wall, remove `MediaScreenController`, enable HDR + bloom, add fixed foveated rendering, and verify on Quest.
 
-### Active roadmap
+### Active 2.0 roadmap
 
-9. **Planet + destination engine** — add one hero world, `Jovian Dawn`: a banded gas giant with storm, terminator, atmospheric limb, rings, and slow destination switching.
-10. **More worlds + per-scene sound** — add `The Ringed Giant`, `Aurora World`, and `Deep Quiet`; add per-world audio layers on top of the M5 ambient bed.
-11. **Living sky** — extend the shooting-star system into a comfort-capped event pool: distant ships, comets, asteroids, moon transits, meteor showers, and aurora ripples.
-12. **Awe pass** — add `Binary Eclipse`, `Nebula Drift`, a very rare `Leviathan` event, and a final comfort/perf verification sweep on device.
+0. **Clean break** — environment lifecycle, capture harness, frame-time evidence, and removal of weak/inactive 2.0 claims.
+1. **The First Question** — rebuild stars-only space as the benchmark and ship the real selector.
+2. **The Harbour** — prove original station art direction and readable kilometre scale before building another planet.
+3. **Blue Morning** — build the atmospheric view and validate `Still`/`Drift` comfort.
+4. **The Great Weather** — replace the experimental gas giant with dimensional storms, rings, moons, and coherent light.
+5. **The Long Formation** — build a dedicated fleet-at-rest composition with one authored formation turn.
+6. **The Quiet Watch** — unify sound, light, persistence, timing, comfort, thermal performance, and release QA.
 
-All geometry remains procedural C#; the design is code-reviewable. Original, generic sci-fi only — see the IP Boundary section below.
+Every milestone ends with a regenerated APK, Quest installation, fixed-seat captures, frame-time evidence, and on-device review. Procedural code remains useful but is no longer a purity rule: compatibly licensed authored meshes, textures, matte layers, and baked assets are allowed when they materially improve the headset result.
+
+Original, generic sci-fi only — see the IP Boundary section below.
 
 ## Requirements
 

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starship Cabin 2.0 — The Quiet Watch</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  :root {
+    --night:#06090d; --ink:#17191b; --paper:#f0eee7; --paper2:#e5e0d4;
+    --cream:#f7f3e8; --muted:#626568; --line:#bcb7aa; --gold:#d59b4b;
+    --blue:#6db8d6; --rust:#9a5541; --green:#6f9a83;
+  }
+  html, body { margin:0; padding:0; background:#222; font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); }
+  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page { width:210mm; height:297mm; position:relative; overflow:hidden; page-break-after:always; background:var(--paper); }
+  .page:last-child { page-break-after:auto; }
+  .pad { padding:17mm 17mm 16mm; height:100%; }
+  .dark { background:var(--night); color:var(--cream); }
+  .eyebrow { text-transform:uppercase; letter-spacing:.19em; font-size:7.6pt; font-weight:800; color:var(--gold); }
+  h1,h2,h3,p { margin-top:0; }
+  h1 { font-family:Georgia,"Times New Roman",serif; font-size:39pt; line-height:1.02; font-weight:500; letter-spacing:-.035em; }
+  h2 { font-family:Georgia,"Times New Roman",serif; font-size:25pt; line-height:1.08; font-weight:500; letter-spacing:-.025em; margin-bottom:5mm; }
+  h3 { font-size:11pt; line-height:1.25; margin-bottom:1.6mm; }
+  p { font-size:9.4pt; line-height:1.48; margin-bottom:3.1mm; }
+  .lead { font-family:Georgia,"Times New Roman",serif; font-size:16pt; line-height:1.42; }
+  .muted { color:var(--muted); }
+  .dark .muted { color:#b9bdc1; }
+  .small { font-size:7.8pt; }
+  .footer { position:absolute; left:17mm; right:17mm; bottom:7mm; display:flex; justify-content:space-between; padding-top:2mm; border-top:.25mm solid rgba(100,100,100,.45); font-size:7pt; letter-spacing:.11em; text-transform:uppercase; color:#777; }
+  .dark .footer { color:#888f96; border-color:#30343a; }
+  .rule { height:.35mm; background:var(--gold); width:24mm; margin:5mm 0; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:7mm; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:4mm; }
+  .quote { font-family:Georgia,"Times New Roman",serif; font-size:20pt; line-height:1.34; }
+  .note { border-left:1.2mm solid var(--gold); padding:1mm 0 1mm 5mm; }
+  .chip { display:inline-block; border:.25mm solid #9f9a8d; border-radius:20mm; padding:1.1mm 2.5mm; margin:0 1mm 1.5mm 0; font-size:7pt; letter-spacing:.05em; text-transform:uppercase; }
+  .dark .chip { border-color:#555d65; color:#c6ccd2; }
+  .cover-image { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .cover-shade { position:absolute; inset:0; background:linear-gradient(90deg,rgba(2,4,6,.93) 0%,rgba(2,4,6,.72) 42%,rgba(2,4,6,.06) 72%),linear-gradient(0deg,rgba(2,4,6,.82),transparent 40%); }
+  .cover-copy { position:absolute; left:17mm; top:19mm; width:103mm; color:white; }
+  .cover-copy .subtitle { font-size:11pt; letter-spacing:.16em; text-transform:uppercase; color:#f1bd70; margin-top:5mm; }
+  .cover-bottom { position:absolute; left:17mm; right:17mm; bottom:17mm; display:grid; grid-template-columns:1fr 55mm; gap:10mm; color:white; align-items:end; }
+  .cover-bottom p { margin:0; color:#d5d8db; }
+  .folio { text-align:right; font-size:7pt; text-transform:uppercase; letter-spacing:.13em; color:#b5b7b8; }
+  .truth { padding:4mm 0; border-bottom:.25mm solid var(--line); display:grid; grid-template-columns:38mm 1fr; gap:5mm; }
+  .truth:first-of-type { border-top:.25mm solid var(--line); }
+  .truth strong { font-size:8pt; text-transform:uppercase; letter-spacing:.09em; color:#7d5630; }
+  .reason { min-height:47mm; border-top:.8mm solid var(--gold); padding-top:3mm; }
+  .reason .n { font-family:Georgia,serif; font-size:24pt; color:#b5ab9b; float:right; line-height:1; }
+  .reason p { color:#5d6062; }
+  .hero-photo { width:100%; height:102mm; object-fit:cover; display:block; }
+  .caption { font-size:7pt; color:#74777a; margin-top:1.5mm; }
+  .dark .caption { color:#959aa0; }
+  .scale { display:grid; grid-template-columns:25mm 1fr; gap:4mm; padding:3.2mm 0; border-bottom:.2mm solid #bdb7aa; align-items:center; }
+  .scale .label { font-size:7pt; text-transform:uppercase; letter-spacing:.1em; color:#8a6744; }
+  .bar { height:7mm; background:linear-gradient(90deg,#172637,#6db8d6); position:relative; }
+  .bar:after { content:""; position:absolute; right:0; top:0; bottom:0; width:.5mm; background:#111; }
+  .arc { display:grid; grid-template-columns:30mm 1fr; gap:5mm; padding:4mm 0; border-bottom:.25mm solid var(--line); }
+  .arc .time { font-family:Georgia,serif; font-size:14pt; color:#9d6f37; }
+  .arc p { margin:0; }
+  .window-grid { display:grid; grid-template-columns:1fr 1fr; gap:5mm; }
+  .window { border:.25mm solid #3b4147; background:#0b0f13; color:#edf0f2; padding:4mm; min-height:53mm; }
+  .window .why { color:#e6b36c; text-transform:uppercase; letter-spacing:.13em; font-size:7pt; }
+  .window p { font-size:8.3pt; color:#b9c0c6; }
+  .photo-band { position:relative; height:122mm; overflow:hidden; }
+  .photo-band img { width:100%; height:100%; object-fit:cover; }
+  .photo-band .overlay { position:absolute; inset:0; background:linear-gradient(90deg,rgba(3,5,8,.78),transparent 62%); }
+  .photo-title { position:absolute; left:17mm; top:14mm; width:80mm; color:white; }
+  .photo-title h2 { font-size:27pt; }
+  .split-photo { display:grid; grid-template-columns:1.08fr .92fr; height:116mm; }
+  .split-photo img { width:100%; height:100%; object-fit:cover; }
+  .split-copy { background:#11171c; color:white; padding:13mm 10mm; }
+  .split-copy p { color:#bec4c9; }
+  .layer { display:grid; grid-template-columns:31mm 1fr 45mm; gap:4mm; padding:3.7mm 0; border-bottom:.25mm solid var(--line); align-items:start; }
+  .layer .id { font-size:7pt; text-transform:uppercase; letter-spacing:.1em; color:#926532; }
+  .layer .tech { font-size:8pt; color:#666; }
+  .gate { display:grid; grid-template-columns:16mm 42mm 1fr 33mm; gap:3mm; padding:3.5mm 1mm; border-bottom:.25mm solid #afa99d; }
+  .gate .id { color:#915d2e; font-weight:800; }
+  .gate .name { font-weight:750; }
+  .gate .proof { font-size:8.3pt; color:#5e6264; }
+  .gate .range { font-size:7.5pt; color:#7d5630; text-align:right; }
+  .contract { display:grid; grid-template-columns:42mm 1fr; gap:5mm; padding:3.2mm 0; border-bottom:.25mm solid #4a4d50; }
+  .contract strong { color:#efbc72; }
+  .contract span { color:#c6cacf; font-size:9pt; line-height:1.4; }
+</style>
+</head>
+<body>
+
+<section class="page dark">
+  <img class="cover-image" src="quiet-watch/blue-morning.jpg" alt="">
+  <div class="cover-shade"></div>
+  <div class="cover-copy">
+    <div class="eyebrow">Replacement product vision · v1</div>
+    <h1 style="margin-top:6mm">Starship<br>Cabin 2.0</h1>
+    <div class="subtitle">The Quiet Watch</div>
+  </div>
+  <div class="cover-bottom">
+    <div class="quote">Awe through the glass.<br>Peace on this side of it.</div>
+    <div>
+      <p class="small">A restorative starship-officer fantasy for Meta Quest 3.</p>
+      <div class="folio" style="margin-top:5mm">3 September 2026</div>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pad">
+    <div class="eyebrow">01 · The correction</div>
+    <h2 style="margin-top:4mm">The first draft was a prettier checklist. That was the wrong level of thinking.</h2>
+    <p class="lead">It repeated the inherited structure—destinations, ambience, events—and renamed the pieces. It did not define why this place should matter, what makes scale believable in VR, or how we would reach a visual bar beyond procedural placeholders.</p>
+    <div class="rule"></div>
+    <div class="truth"><strong>Old framing</strong><span>Build five backdrops and a selector.</span></div>
+    <div class="truth"><strong>New framing</strong><span>Build five living windows into the reasons an officer chose this life: curiosity, wonder, fellowship, belonging and home.</span></div>
+    <div class="truth"><strong>Old content model</strong><span>Loop random objects through one scene and call it alive.</span></div>
+    <div class="truth"><strong>New content model</strong><span>Give every vista its own visual composition and one authored “grace note” that arrives only after stillness has earned it.</span></div>
+    <div class="truth"><strong>Old production model</strong><span>Code a whole milestone, then discover in the headset that it does not look convincing.</span></div>
+    <div class="truth"><strong>New production model</strong><span>Approve concept → build one vertical slice → compare Quest capture to target → close the visual gap → only then scale.</span></div>
+    <div class="truth"><strong>Old purity rule</strong><span>Everything procedural, even when that produces toy-like hero objects.</span></div>
+    <div class="truth"><strong>New quality rule</strong><span>Use the best Quest-safe combination of shaders, authored meshes, textures, matte layers and code. Provenance remains explicit; visual quality is the point.</span></div>
+    <div class="note" style="margin-top:8mm">
+      <p><strong>Immediate reset:</strong> remove the blob cat; retire the “New Hope 2.0” claim; keep existing apps and branches as rollback evidence; make no more invisible headline features.</p>
+    </div>
+    <div class="footer"><span>The Quiet Watch</span><span>2</span></div>
+  </div>
+</section>
+
+<section class="page dark">
+  <div class="pad">
+    <div class="eyebrow">02 · The emotional architecture</div>
+    <h2 style="margin-top:4mm">The window should answer a quiet question: why did I become a starship officer?</h2>
+    <p class="lead muted">Not through exposition. Through five views that let the player supply their own memories.</p>
+    <div class="grid2" style="margin-top:10mm">
+      <div class="reason"><span class="n">I</span><h3>The First Question</h3><p>Stars without landmarks. The original pull of the unknown. No spectacle is needed beyond depth, darkness and the impossible number of lights.</p></div>
+      <div class="reason"><span class="n">II</span><h3>The Great Weather</h3><p>A storm-wrapped giant close enough to humble you. Exploration as privilege: being present where almost nobody has stood watch.</p></div>
+      <div class="reason"><span class="n">III</span><h3>The Long Formation</h3><p>Other ships keeping station in silence. Fellowship without chatter; the sense that your crew and your fleet are out there with you.</p></div>
+      <div class="reason"><span class="n">IV</span><h3>Harbour of Ten Thousand Lights</h3><p>A colossal station at rest. Civilization made visible at scale: somewhere to return, repair and belong.</p></div>
+      <div class="reason"><span class="n">V</span><h3>Blue Morning</h3><p>An Earth-like horizon entering dawn. The reason service matters: fragile beauty below, and the possibility of going home.</p></div>
+      <div class="reason" style="border-color:#6db8d6"><span class="n">∞</span><h3>The officer owns the meaning</h3><p>No canon biography, mission text or forced voice-over. Names and atmosphere suggest a life; the player completes it.</p></div>
+    </div>
+    <div class="note" style="margin-top:8mm">
+      <p class="quote" style="font-size:17pt">The room is shelter. The view is vocation.</p>
+    </div>
+    <div class="footer"><span>The Quiet Watch</span><span>3</span></div>
+  </div>
+</section>
+
+<section class="page">
+  <img class="hero-photo" src="quiet-watch/first-question.jpg" alt="">
+  <div class="pad" style="height:195mm;padding-top:12mm">
+    <div class="eyebrow">03 · The grammar of awe</div>
+    <h2 style="margin-top:3mm">Awe is not “more stuff.” It is a controlled relationship between shelter, scale and time.</h2>
+    <div class="grid2">
+      <div>
+        <h3>1. Shelter / vastness</h3>
+        <p>The cabin stays warm, tactile and human-sized. Beyond its mullions: true black, unreachable distance and enormous forms. The contrast creates safety without shrinking the universe.</p>
+        <h3>2. A scale ladder</h3>
+        <p>Every view includes readable reference sizes. Window frame → service craft → capital structure → planet → star field. Without the ladder, a kilometre-wide station reads like a toy.</p>
+        <h3>3. Darkness as content</h3>
+        <p>Black space is not empty production value. It gives bright objects power, prevents visual fatigue and makes the room feel genuinely off-world.</p>
+      </div>
+      <div>
+        <h3>4. Coherent causes</h3>
+        <p>If a world turns, its light changes. If a shuttle passes, station beacons answer. If dawn rises, cabin light warms. Nothing drifts merely because an update loop exists.</p>
+        <h3>5. Slow time</h3>
+        <p>Meaningful change happens over minutes. Stillness is the baseline; movement is noticed because it is rare and legible.</p>
+        <h3>6. Head-tracked depth</h3>
+        <p>The view must survive small natural head movements. Near exterior elements show restrained parallax; distant bodies remain truly distant. The glass never feels like a television.</p>
+      </div>
+    </div>
+    <div class="caption">Concept target—not a screenshot. The target is the balance of true darkness, layered stellar structure, shelter and restrained light.</div>
+    <div class="footer"><span>The Quiet Watch</span><span>4</span></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pad">
+    <div class="eyebrow">04 · The living-vista format</div>
+    <h2 style="margin-top:4mm">Every destination is an authored period of rest, not a looping screensaver.</h2>
+    <p class="lead">A twenty-minute session has a quiet dramatic shape. Nothing asks for attention; the timing simply makes staying worthwhile.</p>
+    <div style="margin-top:8mm">
+      <div class="arc"><div class="time">0–1:30</div><div><h3>Arrival</h3><p>Fade through darkness. Exterior, reflected cabin light and sound settle together. The composition establishes itself immediately; no tutorial panel blocks the view.</p></div></div>
+      <div class="arc"><div class="time">1:30–12:00</div><div><h3>Stillness</h3><p>The vista breathes at geological or orbital speed. Cloud bands evolve, station traffic follows routes, ships keep formation. The player can read, sit or simply look.</p></div></div>
+      <div class="arc"><div class="time">12:00–18:00</div><div><h3>The grace note</h3><p>One destination-specific event arrives: a moon emerges from a ring shadow, a fleet turns toward dawn, or the station extinguishes one hemisphere for night cycle. It is composed, not randomly selected.</p></div></div>
+      <div class="arc"><div class="time">18:00–∞</div><div><h3>Rest</h3><p>The scene returns to quiet continuity. No fireworks loop. The officer may remain indefinitely or choose another window.</p></div></div>
+    </div>
+    <h2 style="font-size:18pt;margin-top:9mm">Only three decisions</h2>
+    <div class="grid3">
+      <div><div class="eyebrow">Where</div><h3>Choose a vista</h3><p>Five large, clearly different visual tiles.</p></div>
+      <div><div class="eyebrow">How alive</div><h3>Quiet / Living</h3><p>Quiet preserves ambient motion but omits service traffic and the grace note.</p></div>
+      <div><div class="eyebrow">How much motion</div><h3>Still / Drift</h3><p>Still removes horizon travel and formation manoeuvres. It is always the default for atmosphere scenes.</p></div>
+    </div>
+    <div class="note" style="margin-top:9mm"><p>No forced auto-tour. No gamification, collectibles, chores, NPC chatter or “engagement” systems. This is a place to recover.</p></div>
+    <div class="footer"><span>The Quiet Watch</span><span>5</span></div>
+  </div>
+</section>
+
+<section class="page dark">
+  <div class="photo-band">
+    <img src="quiet-watch/harbour-ten-thousand-lights.jpg" alt="">
+    <div class="overlay"></div>
+    <div class="photo-title"><div class="eyebrow">Living window IV</div><h2 style="margin-top:3mm">Harbour of<br>Ten Thousand Lights</h2><p>Scale becomes belonging.</p></div>
+  </div>
+  <div class="pad" style="height:175mm;padding-top:10mm">
+    <div class="window-grid">
+      <div class="window"><div class="why">Curiosity</div><h3>The First Question</h3><p>Stars only, but not a flat texture: a galactic river with dust structure, colour-temperature variation, deep black voids and three restrained parallax layers.</p><span class="chip">Grace note: distant comet</span></div>
+      <div class="window"><div class="why">Belonging</div><h3>Harbour of Ten Thousand Lights</h3><p>A modular megastructure continues beyond the window. Habitat rhythms, docking spars and tiny service traffic make it feel inhabited and kilometres wide.</p><span class="chip">Grace note: night cycle</span></div>
+      <div class="window"><div class="why">Fellowship</div><h3>The Long Formation</h3><p>Two original ship families at distinct distances. They do not patrol the window like fish; they hold station with minute corrections and shared navigation-light grammar.</p><span class="chip">Grace note: fleet turn</span></div>
+      <div class="window"><div class="why">Design bar</div><h3>No interchangeable event pool</h3><p>Station actions belong to the station. Fleet actions belong to the fleet. A comet belongs to deep space. Context makes an event feel observed rather than spawned.</p><span class="chip">Authored coherence</span></div>
+    </div>
+    <div class="caption">Concept target—not a screenshot. The station image defines the intended composition and scale; implementation will be rebuilt for Quest constraints.</div>
+    <div class="footer"><span>The Quiet Watch</span><span>6</span></div>
+  </div>
+</section>
+
+<section class="page dark">
+  <div class="split-photo">
+    <img src="quiet-watch/great-weather.jpg" alt="">
+    <div class="split-copy">
+      <div class="eyebrow">Living window II</div>
+      <h2 style="margin-top:3mm">The Great Weather</h2>
+      <p>A gas giant worth approaching again from first principles: storms with dimensional flow, ring shadow, moons and a night side—not six colour presets.</p>
+      <span class="chip">Wonder</span><span class="chip">Grace note: moonrise</span>
+    </div>
+  </div>
+  <div class="split-photo" style="border-top:.5mm solid #30343a">
+    <div class="split-copy">
+      <div class="eyebrow">Living window V</div>
+      <h2 style="margin-top:3mm">Blue Morning</h2>
+      <p>The emotional culmination: curved horizon, layered clouds, water and land, sparse night lights and sunrise. “Still” is an orbital tableau; “Drift” adds slow atmospheric passage.</p>
+      <span class="chip">Home</span><span class="chip">Grace note: dawn</span>
+      <p class="small" style="margin-top:5mm;color:#959ba0">The Long Formation can share this destination occasionally, but it also exists as a dedicated deep-space view.</p>
+    </div>
+    <img src="quiet-watch/blue-morning.jpg" alt="">
+  </div>
+  <div class="footer" style="left:12mm;right:12mm"><span>The Quiet Watch</span><span>7</span></div>
+</section>
+
+<section class="page">
+  <div class="pad">
+    <div class="eyebrow">06 · Quest-realistic production design</div>
+    <h2 style="margin-top:4mm">Do not make the headset brute-force a film frame. Reconstruct the perception of it.</h2>
+    <p class="lead">Breathtaking does not require modelling the universe. It requires spending geometry, texture, motion and light where human vision reads scale.</p>
+    <div style="margin-top:7mm">
+      <div class="layer"><div class="id">Far field</div><div><h3>Infinity and atmosphere</h3><p>High-resolution sky dome or procedural star field; galactic dust; nebular haze; atmosphere scattering. Stable at infinity.</p></div><div class="tech">Minimal parallax<br>low geometry cost</div></div>
+      <div class="layer"><div class="id">Hero field</div><div><h3>The reason for the view</h3><p>One planet, station or fleet composition with LODs, authored silhouettes, baked detail and selective shaders.</p></div><div class="tech">Visual budget goes here</div></div>
+      <div class="layer"><div class="id">Scale cues</div><div><h3>Objects the eye can measure</h3><p>Moons, docking craft, windows, beacons, cloud shadow and navigation lights establish kilometres and orbital distance.</p></div><div class="tech">Sparse, deliberate</div></div>
+      <div class="layer"><div class="id">Cabin response</div><div><h3>The outside reaches inside</h3><p>One controlled exterior spill light, restrained glass reflection and destination sound make the two spaces causally connected.</p></div><div class="tech">Cheap, high impact</div></div>
+    </div>
+    <div class="grid2" style="margin-top:8mm">
+      <div class="note"><h3>Reference-to-headset loop</h3><p>Concept frame → PC reference scene → Quest build → fixed-seat capture → visual gap list. A milestone remains open until the largest perceptual gaps are closed.</p></div>
+      <div class="note"><h3>Performance contract</h3><p>Sustain 72 Hz on Quest 3 with headroom: target CPU and GPU frame times at or below 11 ms, no thermal collapse in a 45-minute session, and no comfort-breaking stutter during transitions.</p></div>
+    </div>
+    <p class="caption" style="margin-top:7mm">Concept art defines mood, composition and scale—not asset fidelity promises. All final assets must be original or compatibly licensed with recorded provenance.</p>
+    <div class="footer"><span>The Quiet Watch</span><span>8</span></div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pad">
+    <div class="eyebrow">07 · Roadmap</div>
+    <h2 style="margin-top:4mm">Prove the visual thesis before building the catalogue.</h2>
+    <p class="muted">Ranges are planning estimates, not release promises. After M1, actual Quest frame time and the reference-to-headset gap determine the forecast.</p>
+    <div style="margin-top:7mm">
+      <div class="gate"><div class="id">M0</div><div class="name">Clean break</div><div class="proof">Create the replacement branch; remove the cat and inactive claims; preserve rollback points; implement environment lifecycle, capture positions and frame-time logging.</div><div class="range">2–4 days</div></div>
+      <div class="gate"><div class="id">M1</div><div class="name">The First Question</div><div class="proof">Ship the destination selector and rebuild stars-only space as the quality baseline. Install, capture and tune from every seat.</div><div class="range">4–7 days</div></div>
+      <div class="gate"><div class="id">M2</div><div class="name">The Harbour</div><div class="proof">Build the station first—not another planet—because it proves original art direction, readable scale, modular geometry and contextual traffic.</div><div class="range">1½–2½ weeks</div></div>
+      <div class="gate"><div class="id">M3</div><div class="name">Blue Morning</div><div class="proof">Build atmospheric horizon, cloud depth and Still/Drift comfort modes. This is the emotional and comfort-risk benchmark.</div><div class="range">1½–2½ weeks</div></div>
+      <div class="gate"><div class="id">M4</div><div class="name">The Great Weather</div><div class="proof">Replace the current gas-giant implementation completely; add dimensional storms, ring shadow, moons and coherent light response.</div><div class="range">1–2 weeks</div></div>
+      <div class="gate"><div class="id">M5</div><div class="name">The Long Formation</div><div class="proof">Extend the ship language established around the station into a dedicated fleet-at-rest composition and one authored fleet turn.</div><div class="range">1–2 weeks</div></div>
+      <div class="gate"><div class="id">M6</div><div class="name">The Quiet Watch</div><div class="proof">Unify sound, lighting, settings persistence, transitions and living-vista timing; cut weak content; run long comfort, thermal and reliability tests.</div><div class="range">1–2 weeks</div></div>
+    </div>
+    <div class="grid3" style="margin-top:9mm">
+      <div><div class="eyebrow">Gate 1</div><h3>Looks right</h3><p>Approved fixed-seat captures and headset review.</p></div>
+      <div><div class="eyebrow">Gate 2</div><h3>Feels right</h3><p>Twenty quiet minutes without fatigue or vection.</p></div>
+      <div><div class="eyebrow">Gate 3</div><h3>Runs right</h3><p>72 Hz minimum, transition stability and thermal headroom.</p></div>
+    </div>
+    <div class="note" style="margin-top:8mm"><p><strong>Likely planning range:</strong> roughly 7–12 focused weeks to a real 2.0, depending on how closely the Quest build can approach the approved station and atmosphere concepts. M1 is the calibration milestone.</p></div>
+    <div class="footer"><span>The Quiet Watch</span><span>9</span></div>
+  </div>
+</section>
+
+<section class="page dark">
+  <div class="pad">
+    <div class="eyebrow">08 · Release contract</div>
+    <h2 style="margin-top:4mm">“Done” means the view survives the headset.</h2>
+    <p class="lead muted">The roadmap is subordinate to these truths. If an implementation fails them, we change the implementation—not the standard.</p>
+    <div style="margin-top:8mm">
+      <div class="contract"><strong>Five different worlds</strong><span>Each passes a silhouette test before colour and labels. No world is a material preset for another.</span></div>
+      <div class="contract"><strong>Immediate ownership</strong><span>The officer can select any view within five seconds. Auto-tour is optional and off by default.</span></div>
+      <div class="contract"><strong>Earned life</strong><span>Motion follows the place's logic. Each vista has at most one signature grace note per session.</span></div>
+      <div class="contract"><strong>Real comfort</strong><span>No forced camera movement. Atmosphere and fleet views default to Still; Drift is explicit. Twenty-minute tests pass.</span></div>
+      <div class="contract"><strong>Honest quality</strong><span>No blob characters, primitive hero objects, invisible headline features or “subtle” excuses. Weak content is removed.</span></div>
+      <div class="contract"><strong>Quest authority</strong><span>Concept art is direction; on-device perception is truth. Every milestone includes an installed build and measured frame time.</span></div>
+      <div class="contract"><strong>Original universe</strong><span>No franchise names, silhouettes, interface language, audio or imitation. The visual identity must become recognizably its own.</span></div>
+    </div>
+    <div class="note" style="margin-top:10mm">
+      <p class="quote">The player should eventually take off the headset and feel that the real room has the wrong window.</p>
+    </div>
+    <div style="margin-top:12mm">
+      <div class="eyebrow">First action after approval</div>
+      <p style="font-size:12pt;margin-top:3mm">Create a new development branch for The Quiet Watch, archive New Hope as historical evidence, and execute M0. The first installable deliverable is not another planet—it is the rebuilt stars-only view plus the real selector.</p>
+    </div>
+    <div class="footer"><span>The Quiet Watch</span><span>10</span></div>
+  </div>
+</section>
+
+</body>
+</html>
