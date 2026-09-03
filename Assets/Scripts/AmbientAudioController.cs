@@ -93,6 +93,14 @@ namespace StarshipCabin
             beepVolume = volume * 0.16f;
         }
 
+        public void SetQuietWatchProfile(bool living)
+        {
+            SetMasterCalmVolume(living ? 0.72f : 0.58f);
+            // Quiet mode is uninterrupted shelter. Living mode permits the
+            // existing rare, restrained panel acknowledgement.
+            beepVolume = living ? 0.055f : 0f;
+        }
+
         private void PlayLoop(AudioSource source)
         {
             if (source == null)

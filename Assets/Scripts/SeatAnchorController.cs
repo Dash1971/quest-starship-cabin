@@ -6,6 +6,7 @@ using UnityEngine.InputSystem.Controls;
 using UnityEngine.XR;
 using XRInputDevice = UnityEngine.XR.InputDevice;
 using XRCommonUsages = UnityEngine.XR.CommonUsages;
+using StarshipCabin.QuietWatch;
 
 namespace StarshipCabin
 {
@@ -38,6 +39,7 @@ namespace StarshipCabin
     {
         public Transform cameraTransform;
         public Renderer fadeRenderer;
+        public ScreenFader screenFader;
         public SeatAnchor[] anchors;
         public float fadeSeconds = 0.25f;
         public float holdRecenterSeconds = 1.0f;
@@ -116,13 +118,31 @@ namespace StarshipCabin
                 return;
             }
 
-            StartCoroutine(HopRoutine(Mathf.Clamp(index, 0, anchors.Length - 1)));
+            var targetIndex = Mathf.Clamp(index, 0, anchors.Length - 1);
+            transitioning = true;
+
+            if (screenFader != null)
+            {
+                if (screenFader.TryBlackout(
+                        () =>
+                        {
+                            ApplyAnchor(targetIndex);
+                            SendHapticTick();
+                        },
+                        () => transitioning = false))
+                {
+                    return;
+                }
+
+                transitioning = false;
+                return;
+            }
+
+            StartCoroutine(HopRoutine(targetIndex));
         }
 
         private IEnumerator HopRoutine(int index)
         {
-            transitioning = true;
-
             yield return Fade(0f, 1f);
             ApplyAnchor(index);
             SendHapticTick();

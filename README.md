@@ -10,7 +10,7 @@ Active development branch: `v2/quiet-watch`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: vision and roadmap only; M0 implementation has not started
+- Current branch status: M0 architecture and the M1 `First Question` playable are implemented; Quest installation is pending USB-debug authorization
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
 Current headset build: `Quarters V2 Milestone 8 rollback`
@@ -25,6 +25,30 @@ Stable rollback tag: `quarters-v2-m7-tested-20260711`
 - APK SHA-256: `97ec2a0a804f8db99e34c300b920baaa5eed251c6ee5eef5a4c0905b1b0e768b`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
+
+### Quiet Watch first playable
+
+Built and desktop-render validated on 2026-09-03 with Unity 6000.5.2f1:
+
+- Product: `Starship Cabin - The Quiet Watch`
+- Package: `jp.openclaw.starshipcabin.quietwatch`
+- Version: `2.0.0-m1` (`20001`)
+- APK: `Builds/StarshipCabin-QuietWatch-M1.apk`
+- APK SHA-256: `e94391e2240b04d763b0265b2cef5e015ff3d4e0380d18555c3a633a44f49b46`
+- Installation status: pending; the connected Quest was visible to ADB but had not re-authorized USB debugging
+
+This first playable adds:
+
+- A reusable `VistaEnvironment` lifecycle and deterministic `VistaDirector`.
+- One shared comfort blackout owner for seat hops and future vista changes.
+- Persisted vista, `Quiet`/`Living`, and `Still`/`Drift` choices.
+- A restrained diegetic selector on the cabin table with controller shortcuts.
+- Four named fixed-seat capture points and repeatable editor renders.
+- Lightweight ten-second CPU/GPU/frame telemetry for `adb logcat` evidence.
+- `The First Question`: a camera-ray-anchored deep-space field with galactic structure, dust, three stellar depth layers, colour variation, and true negative space.
+- `Quiet` plus `Still` as the default; optional extremely slow drift; one deterministic comet after twelve minutes only in `Living` mode.
+
+The selector currently contains one vista. The Harbour, Blue Morning, Great Weather, and Long Formation remain roadmap work, not hidden or inactive claims.
 
 ### Implemented
 
@@ -119,7 +143,7 @@ These images establish composition, shelter, scale, light, and mood. They are ar
 ### Active 2.0 roadmap
 
 0. **Clean break** — environment lifecycle, capture harness, frame-time evidence, and removal of weak/inactive 2.0 claims.
-1. **The First Question** — rebuild stars-only space as the benchmark and ship the real selector.
+1. **The First Question** — rebuild stars-only space as the benchmark and ship the real selector. First playable built; Quest performance and comfort sign-off remain.
 2. **The Harbour** — prove original station art direction and readable kilometre scale before building another planet.
 3. **Blue Morning** — build the atmospheric view and validate `Still`/`Drift` comfort.
 4. **The Great Weather** — replace the experimental gas giant with dimensional storms, rings, moons, and coherent light.
@@ -187,9 +211,9 @@ To build the Quarters APK from the editor menu, use `Starship Cabin -> Build Qua
   -executeMethod StarshipCabin.EditorTools.QuartersSceneSetup.BuildQuartersApk
 ```
 
-The Quarters build output is:
+The Quiet Watch build output is:
 
-`Builds/StarshipCabin-Quarters.apk`
+`Builds/StarshipCabin-QuietWatch-M1.apk`
 
 ## Sideload
 
@@ -200,11 +224,11 @@ adb install -r Builds/StarshipCabin-MVP.apk
 adb shell monkey -p jp.openclaw.starshipcabin 1
 ```
 
-For the current Quarters build:
+For the Quiet Watch build:
 
 ```bash
-adb install -r Builds/StarshipCabin-Quarters.apk
-adb shell monkey -p jp.openclaw.starshipcabin 1
+adb install -r Builds/StarshipCabin-QuietWatch-M1.apk
+adb shell monkey -p jp.openclaw.starshipcabin.quietwatch 1
 ```
 
 ## IP Boundary

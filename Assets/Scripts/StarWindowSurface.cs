@@ -14,6 +14,10 @@ namespace StarshipCabin
         private static readonly int SpeedId = Shader.PropertyToID("_Speed");
         private static readonly int DriftId = Shader.PropertyToID("_Drift");
         private static readonly int NebulaId = Shader.PropertyToID("_NebulaAmount");
+        private static readonly int TwinkleId = Shader.PropertyToID("_Twinkle");
+        private static readonly int MeteorsId = Shader.PropertyToID("_Meteors");
+        private static readonly int GraceStartId = Shader.PropertyToID("_GraceStart");
+        private static readonly int VistaClockId = Shader.PropertyToID("_VistaClock");
 
         [SerializeField] private float nebulaBlendSeconds = 3.5f;
 
@@ -26,6 +30,7 @@ namespace StarshipCabin
         {
             surfaceRenderer = GetComponent<Renderer>();
             block = new MaterialPropertyBlock();
+            ResetVistaClock();
         }
 
         private void Update()
@@ -51,6 +56,30 @@ namespace StarshipCabin
         public void SetNebula(float amount)
         {
             nebulaTarget = Mathf.Clamp01(amount);
+        }
+
+        public void SetQuietWatchComfort(bool living, bool drifting)
+        {
+            SetMotion(drifting ? 0.010f : 0f, drifting ? 0.003f : 0f);
+            SetFloat(TwinkleId, living ? 0.07f : 0.025f);
+            SetFloat(MeteorsId, 0f);
+            SetNebula(0f);
+        }
+
+        public void ResetVistaClock()
+        {
+            SetFloat(VistaClockId, Time.unscaledTime);
+            ClearGraceNote();
+        }
+
+        public void TriggerFirstQuestionComet()
+        {
+            SetFloat(GraceStartId, Time.unscaledTime);
+        }
+
+        public void ClearGraceNote()
+        {
+            SetFloat(GraceStartId, -1000f);
         }
 
         private void SetFloat(int id, float value)

@@ -39,6 +39,12 @@ The proven foundation remains:
 
 The historical `beta/m9-opus-fix` and `newhope` branches remain available for comparison. They are not the 2.0 foundation or active roadmap.
 
+## Delivery status
+
+- **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
+- **M1 first playable — built, validation open:** `The First Question`, the one-vista diegetic selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. Fixed-seat desktop renders pass. Quest installation, live telemetry, and the required sustained comfort/performance sessions remain before M1 exit.
+- **M2–M6 — not started:** the four later vistas and release-unification work remain roadmap items.
+
 ## The five living windows
 
 ### I. The First Question — curiosity
@@ -109,6 +115,8 @@ Every milestone ends with:
 
 Exit: test environments swap without stale geometry, audio, lighting, or allocations; captures and frame-time evidence are repeatable.
 
+Status: architecture and tooling implemented in the M1 first playable. Multi-vista unload verification remains part of the M2 implementation because only one production vista exists today.
+
 Planning range: 2–4 focused days.
 
 ### M1 — The First Question plus real selector
@@ -120,6 +128,8 @@ Planning range: 2–4 focused days.
 - Save the last vista and comfort settings locally.
 
 Exit: the view reads as space beyond glass rather than a texture on glass; it holds attention without a planet; selection works within five seconds; Quest 3 sustains the performance target.
+
+Status: first playable built and fixed-seat desktop renders validated on 2026-09-03. Quest installation, live 72 Hz evidence, and sustained headset review remain open exit checks.
 
 Planning range: 4–7 focused days.
 

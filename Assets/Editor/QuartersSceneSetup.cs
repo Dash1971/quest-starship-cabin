@@ -16,6 +16,7 @@ using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 using UnityEngine.XR.OpenXR.Features.Interactions;
 using StarshipCabin;
+using StarshipCabin.QuietWatch;
 
 namespace StarshipCabin.EditorTools
 {
@@ -105,9 +106,10 @@ namespace StarshipCabin.EditorTools
             BuildQuartersShell(root, materials);
             var starSurface = BuildGlazing(root, materials);
             QuartersFurnishings.BuildAll(root);
-            BuildBakedLightRig();
-            AddXrRig();
-            AddControllers(starSurface);
+            var exteriorFill = BuildBakedLightRig();
+            var screenFader = AddXrRig();
+            AddQuietWatch(starSurface, exteriorFill, screenFader);
+            AddCapturePoints();
             BuildPostProcessing();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -154,7 +156,7 @@ namespace StarshipCabin.EditorTools
             }
 
             Directory.CreateDirectory("Builds");
-            var buildPath = "Builds/StarshipCabin-Quarters.apk";
+            var buildPath = "Builds/StarshipCabin-QuietWatch-M1.apk";
 
             var options = new BuildPlayerOptions
             {
@@ -414,7 +416,7 @@ namespace StarshipCabin.EditorTools
         // Lights, rig, controllers
         // ------------------------------------------------------------------
 
-        private static void BuildBakedLightRig()
+        private static Light BuildBakedLightRig()
         {
             // Milestone 4: the concept's lighting plan. Baked area lights along
             // the cove lines (plus the already-BakedEmissive cove strips), warm
@@ -457,6 +459,7 @@ namespace StarshipCabin.EditorTools
             mixed.range = 4.5f;
             mixed.shadows = LightShadows.None;
             mixed.lightmapBakeType = LightmapBakeType.Mixed;
+            return mixed;
         }
 
         private static void AreaLight(
@@ -604,7 +607,7 @@ namespace StarshipCabin.EditorTools
             return profile;
         }
 
-        private static void AddXrRig()
+        private static ScreenFader AddXrRig()
         {
             // Milestone 3: the SeatAnchorController owns the origin transform at
             // runtime (it applies the couch anchor on Start, fixing the old
@@ -635,10 +638,10 @@ namespace StarshipCabin.EditorTools
             cameraObject.AddComponent<AudioListener>();
             cameraObject.AddComponent<FoveationController>();
 
-            AddSeatAnchors(origin, cameraObject.transform);
+            return AddSeatAnchors(origin, cameraObject.transform);
         }
 
-        private static void AddSeatAnchors(GameObject origin, Transform cameraTransform)
+        private static ScreenFader AddSeatAnchors(GameObject origin, Transform cameraTransform)
         {
             // Comfort fade overlay: small quad in front of the camera, alpha
             // driven by SeatAnchorController. Renders in the Overlay queue with
@@ -657,6 +660,9 @@ namespace StarshipCabin.EditorTools
             var controller = origin.AddComponent<SeatAnchorController>();
             controller.cameraTransform = cameraTransform;
             controller.fadeRenderer = fadeObject.GetComponent<MeshRenderer>();
+            var fader = origin.AddComponent<ScreenFader>();
+            fader.Configure(controller.fadeRenderer);
+            controller.screenFader = fader;
             controller.anchors = new[]
             {
                 // Eye points are world-space targets; y is the eye height at
@@ -674,6 +680,7 @@ namespace StarshipCabin.EditorTools
             };
 
             EditorUtility.SetDirty(controller);
+            return fader;
         }
 
         private static Material CreateFadeMaterial()
@@ -698,22 +705,85 @@ namespace StarshipCabin.EditorTools
             return mat;
         }
 
-        private static void AddControllers(StarWindowSurface starSurface)
+        private static void AddQuietWatch(StarWindowSurface starSurface, Light exteriorFill, ScreenFader screenFader)
         {
-            var controller = new GameObject("CabinExperience");
-            var experience = controller.AddComponent<CabinExperienceController>();
-            controller.AddComponent<XRAmbienceInputController>();
-
-            var serialized = new SerializedObject(experience);
-            var starProperty = serialized.FindProperty("starWindow");
-            if (starProperty != null)
-            {
-                starProperty.objectReferenceValue = starSurface;
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
-
+            var controller = new GameObject("Quiet Watch Director");
             var audio = new GameObject("CabinAudio");
-            audio.AddComponent<AmbientAudioController>();
+            var audioController = audio.AddComponent<AmbientAudioController>();
+
+            var firstQuestion = starSurface.gameObject.AddComponent<FirstQuestionVista>();
+            firstQuestion.Configure(starSurface, exteriorFill, audioController);
+
+            var director = controller.AddComponent<VistaDirector>();
+            director.Configure(new VistaEnvironment[] { firstQuestion }, screenFader);
+            controller.AddComponent<FrameTimeTelemetry>();
+            controller.AddComponent<QuietWatchInputController>().Configure(director);
+
+            BuildSelectorPanel(director);
+        }
+
+        private static void BuildSelectorPanel(VistaDirector director)
+        {
+            var panelMaterial = CreateEmissiveMaterial(
+                "Quiet Watch Selector Face",
+                new Color(0.018f, 0.028f, 0.040f),
+                new Color(0.07f, 0.20f, 0.28f),
+                0.5f);
+            var panelMesh = QuartersMeshes.ChamferedBox("Quiet Watch Selector", 0.66f, 0.25f, 0.018f, 0.018f);
+            var panel = MeshObject(
+                null,
+                "Quiet Watch Selector",
+                panelMesh,
+                panelMaterial,
+                new Vector3(-1.27f, 0.59f, 0.08f),
+                Quaternion.identity);
+            GameObjectUtility.SetStaticEditorFlags(panel, 0);
+
+            var title = CreatePanelText(panel.transform, "THE QUIET WATCH", new Vector3(0f, 0.070f, -0.011f), 0.0043f,
+                new Color(0.74f, 0.91f, 1f));
+            var subtitle = CreatePanelText(panel.transform, "STARS ONLY", new Vector3(0f, 0.020f, -0.011f), 0.0036f,
+                new Color(0.44f, 0.69f, 0.80f));
+            var state = CreatePanelText(panel.transform, "QUIET / STILL", new Vector3(0f, -0.060f, -0.011f), 0.00255f,
+                new Color(0.72f, 0.78f, 0.78f));
+
+            panel.AddComponent<QuietWatchSelectorPanel>().Configure(director, title, subtitle, state);
+        }
+
+        private static TextMesh CreatePanelText(
+            Transform parent, string initialText, Vector3 localPosition, float characterSize, Color color)
+        {
+            var textObject = new GameObject("Selector Text: " + initialText);
+            textObject.transform.SetParent(parent, false);
+            textObject.transform.localPosition = localPosition;
+
+            var text = textObject.AddComponent<TextMesh>();
+            text.text = initialText;
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 64;
+            text.characterSize = characterSize;
+            text.anchor = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignment.Center;
+            text.color = color;
+            textObject.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
+            GameObjectUtility.SetStaticEditorFlags(textObject, 0);
+            return text;
+        }
+
+        private static void AddCapturePoints()
+        {
+            var root = new GameObject("Quiet Watch Capture Points").transform;
+            AddCapturePoint(root, "Couch", new Vector3(-1.6f, 1.10f, -1.42f), new Vector3(0f, 1.45f, -7.0f));
+            AddCapturePoint(root, "Bed Sitting", new Vector3(1.42f, 1.22f, -0.10f), new Vector3(0.4f, 1.55f, -7.0f));
+            AddCapturePoint(root, "Bed Reclining", new Vector3(2.05f, 0.95f, -1.00f), new Vector3(0.6f, 1.55f, -7.0f));
+            AddCapturePoint(root, "Desk", new Vector3(-2.2f, 1.18f, 2.0f), new Vector3(-0.5f, 1.40f, -7.0f));
+        }
+
+        private static void AddCapturePoint(Transform parent, string name, Vector3 eye, Vector3 target)
+        {
+            var point = new GameObject("Capture - " + name);
+            point.transform.SetParent(parent);
+            point.transform.SetPositionAndRotation(eye, Quaternion.LookRotation((target - eye).normalized, Vector3.up));
+            point.AddComponent<VistaCapturePoint>().Configure(name);
         }
 
         // ------------------------------------------------------------------
@@ -783,21 +853,21 @@ namespace StarshipCabin.EditorTools
 
         private static Material CreateStarMaterial()
         {
-            const string path = "Assets/Materials/Star Window Surface.mat";
+            const string path = "Assets/Materials/Quiet Watch - First Question.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (existing != null)
             {
                 return existing;
             }
 
-            var shader = Shader.Find("StarshipCabin/StarWindow");
+            var shader = Shader.Find("StarshipCabin/QuietWatchStarWindow");
             if (shader == null)
             {
                 throw new InvalidOperationException(
-                    "StarshipCabin/StarWindow shader not found. Ensure Assets/Shaders/StarWindow.shader is imported.");
+                    "Quiet Watch star shader not found. Ensure Assets/Shaders/QuietWatchStarWindow.shader is imported.");
             }
 
-            var mat = new Material(shader) { name = "Star Window Surface" };
+            var mat = new Material(shader) { name = "Quiet Watch - First Question" };
             AssetDatabase.CreateAsset(mat, path);
             return mat;
         }
@@ -884,9 +954,11 @@ namespace StarshipCabin.EditorTools
         {
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
-            PlayerSettings.companyName = "OpenClaw";
-            PlayerSettings.productName = "Starship Cabin";
-            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin");
+            PlayerSettings.companyName = "Starship Cabin Project";
+            PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
+            PlayerSettings.bundleVersion = "2.0.0-m1";
+            PlayerSettings.Android.bundleVersionCode = 20001;
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
