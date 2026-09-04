@@ -10,7 +10,7 @@ namespace StarshipCabin.QuietWatch
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         [SerializeField] private Renderer fadeRenderer;
-        [SerializeField, Min(0.05f)] private float fadeSeconds = 0.25f;
+        [SerializeField, Min(0.05f)] private float fadeSeconds = 0.55f;
 
         private MaterialPropertyBlock block;
 

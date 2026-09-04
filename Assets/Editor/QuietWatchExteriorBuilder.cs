@@ -149,7 +149,7 @@ namespace StarshipCabin.EditorTools
                     new Vector3(11.5f, 6.0f, -46f), Quaternion.Euler(0f, -5f, 2f), 0.72f)
             };
 
-            return Configure(vista, "long-formation", "THE LONG FORMATION", "THE FLEET HOLDS STATION",
+            return Configure(vista, "long-formation", "THE LONG FORMATION", "FORMATION UNDERWAY",
                 AuthoredVistaKind.LongFormation, stars, fill, audio, formationRig, ships.ToArray(), new Color(0.34f, 0.58f, 0.84f));
         }
 

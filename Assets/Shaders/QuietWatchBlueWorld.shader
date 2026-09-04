@@ -8,6 +8,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
         _AtmosphereColor ("Atmosphere", Color) = (0.12, 0.48, 1.0, 1)
         _SunsetColor ("Sunset", Color) = (1.0, 0.31, 0.08, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.45, 0.28, -0.84, 0)
+        _DawnProgress ("Dawn Progress", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -32,6 +33,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 half4 _AtmosphereColor;
                 half4 _SunsetColor;
                 float4 _SunDirection;
+                float _DawnProgress;
             CBUFFER_END
 
             struct Attributes
@@ -106,7 +108,8 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 n = normalize(input.normalWS);
                 float3 v = normalize(input.viewWS);
-                float3 sun = normalize(_SunDirection.xyz);
+                float3 sun = normalize(_SunDirection.xyz
+                    + float3(_DawnProgress * 0.22, _DawnProgress * 0.10, 0.0));
                 float sunDot = dot(n, sun);
                 float daylight = smoothstep(-0.19, 0.14, sunDot);
                 float broadLight = 0.10 + 0.90 * saturate(sunDot * 0.68 + 0.32);
@@ -166,6 +169,9 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 color += float3(1.0, 0.48, 0.12) * nightLights * 2.2;
                 color += _AtmosphereColor.rgb * rim * (0.36 + daylight * 1.32);
                 color += _SunsetColor.rgb * rim * terminator * 1.55;
+                float dawnReach = rim * smoothstep(-0.24, 0.22, sunDot);
+                color += _SunsetColor.rgb * dawnReach * _DawnProgress * 0.72;
+                color += float3(1.0, 0.76, 0.48) * daylight * _DawnProgress * 0.055;
                 color = 1.0 - exp(-color * 1.42);
                 return half4(color, 1.0);
             }

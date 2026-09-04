@@ -11,9 +11,7 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private StarWindowSurface starWindow;
         [SerializeField] private Light exteriorFill;
         [SerializeField] private AmbientAudioController audioController;
-        // Review build timing: visible quickly enough for an in-headset pass.
-        // Restore the long-session cadence during the M6 release pass.
-        [SerializeField, Min(15f)] private float graceNoteAtSeconds = 45f;
+        [SerializeField, Min(15f)] private float graceNoteAtSeconds = 780f;
 
         private LifeMode lifeMode;
         private float enteredAt;
@@ -38,6 +36,7 @@ namespace StarshipCabin.QuietWatch
             {
                 graceNotePlayed = true;
                 starWindow?.TriggerFirstQuestionComet();
+                audioController?.TriggerQuietWatchGrace("first-question");
                 Debug.Log("Quiet Watch grace note: First Question comet");
             }
         }
@@ -56,7 +55,7 @@ namespace StarshipCabin.QuietWatch
                 exteriorFill.intensity = 0.38f;
             }
 
-            audioController?.SetQuietWatchProfile(nextLifeMode == LifeMode.Living);
+            audioController?.SetQuietWatchProfile("first-question", nextLifeMode == LifeMode.Living);
         }
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode motionMode)
@@ -65,7 +64,7 @@ namespace StarshipCabin.QuietWatch
             starWindow?.SetQuietWatchComfort(
                 living: nextLifeMode == LifeMode.Living,
                 drifting: motionMode == MotionMode.Drift);
-            audioController?.SetQuietWatchProfile(nextLifeMode == LifeMode.Living);
+            audioController?.SetQuietWatchProfile("first-question", nextLifeMode == LifeMode.Living);
         }
 
         public override void Exit()

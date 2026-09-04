@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace StarshipCabin
@@ -29,6 +30,7 @@ namespace StarshipCabin
         [SerializeField] private AudioSource engineHum;
         [SerializeField] private AudioSource brownNoise;
         [SerializeField] private AudioSource airCirculation;
+        [SerializeField] private AudioSource destinationBed;
 
         [Header("One Shots")]
         [SerializeField] private AudioSource oneShotSource;
@@ -37,7 +39,11 @@ namespace StarshipCabin
         [SerializeField, Range(0f, 1f)] private float beepVolume = 0.10f;
 
         private const int SampleRate = 24000;
+        private readonly Dictionary<string, AudioClip> destinationClips = new Dictionary<string, AudioClip>();
+        private readonly Dictionary<string, AudioClip> graceClips = new Dictionary<string, AudioClip>();
         private float nextBeepAt;
+        private float destinationTargetVolume;
+        private string currentDestination = string.Empty;
 
         private void Awake()
         {
@@ -58,6 +64,12 @@ namespace StarshipCabin
 
         private void Update()
         {
+            if (destinationBed != null)
+            {
+                destinationBed.volume = Mathf.MoveTowards(
+                    destinationBed.volume, destinationTargetVolume, Time.unscaledDeltaTime * 0.10f);
+            }
+
             if (panelBeeps == null || panelBeeps.Length == 0 || oneShotSource == null)
             {
                 return;
@@ -95,10 +107,60 @@ namespace StarshipCabin
 
         public void SetQuietWatchProfile(bool living)
         {
-            SetMasterCalmVolume(living ? 0.72f : 0.58f);
+            SetQuietWatchProfile(currentDestination, living);
+        }
+
+        /// <summary>
+        /// Blends the common cabin bed with one restrained, destination-specific
+        /// spatial layer. Clip changes happen behind the vista blackout and fade
+        /// back in, so the exterior, light and sound arrive as one place.
+        /// </summary>
+        public void SetQuietWatchProfile(string vistaId, bool living)
+        {
+            EnsureProceduralAudio();
+            currentDestination = string.IsNullOrEmpty(vistaId) ? "first-question" : vistaId;
+            SetMasterCalmVolume(living ? 0.68f : 0.54f);
+
+            var clip = DestinationClip(currentDestination);
+            if (destinationBed != null)
+            {
+                destinationBed.transform.localPosition = DestinationPosition(currentDestination);
+            }
+            if (destinationBed != null && destinationBed.clip != clip)
+            {
+                destinationBed.Stop();
+                destinationBed.clip = clip;
+                destinationBed.volume = 0f;
+                if (clip != null)
+                {
+                    destinationBed.Play();
+                }
+            }
+
+            destinationTargetVolume = DestinationVolume(currentDestination) * (living ? 1.0f : 0.72f);
             // Quiet mode is uninterrupted shelter. Living mode permits the
             // existing rare, restrained panel acknowledgement.
             beepVolume = living ? 0.055f : 0f;
+        }
+
+        public void TriggerQuietWatchGrace(string vistaId)
+        {
+            if (oneShotSource == null)
+            {
+                return;
+            }
+
+            var id = string.IsNullOrEmpty(vistaId) ? currentDestination : vistaId;
+            if (!graceClips.TryGetValue(id, out var clip))
+            {
+                clip = CreateGraceClip(id);
+                graceClips[id] = clip;
+            }
+
+            if (clip != null)
+            {
+                oneShotSource.PlayOneShot(clip, id == "first-question" ? 0.075f : 0.16f);
+            }
         }
 
         private void PlayLoop(AudioSource source)
@@ -146,6 +208,24 @@ namespace StarshipCabin
                 airCirculation.volume = 0.26f;
             }
 
+            if (destinationBed == null)
+            {
+                var bedObject = new GameObject("Destination Spatial Bed");
+                bedObject.transform.SetParent(transform, false);
+                bedObject.transform.localPosition = new Vector3(-2.6f, 1.7f, -4.8f);
+                destinationBed = bedObject.AddComponent<AudioSource>();
+                destinationBed.loop = true;
+                destinationBed.playOnAwake = false;
+                destinationBed.spatialBlend = 0.72f;
+                destinationBed.rolloffMode = AudioRolloffMode.Linear;
+                destinationBed.minDistance = 1.5f;
+                destinationBed.maxDistance = 18f;
+                destinationBed.dopplerLevel = 0f;
+                var lowPass = bedObject.AddComponent<AudioLowPassFilter>();
+                lowPass.cutoffFrequency = 1450f;
+                lowPass.lowpassResonanceQ = 0.72f;
+            }
+
             if (oneShotSource == null)
             {
                 oneShotSource = gameObject.AddComponent<AudioSource>();
@@ -163,6 +243,129 @@ namespace StarshipCabin
             }
 
             beepVolume = 0.10f;
+        }
+
+        private AudioClip DestinationClip(string vistaId)
+        {
+            if (!destinationClips.TryGetValue(vistaId, out var clip))
+            {
+                clip = CreateDestinationClip(vistaId);
+                destinationClips[vistaId] = clip;
+            }
+            return clip;
+        }
+
+        private static float DestinationVolume(string vistaId)
+        {
+            switch (vistaId)
+            {
+                case "harbour": return 0.15f;
+                case "blue-morning": return 0.075f;
+                case "great-weather": return 0.13f;
+                case "long-formation": return 0.12f;
+                default: return 0.025f;
+            }
+        }
+
+        private static Vector3 DestinationPosition(string vistaId)
+        {
+            switch (vistaId)
+            {
+                case "harbour": return new Vector3(-3.1f, 1.5f, -5.4f);
+                case "blue-morning": return new Vector3(0.8f, 2.2f, -6.0f);
+                case "great-weather": return new Vector3(2.4f, 0.8f, -5.7f);
+                case "long-formation": return new Vector3(2.9f, 1.6f, -5.5f);
+                default: return new Vector3(0f, 1.8f, -6.4f);
+            }
+        }
+
+        /// <summary>
+        /// Twelve-second, loop-locked sound identities. They are deliberately
+        /// low and abstract: machinery through a hull, atmospheric scale and
+        /// distant drives rather than literal effects in vacuum.
+        /// </summary>
+        private static AudioClip CreateDestinationClip(string vistaId)
+        {
+            const float seconds = 12f;
+            var samples = new float[(int)(SampleRate * seconds)];
+            var random = new System.Random(vistaId.GetHashCode());
+            var filteredNoise = 0f;
+
+            for (var i = 0; i < samples.Length; i++)
+            {
+                var t = i / (float)SampleRate;
+                var noise = (float)(random.NextDouble() * 2.0 - 1.0);
+                filteredNoise = Mathf.Lerp(filteredNoise, noise, 0.006f);
+                float value;
+                switch (vistaId)
+                {
+                    case "harbour":
+                        var machinery = 0.72f + 0.28f * Mathf.Sin(2f * Mathf.PI * 0.25f * t);
+                        value = (Mathf.Sin(2f * Mathf.PI * 31f * t) * 0.38f
+                            + Mathf.Sin(2f * Mathf.PI * 62f * t + 0.8f) * 0.16f
+                            + filteredNoise * 0.70f) * machinery;
+                        break;
+                    case "blue-morning":
+                        value = Mathf.Sin(2f * Mathf.PI * 48f * t) * 0.16f
+                            + Mathf.Sin(2f * Mathf.PI * 72f * t + 1.1f) * 0.10f
+                            + filteredNoise * (0.48f + 0.12f * Mathf.Sin(2f * Mathf.PI * t / 6f));
+                        break;
+                    case "great-weather":
+                        value = Mathf.Sin(2f * Mathf.PI * 21f * t) * 0.43f
+                            + Mathf.Sin(2f * Mathf.PI * 28f * t + 0.6f) * 0.24f
+                            + filteredNoise * 0.88f;
+                        break;
+                    case "long-formation":
+                        value = Mathf.Sin(2f * Mathf.PI * 36f * t) * 0.34f
+                            + Mathf.Sin(2f * Mathf.PI * 54f * t + 1.6f) * 0.22f
+                            + Mathf.Sin(2f * Mathf.PI * 72f * t + 0.2f) * 0.09f
+                            + filteredNoise * 0.42f;
+                        break;
+                    default:
+                        value = Mathf.Sin(2f * Mathf.PI * 24f * t) * 0.12f + filteredNoise * 0.16f;
+                        break;
+                }
+                samples[i] = value;
+            }
+
+            Normalize(samples, 0.46f);
+            return ToClip("Quiet Watch " + vistaId + " ambience", samples);
+        }
+
+        private static AudioClip CreateGraceClip(string vistaId)
+        {
+            var duration = vistaId == "great-weather" ? 4.5f : 2.8f;
+            var samples = new float[Mathf.CeilToInt(SampleRate * duration)];
+            for (var i = 0; i < samples.Length; i++)
+            {
+                var t = i / (float)SampleRate;
+                var progress = Mathf.Clamp01(t / duration);
+                var envelope = Mathf.Sin(progress * Mathf.PI);
+                float value;
+                switch (vistaId)
+                {
+                    case "harbour":
+                        value = Mathf.Sin(2f * Mathf.PI * 246f * t) * 0.22f
+                            + Mathf.Sin(2f * Mathf.PI * 369f * t) * 0.10f;
+                        break;
+                    case "blue-morning":
+                        value = Mathf.Sin(2f * Mathf.PI * 96f * t) * 0.24f
+                            + Mathf.Sin(2f * Mathf.PI * 144f * t) * 0.12f;
+                        break;
+                    case "great-weather":
+                        value = Mathf.Sin(2f * Mathf.PI * (24f + progress * 7f) * t) * 0.42f;
+                        break;
+                    case "long-formation":
+                        value = Mathf.Sin(2f * Mathf.PI * 164f * t) * 0.18f
+                            + Mathf.Sin(2f * Mathf.PI * 219f * t) * 0.10f;
+                        break;
+                    default:
+                        value = Mathf.Sin(2f * Mathf.PI * 310f * t) * 0.16f;
+                        break;
+                }
+                samples[i] = value * envelope;
+            }
+            return ToClip("Quiet Watch " + vistaId + " grace", samples);
         }
 
         /// <summary>

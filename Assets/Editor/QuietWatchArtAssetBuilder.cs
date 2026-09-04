@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using StarshipCabin.QuietWatch;
 
 namespace StarshipCabin.EditorTools
 {
@@ -112,7 +113,44 @@ namespace StarshipCabin.EditorTools
             group.fadeMode = LODFadeMode.None;
             group.SetLODs(lods.ToArray());
             group.RecalculateBounds();
+
+            if (family != "HarbourSector")
+            {
+                AddDriveGlows(root, family);
+            }
             return root;
+        }
+
+        private static void AddDriveGlows(Transform ship, string family)
+        {
+            var command = family == "CommandShip";
+            var xPositions = command ? new[] { -2.75f, 0f, 2.75f } : new[] { -1.15f, 1.15f };
+            var aft = command ? 10.4f : 6.8f;
+            var diameter = command ? 0.36f : 0.25f;
+            var glows = new Transform[xPositions.Length];
+            for (var i = 0; i < xPositions.Length; i++)
+            {
+                var glow = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                glow.name = $"Drive Glow {i + 1}";
+                glow.transform.SetParent(ship, false);
+                glow.transform.localPosition = new Vector3(xPositions[i], 0f, aft);
+                glow.transform.localScale = new Vector3(diameter, diameter, diameter * 0.42f);
+                glow.layer = ExteriorLayer;
+                var collider = glow.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+                var renderer = glow.GetComponent<Renderer>();
+                renderer.sharedMaterial = materials.Blue;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+                glows[i] = glow.transform;
+            }
+
+            var pulse = ship.gameObject.AddComponent<ShipEnginePulse>();
+            pulse.Configure(glows, command ? 0.3f : family == "EscortSpear" ? 2.1f : 4.2f);
         }
 
         public static Light AddExteriorSun(

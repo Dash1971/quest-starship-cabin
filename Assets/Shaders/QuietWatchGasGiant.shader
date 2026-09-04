@@ -6,6 +6,7 @@ Shader "StarshipCabin/QuietWatchGasGiant"
         _DarkBand ("Dark Band", Color) = (0.22, 0.065, 0.045, 1)
         _StormColor ("Storm", Color) = (1.0, 0.28, 0.075, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.62, 0.30, -0.72, 0)
+        _WeatherPulse ("Weather Grace", Range(0, 1)) = 0
     }
     SubShader
     {
@@ -28,6 +29,7 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 half4 _DarkBand;
                 half4 _StormColor;
                 float4 _SunDirection;
+                float _WeatherPulse;
             CBUFFER_END
 
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -170,6 +172,8 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 // and within bright zones, separating upper haze from belts.
                 float upperHaze = pow(1.0 - viewDot, 5.0) * smoothstep(-0.12, 0.55, sunDot);
                 color += float3(1.0, 0.55, 0.22) * upperHaze * 0.72;
+                color += _StormColor.rgb * storm * _WeatherPulse * 0.075;
+                color += float3(0.88, 0.48, 0.20) * atmosphere * _WeatherPulse * 0.055;
 
                 // Filmic compression preserves storm and shadow structure under
                 // the cabin's restrained bloom without flattening the nightside.

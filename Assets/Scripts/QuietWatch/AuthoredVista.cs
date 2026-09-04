@@ -31,13 +31,19 @@ namespace StarshipCabin.QuietWatch
         private Quaternion[] travellerRotations = Array.Empty<Quaternion>();
         private Vector3[] travellerScales = Array.Empty<Vector3>();
         private HarbourTrafficRoute[] harbourRoutes = Array.Empty<HarbourTrafficRoute>();
+        private ShipEnginePulse[] formationEngines = Array.Empty<ShipEnginePulse>();
         private Vector3 slowTurnOriginPosition;
         private Quaternion slowTurnOriginRotation;
+        private Renderer heroRenderer;
+        private MaterialPropertyBlock heroBlock;
         private LifeMode lifeMode;
         private MotionMode motionMode;
         private float enteredAt;
         private bool graceNotePlayed;
         private bool active;
+
+        public float GraceNoteAtSeconds => graceNoteAtSeconds;
+        public float GraceDurationSeconds => GraceDuration();
 
         public void Configure(
             string id,
@@ -59,6 +65,7 @@ namespace StarshipCabin.QuietWatch
             slowTurn = rotatingElement;
             travellers = movingElements ?? Array.Empty<Transform>();
             fillColor = lightColor;
+            graceNoteAtSeconds = GraceDelayFor(vistaKind);
             CacheOrigins();
         }
 
@@ -84,6 +91,7 @@ namespace StarshipCabin.QuietWatch
             travellerRotations = new Quaternion[travellers.Length];
             travellerScales = new Vector3[travellers.Length];
             harbourRoutes = new HarbourTrafficRoute[travellers.Length];
+            formationEngines = new ShipEnginePulse[travellers.Length];
             for (var i = 0; i < travellers.Length; i++)
             {
                 var traveller = travellers[i];
@@ -96,7 +104,11 @@ namespace StarshipCabin.QuietWatch
                 travellerRotations[i] = traveller.localRotation;
                 travellerScales[i] = traveller.localScale;
                 harbourRoutes[i] = traveller.GetComponent<HarbourTrafficRoute>();
+                formationEngines[i] = traveller.GetComponent<ShipEnginePulse>();
             }
+
+            heroRenderer = slowTurn != null ? slowTurn.GetComponent<Renderer>() : null;
+            heroBlock ??= new MaterialPropertyBlock();
         }
 
         private void Update()
@@ -110,6 +122,7 @@ namespace StarshipCabin.QuietWatch
             if (!graceNotePlayed && lifeMode == LifeMode.Living && elapsed >= graceNoteAtSeconds)
             {
                 graceNotePlayed = true;
+                audioController?.TriggerQuietWatchGrace(VistaId);
                 Debug.Log($"Quiet Watch grace note started: {DisplayName}");
             }
 
@@ -178,7 +191,7 @@ namespace StarshipCabin.QuietWatch
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
             starWindow?.SetAuthoredVistaBackdrop(BackdropDensity());
-            audioController?.SetQuietWatchProfile(nextLifeMode == LifeMode.Living);
+            audioController?.SetQuietWatchProfile(VistaId, nextLifeMode == LifeMode.Living);
 
             if (kind == AuthoredVistaKind.Harbour)
             {
@@ -250,10 +263,19 @@ namespace StarshipCabin.QuietWatch
             if (slowTurn != null)
             {
                 var living = lifeMode == LifeMode.Living;
-                var cruise = living
-                    ? new Vector3(Mathf.Sin(elapsed * 0.035f) * 0.22f, Mathf.Sin(elapsed * 0.021f) * 0.10f, -elapsed * 0.006f)
-                    : Vector3.zero;
-                var turn = Quaternion.Euler(-1.2f * grace, 8.5f * grace, -2.8f * Mathf.Sin(grace * Mathf.PI));
+                // The whole formation is underway in both modes. A broad,
+                // bounded flight curve gives an immediately readable change
+                // against the window while preserving a restful composition.
+                var activity = living ? 1.0f : 0.72f;
+                var cruise = new Vector3(
+                    Mathf.Sin(elapsed * 0.012f) * 2.2f * activity,
+                    Mathf.Sin(elapsed * 0.008f + 0.5f) * 0.62f * activity,
+                    Mathf.Sin(elapsed * 0.012f) * 3.8f * activity);
+                var courseYaw = Mathf.Cos(elapsed * 0.012f) * 1.35f * activity;
+                var turn = Quaternion.Euler(
+                    -2.0f * grace,
+                    courseYaw - 10.0f * grace,
+                    3.4f * Mathf.Sin(grace * Mathf.PI));
                 slowTurn.localPosition = slowTurnOriginPosition + cruise;
                 slowTurn.localRotation = slowTurnOriginRotation * turn;
             }
@@ -267,21 +289,23 @@ namespace StarshipCabin.QuietWatch
                 }
 
                 traveller.gameObject.SetActive(true);
-                if (lifeMode == LifeMode.Quiet)
-                {
-                    traveller.localPosition = travellerOrigins[i];
-                    traveller.localRotation = travellerRotations[i];
-                    continue;
-                }
-
-                var phase = elapsed * (0.045f + i * 0.008f) + i * 2.1f;
+                var living = lifeMode == LifeMode.Living;
+                var phase = elapsed * (0.082f + i * 0.011f) + i * 2.1f;
+                var correctionScale = living ? 1.0f : 0.58f;
                 var correction = new Vector3(
-                    Mathf.Sin(phase) * (0.035f + i * 0.008f),
-                    Mathf.Sin(phase * 0.71f) * 0.025f,
-                    Mathf.Cos(phase * 0.53f) * 0.018f);
+                    Mathf.Sin(phase) * (0.16f + i * 0.035f),
+                    Mathf.Sin(phase * 0.71f) * (0.10f + i * 0.018f),
+                    Mathf.Cos(phase * 0.53f) * (0.12f + i * 0.025f)) * correctionScale;
                 traveller.localPosition = travellerOrigins[i] + correction;
                 traveller.localRotation = travellerRotations[i]
-                    * Quaternion.Euler(0f, Mathf.Sin(phase * 0.6f) * 0.28f, Mathf.Sin(phase) * 0.42f);
+                    * Quaternion.Euler(
+                        Mathf.Sin(phase * 0.71f) * 0.38f * correctionScale,
+                        Mathf.Sin(phase * 0.6f) * 0.72f * correctionScale,
+                        Mathf.Sin(phase) * 1.10f * correctionScale);
+                if (i < formationEngines.Length && formationEngines[i] != null)
+                {
+                    formationEngines[i].SetActivity(living ? 1.0f : 0.68f);
+                }
             }
         }
 
@@ -305,7 +329,7 @@ namespace StarshipCabin.QuietWatch
                 var emergence = new Vector3(12f, 4.2f, -2f) * grace * distanceScale;
                 traveller.localPosition = travellerOrigins[i] + emergence;
             }
-
+            SetHeroFloat("_WeatherPulse", grace);
         }
 
         private void UpdateBlueMorning(float elapsed, float grace)
@@ -315,7 +339,7 @@ namespace StarshipCabin.QuietWatch
                 var degrees = motionMode == MotionMode.Drift ? elapsed * 0.028f : 0f;
                 slowTurn.localRotation = slowTurnOriginRotation * Quaternion.AngleAxis(degrees, Vector3.up);
             }
-
+            SetHeroFloat("_DawnProgress", grace);
         }
 
         private void RestoreTransforms()
@@ -325,6 +349,9 @@ namespace StarshipCabin.QuietWatch
                 slowTurn.localPosition = slowTurnOriginPosition;
                 slowTurn.localRotation = slowTurnOriginRotation;
             }
+
+            SetHeroFloat("_DawnProgress", 0f);
+            SetHeroFloat("_WeatherPulse", 0f);
 
             for (var i = 0; i < travellerOrigins.Length; i++)
             {
@@ -410,7 +437,37 @@ namespace StarshipCabin.QuietWatch
 
         private float GraceDuration()
         {
-            return kind == AuthoredVistaKind.Harbour ? 24f : 32f;
+            switch (kind)
+            {
+                case AuthoredVistaKind.Harbour: return 72f;
+                case AuthoredVistaKind.BlueMorning: return 110f;
+                case AuthoredVistaKind.GreatWeather: return 96f;
+                case AuthoredVistaKind.LongFormation: return 84f;
+                default: return 90f;
+            }
+        }
+
+        private static float GraceDelayFor(AuthoredVistaKind vistaKind)
+        {
+            switch (vistaKind)
+            {
+                case AuthoredVistaKind.Harbour: return 720f;
+                case AuthoredVistaKind.BlueMorning: return 840f;
+                case AuthoredVistaKind.GreatWeather: return 900f;
+                case AuthoredVistaKind.LongFormation: return 780f;
+                default: return 780f;
+            }
+        }
+
+        private void SetHeroFloat(string propertyName, float value)
+        {
+            if (heroRenderer == null)
+            {
+                return;
+            }
+            heroRenderer.GetPropertyBlock(heroBlock);
+            heroBlock.SetFloat(propertyName, value);
+            heroRenderer.SetPropertyBlock(heroBlock);
         }
 
         private static float Smooth01(float value)

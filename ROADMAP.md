@@ -43,8 +43,8 @@ The historical `beta/m9-opus-fix` and `newhope` branches remain available for co
 
 - **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
 - **M1 first playable — corrected and installed, validation open:** `The First Question`, the selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. M1.1 replaced the rejected sparse/spiked first star pass with the darker point-star field. Second headset review, live telemetry, and sustained comfort/performance sessions remain before M1 exit.
-- **M2–M5 Believable Worlds review — implemented and installed, milestone exits open:** M5.2 replaces collision-prone traffic arcs with banked, authored approach/departure corridors around 44 conservative station clearance volumes. Automated pre-capture and pre-build validation passes every route plus 240 seconds of craft-to-craft separation. Harbour gains docking guidance and habitat-light detail; Blue Morning and Great Weather receive major atmosphere, surface, cloud and lighting upgrades; cabin spill now responds to each destination. Twenty fixed-seat and seven deterministic event/traffic captures, ARM64/OpenXR build, and Quest installation pass. Destination audio, headset visual tuning, live frame evidence, comfort sessions, and release-length event timing remain.
-- **M6 — not started:** release unification and final QA remain roadmap work.
+- **M2–M5 Believable Worlds review — implemented and installed, milestone exits open:** M5.2 replaced collision-prone traffic arcs with banked, authored approach/departure corridors around 44 conservative station clearance volumes, then upgraded harbour detail, Blue Morning, Great Weather, and cabin light response.
+- **M6 Awe Candidate — implemented and installed, release exit open:** the formation now travels visibly in both modes with independent station keeping, animated drives, and a coordinated Living course change. Five destination-specific spatial beds and event cues, progressive dawn/weather response, slower blackouts, and 12–15-minute grace-note timing are unified in one build. Twenty fixed-seat plus eight deterministic motion/event captures pass; the expanded harbour audit covers 1,200 seconds, and GLES3/Vulkan ARM64/OpenXR build and Quest installation pass. Live frame evidence, headset art/audio sign-off, comfort sessions, and the 45-minute thermal run remain.
 
 ## The five living windows
 
@@ -146,7 +146,7 @@ Build the station before another planet. This is the first proof of original art
 
 Exit: the station reads as kilometres wide within five seconds; service craft provide scale; traffic is calm; no hero object reads as a primitive.
 
-Status: the primitive station blockout has been replaced by a Blender-authored inhabited sector with 8,508/4,080/1,596-face LODs, layered torus structure, axial core, trusses, docking causeways, hangars, traffic masts, PBR maps, and three authored service craft. M5.2 makes free-flying craft follow banked Catmull-Rom corridors through arrival, docking and departure phases. Forty-four conservative station keep-out volumes plus time-sampled craft separation are enforced before capture and build; the installed review build passes with at least 1.99 m station clearance and 2.80 m inter-craft clearance after safety envelopes. Docking guidance and habitat-light variation further clarify the inhabited infrastructure. Headset scale/motion review and the remaining audio, night-cycle, comfort, and performance gates remain open.
+Status: the primitive station blockout has been replaced by a Blender-authored inhabited sector with 8,508/4,080/1,596-face LODs, layered torus structure, axial core, trusses, docking causeways, hangars, traffic masts, PBR maps, and three authored service craft. Free-flying craft follow banked Catmull-Rom corridors through arrival, docking and departure phases. Forty-four conservative station keep-out volumes plus time-sampled craft separation are enforced before capture and build; M6 extends this audit to 1,200 seconds so it covers the release-timed departure. The installed candidate passes with at least 1.99 m station clearance and 2.80 m inter-craft clearance after safety envelopes. Docking guidance, habitat-light variation, cabin spill, and a muffled mechanical spatial bed further clarify the inhabited infrastructure. Headset scale/motion/audio review and the remaining night-cycle, comfort, and performance gates remain open.
 
 Planning range: 1.5–2.5 focused weeks.
 
@@ -159,7 +159,7 @@ Planning range: 1.5–2.5 focused weeks.
 
 Exit: `Still` and `Drift` pass a 20-minute seated comfort test; horizon/cloud layers remain stable under head movement; motion never starts unexpectedly.
 
-Status: M5.2 upgrades the installed curved horizon with domain-warped continents, shelves, ocean depth/glint, two cloud scales and shadows, clustered night lights, a brighter atmospheric limb, richer sunrise colour, and restrained cabin-light coupling. Headset art review, separate `Still`/`Drift` tuning, sound, comfort, and performance gates remain open.
+Status: M6 adds progressive dawn illumination and a warm spatial air/harmonic bed to the domain-warped continents, shelves, ocean depth/glint, two cloud scales and shadows, clustered night lights, atmospheric limb, sunrise colour, and cabin-light coupling. Headset art/audio review, separate `Still`/`Drift` tuning, comfort, and performance gates remain open.
 
 Planning range: 1.5–2.5 focused weeks.
 
@@ -172,7 +172,7 @@ Planning range: 1.5–2.5 focused weeks.
 
 Exit: the world is visibly different from a flat striped sphere; rings and moons establish scale; the night side and reflected cabin light remain coherent.
 
-Status: M5.2 brightens and deepens the installed world with coloured cloud belts, stronger multi-scale relief and storm filaments, atmospheric depth, an approximate ring-plane shadow, irregular translucent ring density, and restrained cabin-light coupling. The dedicated crater/highland/maria moon shader and real moon-emergence grace note remain. Destination sound, headset tuning, and performance/comfort gates remain open.
+Status: M6 adds progressive weather response and a deep planetary spatial rumble to the coloured cloud belts, multi-scale relief and storm filaments, atmospheric depth, approximate ring-plane shadow, irregular translucent rings, cabin-light coupling, dedicated moon shader, and moon-emergence grace note. Headset art/audio tuning and performance/comfort gates remain open.
 
 Planning range: 1–2 focused weeks.
 
@@ -185,7 +185,7 @@ Planning range: 1–2 focused weeks.
 
 Exit: ships read as designed vessels rather than boxes or specks; formation depth is immediate; motion does not feel like sprites sliding across the window.
 
-Status: the procedural ship blockouts have been replaced by an original Blender-authored command ship and two related escort families. M5.1 cuts the three tiny far-field vessels, leaving a command ship and two substantial escorts. Quiet holds a disciplined tableau; Living adds minute independent corrections, coordinated forward cruise, and a visible eight-degree formation turn. Headset material/depth/motion review, destination sound, and performance/comfort gates remain open.
+Status: the procedural ship blockouts have been replaced by an original Blender-authored command ship and two related escort families. The three tiny far-field vessels remain cut. M6 replaces the effectively stationary tableau with a visible bounded flight curve in both Quiet and Living, individual corrections, animated drive glow, a low engine chorus, and a ten-degree coordinated Living course change that remains inside the open window pane. Headset material/depth/motion/audio review and performance/comfort gates remain open.
 
 Planning range: 1–2 focused weeks.
 
@@ -198,6 +198,8 @@ Planning range: 1–2 focused weeks.
 - Update public documentation to match exactly what passed on-device.
 
 Exit: all five vistas satisfy the release contract below.
+
+Status: Awe Candidate built and installed. Sound, light, persistence, release-length event timing, and transitions are unified; automated captures, extended traffic validation, and Android packaging pass. Live 72 Hz evidence, headset art/audio sign-off, the relevant 20-minute comfort sessions, and the 45-minute thermal run remain before release.
 
 Planning range: 1–2 focused weeks.
 

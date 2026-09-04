@@ -87,7 +87,7 @@ namespace StarshipCabin.EditorTools
                     vista.Exit();
                 }
 
-                // Three deterministic Living-mode review frames prove that
+                // Deterministic Living-mode review frames prove that
                 // choreography and grace-note compositions remain inside the
                 // observation window before the headset build is installed.
                 var couch = points.FirstOrDefault(point => point.CaptureName == "Couch");
@@ -107,9 +107,12 @@ namespace StarshipCabin.EditorTools
                         {
                             candidate.gameObject.SetActive(candidate == authored);
                         }
+                        var eventPreview = authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.68f;
                         var previewTimes = authored.VistaId == "harbour"
-                            ? new[] { 28f, 52f, 60f }
-                            : new[] { 60f };
+                            ? new[] { 28f, 52f, eventPreview }
+                            : authored.VistaId == "long-formation"
+                                ? new[] { 0f, 45f, eventPreview }
+                                : new[] { eventPreview };
                         foreach (var previewAt in previewTimes)
                         {
                             authored.Enter(LifeMode.Living, MotionMode.Still);
@@ -120,9 +123,12 @@ namespace StarshipCabin.EditorTools
                             pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
                             pixels.Apply(false);
 
+                            var beforeEvent = previewAt < authored.GraceNoteAtSeconds;
                             var suffix = authored.VistaId == "harbour"
                                 ? $"living-{previewAt:000}s-couch"
-                                : "living-event-couch";
+                                : authored.VistaId == "long-formation" && beforeEvent
+                                    ? $"living-cruise-{previewAt:000}s-couch"
+                                    : "living-event-couch";
                             var path = Path.Combine(OutputFolder, $"{Slug(authored.VistaId)}-{suffix}.png");
                             File.WriteAllBytes(path, pixels.EncodeToPNG());
                             Debug.Log("Quiet Watch Living capture: " + Path.GetFullPath(path));
@@ -158,8 +164,8 @@ namespace StarshipCabin.EditorTools
     internal static class QuietWatchTrafficValidation
     {
         private const string OutputFolder = "Builds/Validation";
-        private const float GraceStartSeconds = 45f;
-        private const float GraceDurationSeconds = 24f;
+        private const float GraceStartSeconds = 720f;
+        private const float GraceDurationSeconds = 72f;
 
         public static void ValidateOpenScene()
         {
@@ -181,7 +187,7 @@ namespace StarshipCabin.EditorTools
                 $"Routes: {routes.Length}",
                 $"Station clearance volumes: {volumes.Length}",
                 "Route sampling: 401 positions per corridor",
-                "Traffic separation sampling: 0.5 seconds across 240 seconds",
+                "Traffic separation sampling: 0.5 seconds across 1200 seconds",
                 string.Empty
             };
 
@@ -234,7 +240,7 @@ namespace StarshipCabin.EditorTools
                 {
                     var nearest = float.PositiveInfinity;
                     var nearestAt = 0f;
-                    for (var step = 0; step <= 480; step++)
+                    for (var step = 0; step <= 2400; step++)
                     {
                         var elapsed = step * 0.5f;
                         var phaseA = TrafficPhase(routes[first], elapsed);
