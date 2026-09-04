@@ -27,5 +27,14 @@ namespace StarshipCabin.QuietWatch
         public abstract void Enter(LifeMode lifeMode, MotionMode motionMode);
         public abstract void ApplyComfort(LifeMode lifeMode, MotionMode motionMode);
         public abstract void Exit();
+
+        /// <summary>
+        /// Starts the vista's authored Living event immediately for headset
+        /// review. Normal unattended playback keeps its release-length timer.
+        /// </summary>
+        public virtual bool PreviewGraceNote()
+        {
+            return false;
+        }
     }
 }

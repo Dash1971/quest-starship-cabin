@@ -111,7 +111,7 @@ namespace StarshipCabin.EditorTools
                         var previewTimes = authored.VistaId == "harbour"
                             ? new[] { 28f, 52f, eventPreview }
                             : authored.VistaId == "long-formation"
-                                ? new[] { 0f, 45f, eventPreview }
+                                ? new[] { 0f, 10f, 45f, eventPreview }
                                 : new[] { eventPreview };
                         foreach (var previewAt in previewTimes)
                         {

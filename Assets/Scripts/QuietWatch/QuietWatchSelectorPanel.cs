@@ -10,6 +10,8 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private TextMesh subtitle;
         [SerializeField] private TextMesh state;
 
+        private bool previewNoticeWasActive;
+
         public void Configure(VistaDirector vistaDirector, TextMesh titleText, TextMesh subtitleText, TextMesh stateText)
         {
             if (director != null)
@@ -44,6 +46,18 @@ namespace StarshipCabin.QuietWatch
             }
         }
 
+        private void Update()
+        {
+            // The preview acknowledgement expires without another state
+            // change. Refresh only at that boundary to avoid per-frame text
+            // allocations on the headset.
+            var previewNoticeActive = director != null && director.IsPreviewNoticeActive;
+            if (previewNoticeActive != previewNoticeWasActive)
+            {
+                Refresh();
+            }
+        }
+
         private void Refresh()
         {
             var vista = director?.ActiveVista;
@@ -57,7 +71,11 @@ namespace StarshipCabin.QuietWatch
             }
             if (state != null && director != null)
             {
-                state.text = $"{director.Life.ToString().ToUpperInvariant()}  /  {director.Motion.ToString().ToUpperInvariant()}\nA  VISTA     B  LIFE     STICK  MOTION";
+                previewNoticeWasActive = director.IsPreviewNoticeActive;
+                var status = previewNoticeWasActive
+                    ? "EVENT PREVIEW"
+                    : $"{director.Life.ToString().ToUpperInvariant()} / {director.Motion.ToString().ToUpperInvariant()}";
+                state.text = $"{status}\nA VISTA   TAP B LIFE\nHOLD B EVENT   STICK MOTION";
             }
         }
     }

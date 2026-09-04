@@ -18,6 +18,8 @@ namespace StarshipCabin.QuietWatch
     /// </summary>
     public sealed class AuthoredVista : VistaEnvironment
     {
+        private const float PreviewLeadFraction = 0.55f;
+
         [SerializeField] private AuthoredVistaKind kind;
         [SerializeField] private StarWindowSurface starWindow;
         [SerializeField] private Light exteriorFill;
@@ -39,6 +41,7 @@ namespace StarshipCabin.QuietWatch
         private LifeMode lifeMode;
         private MotionMode motionMode;
         private float enteredAt;
+        private float graceNoteStartedAt;
         private bool graceNotePlayed;
         private bool active;
 
@@ -121,13 +124,11 @@ namespace StarshipCabin.QuietWatch
             var elapsed = Time.unscaledTime - enteredAt;
             if (!graceNotePlayed && lifeMode == LifeMode.Living && elapsed >= graceNoteAtSeconds)
             {
-                graceNotePlayed = true;
-                audioController?.TriggerQuietWatchGrace(VistaId);
-                Debug.Log($"Quiet Watch grace note started: {DisplayName}");
+                StartGraceNote(false);
             }
 
             var grace = graceNotePlayed
-                ? Smooth01((elapsed - graceNoteAtSeconds) / GraceDuration())
+                ? Smooth01((Time.unscaledTime - graceNoteStartedAt) / GraceDuration())
                 : 0f;
 
             UpdateComposition(elapsed, grace);
@@ -175,6 +176,7 @@ namespace StarshipCabin.QuietWatch
             RestoreTransforms();
             active = true;
             enteredAt = Time.unscaledTime;
+            graceNoteStartedAt = 0f;
             graceNotePlayed = false;
             starWindow?.ResetVistaClock();
             ApplyComfort(nextLifeMode, nextMotionMode);
@@ -212,6 +214,30 @@ namespace StarshipCabin.QuietWatch
             active = false;
             RestoreTransforms();
             gameObject.SetActive(false);
+        }
+
+        public override bool PreviewGraceNote()
+        {
+            if (!active)
+            {
+                return false;
+            }
+
+            StartGraceNote(true);
+            return true;
+        }
+
+        private void StartGraceNote(bool preview)
+        {
+            graceNotePlayed = true;
+            // Review preview lands directly in the event's readable middle
+            // phase. Release-timed playback still begins gently from zero.
+            graceNoteStartedAt = Time.unscaledTime
+                - (preview ? GraceDuration() * PreviewLeadFraction : 0f);
+            audioController?.TriggerQuietWatchGrace(VistaId);
+            Debug.Log(preview
+                ? $"Quiet Watch event preview started: {DisplayName}"
+                : $"Quiet Watch grace note started: {DisplayName}");
         }
 
         private void UpdateHarbourTraffic(float elapsed, float grace)
@@ -266,12 +292,13 @@ namespace StarshipCabin.QuietWatch
                 // The whole formation is underway in both modes. A broad,
                 // bounded flight curve gives an immediately readable change
                 // against the window while preserving a restful composition.
-                var activity = living ? 1.0f : 0.72f;
+                var activity = living ? 1.0f : 0.80f;
+                var flightPhase = elapsed * (living ? 0.064f : 0.052f);
                 var cruise = new Vector3(
-                    Mathf.Sin(elapsed * 0.012f) * 2.2f * activity,
-                    Mathf.Sin(elapsed * 0.008f + 0.5f) * 0.62f * activity,
-                    Mathf.Sin(elapsed * 0.012f) * 3.8f * activity);
-                var courseYaw = Mathf.Cos(elapsed * 0.012f) * 1.35f * activity;
+                    Mathf.Sin(flightPhase) * 3.8f * activity,
+                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 1.05f * activity,
+                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 5.8f * activity);
+                var courseYaw = Mathf.Cos(flightPhase) * 2.8f * activity;
                 var turn = Quaternion.Euler(
                     -2.0f * grace,
                     courseYaw - 10.0f * grace,
@@ -290,18 +317,18 @@ namespace StarshipCabin.QuietWatch
 
                 traveller.gameObject.SetActive(true);
                 var living = lifeMode == LifeMode.Living;
-                var phase = elapsed * (0.082f + i * 0.011f) + i * 2.1f;
-                var correctionScale = living ? 1.0f : 0.58f;
+                var phase = elapsed * (0.118f + i * 0.015f) + i * 2.1f;
+                var correctionScale = living ? 1.0f : 0.72f;
                 var correction = new Vector3(
-                    Mathf.Sin(phase) * (0.16f + i * 0.035f),
-                    Mathf.Sin(phase * 0.71f) * (0.10f + i * 0.018f),
-                    Mathf.Cos(phase * 0.53f) * (0.12f + i * 0.025f)) * correctionScale;
+                    Mathf.Sin(phase) * (0.38f + i * 0.075f),
+                    Mathf.Sin(phase * 0.71f) * (0.22f + i * 0.040f),
+                    Mathf.Cos(phase * 0.53f) * (0.28f + i * 0.055f)) * correctionScale;
                 traveller.localPosition = travellerOrigins[i] + correction;
                 traveller.localRotation = travellerRotations[i]
                     * Quaternion.Euler(
-                        Mathf.Sin(phase * 0.71f) * 0.38f * correctionScale,
-                        Mathf.Sin(phase * 0.6f) * 0.72f * correctionScale,
-                        Mathf.Sin(phase) * 1.10f * correctionScale);
+                        Mathf.Sin(phase * 0.71f) * 0.85f * correctionScale,
+                        Mathf.Sin(phase * 0.6f) * 1.45f * correctionScale,
+                        Mathf.Sin(phase) * 2.10f * correctionScale);
                 if (i < formationEngines.Length && formationEngines[i] != null)
                 {
                     formationEngines[i].SetActivity(living ? 1.0f : 0.68f);

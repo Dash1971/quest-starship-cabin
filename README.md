@@ -10,10 +10,10 @@ Active development branch: `v2/visual-benchmark`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: the M6 Awe Candidate is implemented and installed with five selectable vistas, collision-validated harbour choreography, continuous formation flight, destination-responsive cabin lighting, spatial ambience, and release-length grace-note timing; headset art-direction, comfort, thermal, and performance sign-off remain open
+- Current branch status: the M6.1 Awe Review Candidate is implemented and installed with five selectable vistas, collision-validated harbour choreography, clearly readable formation flight, destination-responsive cabin lighting, spatial ambience, release-length grace-note timing, and an explicit event-preview control; headset art-direction, comfort, thermal, and performance sign-off remain open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
-Current headset build: `Quiet Watch 2.0.0-m6-awe-candidate`
+Current headset build: `Quiet Watch 2.0.0-m6.1-awe-review`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
@@ -26,39 +26,39 @@ Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
-### Quiet Watch Awe Candidate review build
+### Quiet Watch M6.1 Awe Review Candidate
 
 Built, desktop-render validated, and installed on 2026-09-04 with Unity 6000.5.2f1:
 
 - Product: `Starship Cabin - The Quiet Watch`
 - Package: `jp.openclaw.starshipcabin.quietwatch`
-- Version: `2.0.0-m6-awe-candidate` (`20007`)
+- Version: `2.0.0-m6.1-awe-review` (`20008`)
 - APK: `Builds/StarshipCabin-QuietWatch-MultiVista.apk`
-- APK SHA-256: `de8d587713eaf963eb7c24886d19de0a64f5b19d4f18de1edc4d7c8df7203a7e`
-- Installation status: installed successfully on Meta Quest 3 at 2026-09-04 13:50 JST. Package/version/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
+- APK SHA-256: `2bdb83b7186f1c4091d082c1baf07300de356a1c8de72169aa5217565e85acf7`
+- Installation status: installed successfully on Meta Quest 3 at 2026-09-04 17:50 JST. Package/version/ARM64 resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
 
 The review build contains:
 
 - A reusable `VistaEnvironment` lifecycle and deterministic `VistaDirector`.
 - One shared comfort blackout owner for seat hops and future vista changes.
 - Persisted vista, `Quiet`/`Living`, and `Still`/`Drift` choices.
-- A restrained diegetic selector on the cabin table with controller shortcuts.
+- A restrained diegetic selector on the cabin table with controller shortcuts. Tap `B` for Quiet/Living; hold `B` for about one second to force Living and preview the current vista's grace note from its clearly visible middle phase. Normal unattended playback retains the 12–15-minute release timing.
 - Four named fixed-seat capture points and repeatable editor renders.
 - Lightweight ten-second CPU/GPU/frame telemetry for `adb logcat` evidence.
 - `The First Question`: a camera-ray-anchored deep-space field with galactic structure, dust, three stellar depth layers, colour variation, true negative space, near-silent spatial ambience, and a restrained comet cue.
 - `Harbour of Ten Thousand Lights`: a Blender-authored inhabited station sector with layered torus structure, axial core, observation drum, load trusses, docking causeways, hangars, traffic masts, PBR surface response, and three authored service craft. Traffic follows banked Catmull-Rom approach/departure corridors around 44 conservative station clearance volumes, with deterministic station and craft-to-craft separation validation before capture or build. Habitat-light variation, illuminated docking guidance, and a muffled mechanical spatial bed tie activity to the infrastructure.
 - `Blue Morning`: a brighter curved Earth-like dawn horizon with domain-warped continents, ocean depth and glint, shelves, cloud decks and shadows, clustered night lights, a richer atmospheric limb, progressive sunrise light, coupled cabin spill, and a warm air/harmonic ambience.
 - `The Great Weather`: a brighter domain-warped storm giant with coloured cloud belts, embedded vortices and filaments, atmospheric depth, ring shadow, irregular translucent ring structure, a cratered moon transit, coupled cabin spill, and a deep planetary-scale rumble.
-- `The Long Formation`: one original command ship and two substantial escorts, all with bevelled hard-surface geometry, functional scale cues, animated drive glow, shared navigation-light grammar, and three LODs. The full formation now follows a visible bounded flight curve in both Quiet and Living modes; ships make independent station-keeping corrections, while Living adds a coordinated ten-degree course change and engine chorus.
+- `The Long Formation`: one original command ship and two substantial escorts, all with bevelled hard-surface geometry, functional scale cues, animated drive glow, shared navigation-light grammar, and three LODs. The full formation now traverses a broad roughly 100-second Living / 120-second Quiet flight arc with readable position and scale change inside ten seconds; ships make independent station-keeping corrections, while Living adds a coordinated ten-degree course change and engine chorus.
 - A deterministic Blender 4.5 LTS asset pipeline that produces the editable `.blend`, twelve FBXs, five shared PBR maps, Quest import settings, URP materials, and repeatable silhouette renders without third-party art.
 - `Quiet` plus `Still` as the default; optional extremely slow drift; destination-specific Living events now arrive after 12–15 minutes and unfold over 72–110 seconds without looping spectacle.
 - Five destination-specific procedural spatial beds and restrained event cues, faded in with a slower comfort blackout so exterior, cabin light, and sound settle together.
-- Twenty fixed-seat captures plus eight deterministic event/traffic/formation-motion captures for Harbour, Blue Morning, Great Weather, and Long Formation.
+- Twenty fixed-seat captures plus nine deterministic event/traffic/formation-motion captures for Harbour, Blue Morning, Great Weather, and Long Formation, including dedicated 0/10/45-second formation checkpoints.
 - Automated harbour validation samples every route against station safety envelopes and checks 1,200 seconds of craft-to-craft motion, including the release-timed cutter departure. The report passes with at least 1.99 m station clearance and 2.80 m craft separation after safety radii are deducted.
 
 M1.1 incorporates the first headset review: it removes diffraction spikes and the over-bright blue wash, restores the stronger V3-style brightness distribution at direction-space density, corrects equirectangular star shape, and prevents procedural cell boundaries from leaking as line artifacts. The result is a darker field of clean point stars that remains anchored beyond the glass.
 
-All five vistas are immediately selectable with the controller's primary button. M6 combines the moving-fleet correction, final cross-vista light/event cohesion, destination-specific spatial audio, release-length timing, and slower transitions in one headset drop. It is an Awe Candidate rather than a release: live frame evidence, in-headset art/audio sign-off, 20-minute comfort sessions, and the 45-minute thermal run remain open.
+All five vistas are immediately selectable with the controller's primary button. Tap the secondary button (`B` on the right controller) to change Quiet/Living; hold it for about one second to preview the current event immediately. M6.1 combines a much more legible moving-fleet correction with reviewable event choreography while preserving release pacing for normal sessions. It is an Awe Review Candidate rather than a release: live frame evidence, in-headset art/audio sign-off, 20-minute comfort sessions, and the 45-minute thermal run remain open.
 
 ### Implemented
 

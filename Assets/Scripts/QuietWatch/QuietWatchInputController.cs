@@ -8,7 +8,8 @@ namespace StarshipCabin.QuietWatch
 {
     /// <summary>
     /// Controller mapping for the diegetic selector: primary advances vista,
-    /// secondary toggles Quiet/Living, thumbstick click toggles Still/Drift.
+    /// a short secondary press toggles Quiet/Living, holding secondary previews
+    /// the current Living event, and thumbstick click toggles Still/Drift.
     /// </summary>
     public sealed class QuietWatchInputController : MonoBehaviour
     {
@@ -17,9 +18,14 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private VistaDirector director;
 
         private readonly List<XRInputDevice> devices = new();
+        private const float EventPreviewHoldSeconds = 0.85f;
         private bool primaryWasPressed;
         private bool secondaryWasPressed;
+        private bool secondaryHoldAttempted;
+        private bool secondaryHoldTriggered;
         private bool stickWasPressed;
+        private float secondaryPressedAt;
+        private XRInputDevice secondarySource;
 
         public void Configure(VistaDirector vistaDirector)
         {
@@ -38,8 +44,27 @@ namespace StarshipCabin.QuietWatch
 
             if (secondary && !secondaryWasPressed)
             {
+                secondaryPressedAt = Time.unscaledTime;
+                secondaryHoldAttempted = false;
+                secondaryHoldTriggered = false;
+                secondarySource = source;
+            }
+
+            if (secondary && !secondaryHoldAttempted
+                && Time.unscaledTime - secondaryPressedAt >= EventPreviewHoldSeconds)
+            {
+                secondaryHoldAttempted = true;
+                secondaryHoldTriggered = director?.PreviewGraceNote() == true;
+                if (secondaryHoldTriggered)
+                {
+                    Pulse(secondarySource, 0.42f, 0.14f);
+                }
+            }
+
+            if (!secondary && secondaryWasPressed && !secondaryHoldAttempted)
+            {
                 director?.ToggleLifeMode();
-                Pulse(source);
+                Pulse(secondarySource);
             }
 
             if (stick && !stickWasPressed)
@@ -97,11 +122,11 @@ namespace StarshipCabin.QuietWatch
             }
         }
 
-        private static void Pulse(XRInputDevice device)
+        private static void Pulse(XRInputDevice device, float amplitude = 0.18f, float duration = 0.055f)
         {
             if (device.isValid && device.TryGetHapticCapabilities(out var capabilities) && capabilities.supportsImpulse)
             {
-                device.SendHapticImpulse(0u, 0.18f, 0.055f);
+                device.SendHapticImpulse(0u, amplitude, duration);
             }
         }
     }

@@ -34,10 +34,7 @@ namespace StarshipCabin.QuietWatch
 
             if (Time.unscaledTime - enteredAt >= graceNoteAtSeconds)
             {
-                graceNotePlayed = true;
-                starWindow?.TriggerFirstQuestionComet();
-                audioController?.TriggerQuietWatchGrace("first-question");
-                Debug.Log("Quiet Watch grace note: First Question comet");
+                StartGraceNote(false);
             }
         }
 
@@ -72,6 +69,27 @@ namespace StarshipCabin.QuietWatch
             active = false;
             starWindow?.ClearGraceNote();
             gameObject.SetActive(false);
+        }
+
+        public override bool PreviewGraceNote()
+        {
+            if (!active)
+            {
+                return false;
+            }
+
+            StartGraceNote(true);
+            return true;
+        }
+
+        private void StartGraceNote(bool preview)
+        {
+            graceNotePlayed = true;
+            starWindow?.TriggerFirstQuestionComet();
+            audioController?.TriggerQuietWatchGrace("first-question");
+            Debug.Log(preview
+                ? "Quiet Watch event preview: First Question comet"
+                : "Quiet Watch grace note: First Question comet");
         }
     }
 }

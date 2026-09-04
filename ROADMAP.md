@@ -44,7 +44,7 @@ The historical `beta/m9-opus-fix` and `newhope` branches remain available for co
 - **M0 architecture — implemented:** vista lifecycle, central transition owner, local settings, fixed capture points, and frame telemetry are in code.
 - **M1 first playable — corrected and installed, validation open:** `The First Question`, the selector, and comfort choices build successfully as isolated package `jp.openclaw.starshipcabin.quietwatch`. M1.1 replaced the rejected sparse/spiked first star pass with the darker point-star field. Second headset review, live telemetry, and sustained comfort/performance sessions remain before M1 exit.
 - **M2–M5 Believable Worlds review — implemented and installed, milestone exits open:** M5.2 replaced collision-prone traffic arcs with banked, authored approach/departure corridors around 44 conservative station clearance volumes, then upgraded harbour detail, Blue Morning, Great Weather, and cabin light response.
-- **M6 Awe Candidate — implemented and installed, release exit open:** the formation now travels visibly in both modes with independent station keeping, animated drives, and a coordinated Living course change. Five destination-specific spatial beds and event cues, progressive dawn/weather response, slower blackouts, and 12–15-minute grace-note timing are unified in one build. Twenty fixed-seat plus eight deterministic motion/event captures pass; the expanded harbour audit covers 1,200 seconds, and GLES3/Vulkan ARM64/OpenXR build and Quest installation pass. Live frame evidence, headset art/audio sign-off, comfort sessions, and the 45-minute thermal run remain.
+- **M6.1 Awe Review Candidate — implemented and installed, release exit open:** the formation now completes a broad readable flight arc in roughly 100 seconds in Living and 120 seconds in Quiet, with a clear position/scale change inside ten seconds, independent station keeping, animated drives, and a coordinated Living course change. Holding `B` previews the current vista's event from its readable middle phase while normal sessions retain the 12–15-minute release timing. Five destination-specific spatial beds and event cues, progressive dawn/weather response, and slower blackouts remain unified. Twenty fixed-seat plus nine deterministic motion/event captures pass; the expanded harbour audit covers 1,200 seconds, and GLES3/Vulkan ARM64/OpenXR build and Quest installation pass. Live frame evidence, headset art/audio sign-off, comfort sessions, and the 45-minute thermal run remain.
 
 ## The five living windows
 
@@ -185,7 +185,7 @@ Planning range: 1–2 focused weeks.
 
 Exit: ships read as designed vessels rather than boxes or specks; formation depth is immediate; motion does not feel like sprites sliding across the window.
 
-Status: the procedural ship blockouts have been replaced by an original Blender-authored command ship and two related escort families. The three tiny far-field vessels remain cut. M6 replaces the effectively stationary tableau with a visible bounded flight curve in both Quiet and Living, individual corrections, animated drive glow, a low engine chorus, and a ten-degree coordinated Living course change that remains inside the open window pane. Headset material/depth/motion/audio review and performance/comfort gates remain open.
+Status: the procedural ship blockouts have been replaced by an original Blender-authored command ship and two related escort families. The three tiny far-field vessels remain cut. M6.1 strengthens the formerly subtle curve into a broad roughly 100-second Living / 120-second Quiet flight arc with readable motion inside ten seconds, individual corrections, animated drive glow, a low engine chorus, and a ten-degree coordinated Living course change that remains inside the open window pane. Headset material/depth/motion/audio review and performance/comfort gates remain open.
 
 Planning range: 1–2 focused weeks.
 
@@ -199,7 +199,7 @@ Planning range: 1–2 focused weeks.
 
 Exit: all five vistas satisfy the release contract below.
 
-Status: Awe Candidate built and installed. Sound, light, persistence, release-length event timing, and transitions are unified; automated captures, extended traffic validation, and Android packaging pass. Live 72 Hz evidence, headset art/audio sign-off, the relevant 20-minute comfort sessions, and the 45-minute thermal run remain before release.
+Status: M6.1 Awe Review Candidate built and installed. Sound, light, persistence, release-length event timing, and transitions remain unified; holding `B` now exposes every event immediately for review without changing normal playback timing, and formation travel is visibly legible inside ten seconds. Twenty-nine automated captures, extended traffic validation, and Android packaging pass. Live 72 Hz evidence, headset art/audio sign-off, the relevant 20-minute comfort sessions, and the 45-minute thermal run remain before release.
 
 Planning range: 1–2 focused weeks.
 

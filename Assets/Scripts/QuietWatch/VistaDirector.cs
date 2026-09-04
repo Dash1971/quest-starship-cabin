@@ -21,6 +21,9 @@ namespace StarshipCabin.QuietWatch
         public MotionMode Motion { get; private set; }
         public VistaEnvironment ActiveVista => activeVista;
         public int VistaCount => vistas?.Length ?? 0;
+        public bool IsPreviewNoticeActive => Time.unscaledTime < previewNoticeUntil;
+
+        private float previewNoticeUntil;
 
         public void Configure(VistaEnvironment[] availableVistas, ScreenFader fader)
         {
@@ -77,6 +80,32 @@ namespace StarshipCabin.QuietWatch
             Motion = Motion == MotionMode.Still ? MotionMode.Drift : MotionMode.Still;
             activeVista?.ApplyComfort(Life, Motion);
             SaveAndNotify();
+        }
+
+        public bool PreviewGraceNote()
+        {
+            if (activeVista == null)
+            {
+                return false;
+            }
+
+            // A grace note is a Living-mode event. Holding B from Quiet is a
+            // deliberate request, so enter Living before starting the preview.
+            if (Life != LifeMode.Living)
+            {
+                Life = LifeMode.Living;
+                activeVista.ApplyComfort(Life, Motion);
+            }
+
+            if (!activeVista.PreviewGraceNote())
+            {
+                return false;
+            }
+
+            previewNoticeUntil = Time.unscaledTime + 3.0f;
+            Debug.Log($"Quiet Watch event preview requested: {activeVista.DisplayName}");
+            SaveAndNotify();
+            return true;
         }
 
         private void SelectVista(int nextIndex)
