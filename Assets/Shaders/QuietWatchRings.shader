@@ -39,11 +39,14 @@ Shader "StarshipCabin/QuietWatchRings"
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float radius=length(input.uv);
-                float broad=0.5+0.5*sin(radius*2.4+sin(radius*0.37)*1.8);
-                float fine=0.5+0.5*sin(radius*13.0);
-                float gaps=smoothstep(0.12,0.30,broad*0.72+fine*0.28);
-                float3 color=lerp(_DarkColor.rgb,_LightColor.rgb,broad*0.72+fine*0.18);
-                float alpha=0.20+gaps*0.42;
+                float broad=0.5+0.5*sin(radius*2.15+sin(radius*0.41)*1.4);
+                float medium=0.5+0.5*sin(radius*7.7+sin(radius*2.8)*0.9);
+                float fine=0.5+0.5*sin(radius*17.0+sin(radius*5.1)*0.5);
+                float structure=saturate(broad*0.56+medium*0.31+fine*0.13);
+                float gaps=smoothstep(0.14,0.32,broad*0.58+medium*0.29+fine*0.13);
+                float3 color=lerp(_DarkColor.rgb,_LightColor.rgb,structure);
+                color*=0.88+fine*0.16;
+                float alpha=(0.14+structure*0.48)*gaps;
                 return half4(color,alpha);
             }
             ENDHLSL

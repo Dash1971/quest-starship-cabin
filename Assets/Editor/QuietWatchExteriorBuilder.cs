@@ -27,10 +27,10 @@ namespace StarshipCabin.EditorTools
             var travellers = new List<Transform>();
             travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
                 vista.transform, "EscortWing", "Inbound Customs Cutter",
-                new Vector3(9.8f, 0.4f, -29f), Quaternion.Euler(3f, -16f, 2f), 0.38f));
+                new Vector3(9.8f, 0.4f, -29f), Quaternion.Euler(3f, -16f, 2f), 0.68f));
             travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
                 vista.transform, "EscortSpear", "Docking Tender",
-                new Vector3(-14f, 8.5f, -50f), Quaternion.Euler(-4f, 12f, -2f), 0.34f, false));
+                new Vector3(-14f, 8.5f, -50f), Quaternion.Euler(-4f, 12f, -2f), 0.52f, false));
             travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
                 vista.transform, "EscortSpear", "Distant Shuttle",
                 new Vector3(12f, 11f, -66f), Quaternion.Euler(0f, -20f, 0f), 0.24f, false));
@@ -67,12 +67,17 @@ namespace StarshipCabin.EditorTools
             var rings = ExteriorMesh(vista.transform, "Planetary Rings", Annulus("Great Weather Ring System", 44f, 31.5f, 0.16f, 96), ringMaterial,
                 new Vector3(8f, 6f, -76f), Quaternion.Euler(63f, 8f, -14f));
 
-            var moonMaterial = QuartersSceneSetup.CreateMaterial("Great Weather Moon", new Color(0.34f, 0.31f, 0.29f));
-            Sphere(vista.transform, "Moon in Ring Shadow", moonMaterial, new Vector3(-30f, 18f, -68f), 5.2f);
-            Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(38f, 25f, -101f), 2.8f);
+            var moonMaterial = MaterialFromShader(
+                "Great Weather Moon", "StarshipCabin/QuietWatchMoon");
+            // The giant's visual sphere extends much closer than its origin;
+            // place the moon in front of that surface so the transit survives
+            // depth testing instead of disappearing inside the planet mesh.
+            var shadowMoon = Sphere(vista.transform, "Moon in Ring Shadow", moonMaterial, new Vector3(0f, 3.5f, -16f), 2.5f);
+            var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(34f, 25f, -96f), 3.0f);
 
             return Configure(vista, "great-weather", "THE GREAT WEATHER", "RING SHADOW AND STORMS",
-                AuthoredVistaKind.GreatWeather, stars, fill, audio, planet.transform, new[] { rings.transform }, new Color(0.92f, 0.50f, 0.26f));
+                AuthoredVistaKind.GreatWeather, stars, fill, audio, planet.transform,
+                new[] { shadowMoon.transform, farMoon.transform }, new Color(0.92f, 0.50f, 0.26f));
         }
 
         public static AuthoredVista BuildLongFormation(
@@ -83,24 +88,25 @@ namespace StarshipCabin.EditorTools
                 vista.transform, "Formation Distant Sun", Quaternion.Euler(26f, -44f, -12f),
                 new Color(0.78f, 0.88f, 1.0f), 1.45f, true);
 
+            var formationRig = new GameObject("Formation Flight Rig").transform;
+            formationRig.SetParent(vista.transform, false);
+            GameObjectUtility.SetStaticEditorFlags(formationRig.gameObject, 0);
+
+            // Three substantial vessels read as a deliberate unit. The three
+            // tiny far-field ships from the blockout were cut after headset
+            // review because their static silhouettes looked toy-like.
             var ships = new List<Transform>
             {
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "CommandShip", "Command Ship Resolute",
+                QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "CommandShip", "Command Ship Resolute",
                     new Vector3(3.5f, 1.4f, -29f), Quaternion.Euler(0f, -3f, 0f), 0.96f),
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "Port Escort Near",
-                    new Vector3(-14f, 5.4f, -44f), Quaternion.Euler(0f, 5f, -2f), 0.68f),
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "Starboard Escort Near",
-                    new Vector3(7.5f, 6.2f, -47f), Quaternion.Euler(0f, -5f, 2f), 0.68f),
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortWing", "Port Escort Far",
-                    new Vector3(-16f, 10.5f, -61f), Quaternion.Euler(0f, 7f, -3f), 0.42f, false),
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortWing", "Starboard Escort Far",
-                    new Vector3(17f, 11.2f, -64f), Quaternion.Euler(0f, -7f, 3f), 0.41f, false),
-                QuietWatchArtAssetBuilder.InstantiateLod(vista.transform, "EscortSpear", "High Scout",
-                    new Vector3(0f, 15f, -72f), Quaternion.identity, 0.30f, false)
+                QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortSpear", "Port Escort",
+                    new Vector3(-13.5f, 5.0f, -43f), Quaternion.Euler(0f, 5f, -2f), 0.78f),
+                QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortWing", "Starboard Escort",
+                    new Vector3(11.5f, 6.0f, -46f), Quaternion.Euler(0f, -5f, 2f), 0.72f)
             };
 
             return Configure(vista, "long-formation", "THE LONG FORMATION", "THE FLEET HOLDS STATION",
-                AuthoredVistaKind.LongFormation, stars, fill, audio, ships[0], ships.ToArray(), new Color(0.34f, 0.58f, 0.84f));
+                AuthoredVistaKind.LongFormation, stars, fill, audio, formationRig, ships.ToArray(), new Color(0.34f, 0.58f, 0.84f));
         }
 
         private static GameObject NewVistaRoot(string name)
@@ -240,15 +246,20 @@ namespace StarshipCabin.EditorTools
         private static Material MaterialFromShader(string name, string shaderName)
         {
             var path = $"Assets/Materials/{name}.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
             var shader = Shader.Find(shaderName);
             if (shader == null)
             {
                 throw new InvalidOperationException($"Shader not found: {shaderName}");
+            }
+            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (existing != null)
+            {
+                if (existing.shader != shader)
+                {
+                    existing.shader = shader;
+                    EditorUtility.SetDirty(existing);
+                }
+                return existing;
             }
             var material = new Material(shader) { name = name };
             AssetDatabase.CreateAsset(material, path);

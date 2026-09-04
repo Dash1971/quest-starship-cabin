@@ -11,7 +11,9 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private StarWindowSurface starWindow;
         [SerializeField] private Light exteriorFill;
         [SerializeField] private AmbientAudioController audioController;
-        [SerializeField, Min(60f)] private float graceNoteAtSeconds = 12f * 60f;
+        // Review build timing: visible quickly enough for an in-headset pass.
+        // Restore the long-session cadence during the M6 release pass.
+        [SerializeField, Min(15f)] private float graceNoteAtSeconds = 45f;
 
         private LifeMode lifeMode;
         private float enteredAt;

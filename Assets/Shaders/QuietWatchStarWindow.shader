@@ -130,9 +130,14 @@ Shader "StarshipCabin/QuietWatchStarWindow"
 
             float galacticMask(float2 sky)
             {
-                float spine = 0.53 + 0.12 * sin((sky.x - 0.12) * 6.2831853);
+                // An asymmetric tilted river reads as a galactic structure,
+                // not a decorative sine wave painted across the glass.
+                float spine = 0.51 + (sky.x - 0.5) * 0.11
+                    + 0.075 * sin((sky.x + 0.08) * 6.2831853)
+                    + 0.018 * sin(sky.x * 18.849556);
                 float distanceToSpine = sky.y - spine;
-                return exp(-distanceToSpine * distanceToSpine * 62.0);
+                float taper = smoothstep(0.03, 0.24, sky.x) * smoothstep(1.02, 0.74, sky.x);
+                return exp(-distanceToSpine * distanceToSpine * 74.0) * (0.68 + taper * 0.32);
             }
 
             float3 stellarTint(float value)
@@ -243,12 +248,17 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float hazeStructure = fbm(sky * float2(4.0, 7.0) + 2.7);
                 float3 color = lerp(_DeepColor.rgb, _HazeColor.rgb, hazeStructure * 0.035);
 
-                float dust = smoothstep(0.48, 0.78, fbm(sky * float2(18.0, 11.0) + 9.2));
-                float river = band * (0.10 + fbm(sky * float2(12.0, 17.0) + 21.0) * 0.18);
-                color += _BandColor.rgb * river * (1.0 - dust * 0.90);
+                float dustLarge = fbm(sky * float2(15.0, 10.0) + 9.2);
+                float dustFine = fbm(sky * float2(39.0, 27.0) + 31.4);
+                float dust = smoothstep(0.50, 0.79, dustLarge * 0.72 + dustFine * 0.28);
+                float riverTexture = fbm(sky * float2(12.0, 17.0) + 21.0);
+                float river = band * (0.075 + riverTexture * 0.20);
+                color += _BandColor.rgb * river * (1.0 - dust * 0.94);
+                color += _WarmColor.rgb * band * smoothstep(0.72, 0.90, riverTexture) * 0.006;
 
                 float3 stars = 0.0;
-                stars += starLayer(sky,         48.0, 0.010, 0.46, 1.00, band, 1.00, 1.0, elapsed);
+                stars += starLayer(sky,         34.0, 0.007, 0.18, 1.00, band, 1.22, 1.0, elapsed);
+                stars += starLayer(sky + 4.61,  48.0, 0.010, 0.46, 0.88, band, 0.94, 0.0, elapsed);
                 stars += starLayer(sky + 9.17,  92.0, 0.017, 0.38, 0.68, band, 0.76, 0.0, elapsed);
                 stars += starLayer(sky + 37.51, 176.0, 0.030, 0.26, 0.40, band, 0.52, 0.0, elapsed);
                 stars += starLayer(sky + 73.21, 320.0, 0.050, 0.10, 0.22, band, 0.31, 0.0, elapsed);

@@ -78,6 +78,40 @@ namespace StarshipCabin.EditorTools
 
                     vista.Exit();
                 }
+
+                // Three deterministic Living-mode review frames prove that
+                // choreography and grace-note compositions remain inside the
+                // observation window before the headset build is installed.
+                var couch = points.FirstOrDefault(point => point.CaptureName == "Couch");
+                if (couch != null)
+                {
+                    foreach (var authored in vistas.OfType<AuthoredVista>())
+                    {
+                        if (authored.VistaId != "harbour"
+                            && authored.VistaId != "great-weather"
+                            && authored.VistaId != "long-formation")
+                        {
+                            continue;
+                        }
+
+                        foreach (var candidate in vistas)
+                        {
+                            candidate.gameObject.SetActive(candidate == authored);
+                        }
+                        authored.Enter(LifeMode.Living, MotionMode.Still);
+                        authored.PreviewAt(60f, LifeMode.Living, MotionMode.Still);
+                        camera.transform.SetPositionAndRotation(couch.transform.position, couch.transform.rotation);
+                        camera.Render();
+                        RenderTexture.active = target;
+                        pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                        pixels.Apply(false);
+
+                        var path = Path.Combine(OutputFolder, $"{Slug(authored.VistaId)}-living-event-couch.png");
+                        File.WriteAllBytes(path, pixels.EncodeToPNG());
+                        Debug.Log("Quiet Watch Living capture: " + Path.GetFullPath(path));
+                        authored.Exit();
+                    }
+                }
             }
             finally
             {
