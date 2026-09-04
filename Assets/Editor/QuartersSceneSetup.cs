@@ -13,6 +13,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SpatialTracking;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features.Meta;
 using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 using UnityEngine.XR.OpenXR.Features.Interactions;
 using StarshipCabin;
@@ -741,7 +742,7 @@ namespace StarshipCabin.EditorTools
                 greatWeather,
                 formation
             }, screenFader);
-            controller.AddComponent<FrameTimeTelemetry>();
+            controller.AddComponent<FrameTimeTelemetry>().Configure(director);
             controller.AddComponent<QuietWatchInputController>().Configure(director);
 
             BuildSelectorPanel(director);
@@ -981,8 +982,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m6.1-awe-review";
-            PlayerSettings.Android.bundleVersionCode = 20008;
+            PlayerSettings.bundleVersion = "2.0.0-m6.2-release-candidate";
+            PlayerSettings.Android.bundleVersionCode = 20009;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
@@ -1025,6 +1026,7 @@ namespace StarshipCabin.EditorTools
             }
 
             EnableFeature<MetaQuestFeature>(openXrSettings);
+            EnableFeature<DisplayUtilitiesFeature>(openXrSettings);
             EnableFeature<MetaQuestTouchPlusControllerProfile>(openXrSettings);
             EnableFeature<MetaQuestTouchProControllerProfile>(openXrSettings);
             EnableFeature<OculusTouchControllerProfile>(openXrSettings);

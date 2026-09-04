@@ -15,6 +15,7 @@ namespace StarshipCabin.QuietWatch
 
         private LifeMode lifeMode;
         private float enteredAt;
+        private float livingStartedAt;
         private bool graceNotePlayed;
         private bool active;
 
@@ -32,7 +33,7 @@ namespace StarshipCabin.QuietWatch
                 return;
             }
 
-            if (Time.unscaledTime - enteredAt >= graceNoteAtSeconds)
+            if (Time.unscaledTime - livingStartedAt >= graceNoteAtSeconds)
             {
                 StartGraceNote(false);
             }
@@ -42,7 +43,9 @@ namespace StarshipCabin.QuietWatch
         {
             active = true;
             enteredAt = Time.unscaledTime;
+            livingStartedAt = enteredAt;
             graceNotePlayed = false;
+            lifeMode = nextLifeMode;
             starWindow?.ResetVistaClock();
             ApplyComfort(nextLifeMode, motionMode);
 
@@ -57,6 +60,12 @@ namespace StarshipCabin.QuietWatch
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode motionMode)
         {
+            if (lifeMode != nextLifeMode)
+            {
+                livingStartedAt = Time.unscaledTime;
+                graceNotePlayed = false;
+                starWindow?.ClearGraceNote();
+            }
             lifeMode = nextLifeMode;
             starWindow?.SetQuietWatchComfort(
                 living: nextLifeMode == LifeMode.Living,

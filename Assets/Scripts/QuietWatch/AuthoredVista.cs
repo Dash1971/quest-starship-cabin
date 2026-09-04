@@ -41,6 +41,7 @@ namespace StarshipCabin.QuietWatch
         private LifeMode lifeMode;
         private MotionMode motionMode;
         private float enteredAt;
+        private float livingStartedAt;
         private float graceNoteStartedAt;
         private bool graceNotePlayed;
         private bool active;
@@ -122,7 +123,8 @@ namespace StarshipCabin.QuietWatch
             }
 
             var elapsed = Time.unscaledTime - enteredAt;
-            if (!graceNotePlayed && lifeMode == LifeMode.Living && elapsed >= graceNoteAtSeconds)
+            var livingElapsed = Time.unscaledTime - livingStartedAt;
+            if (!graceNotePlayed && lifeMode == LifeMode.Living && livingElapsed >= graceNoteAtSeconds)
             {
                 StartGraceNote(false);
             }
@@ -176,8 +178,11 @@ namespace StarshipCabin.QuietWatch
             RestoreTransforms();
             active = true;
             enteredAt = Time.unscaledTime;
+            livingStartedAt = enteredAt;
             graceNoteStartedAt = 0f;
             graceNotePlayed = false;
+            lifeMode = nextLifeMode;
+            motionMode = nextMotionMode;
             starWindow?.ResetVistaClock();
             ApplyComfort(nextLifeMode, nextMotionMode);
 
@@ -190,8 +195,21 @@ namespace StarshipCabin.QuietWatch
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode nextMotionMode)
         {
+            var lifeChanged = lifeMode != nextLifeMode;
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
+
+            if (lifeChanged)
+            {
+                livingStartedAt = Time.unscaledTime;
+                graceNotePlayed = false;
+                graceNoteStartedAt = 0f;
+                if (active)
+                {
+                    UpdateComposition(Time.unscaledTime - enteredAt, 0f);
+                }
+            }
+
             starWindow?.SetAuthoredVistaBackdrop(BackdropDensity());
             audioController?.SetQuietWatchProfile(VistaId, nextLifeMode == LifeMode.Living);
 
