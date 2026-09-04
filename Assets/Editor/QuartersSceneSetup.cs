@@ -155,6 +155,12 @@ namespace StarshipCabin.EditorTools
                 ConfigureUrpPipeline();
             }
 
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path != ScenePath)
+            {
+                EditorSceneManager.OpenScene(ScenePath);
+            }
+            QuietWatchTrafficValidation.ValidateOpenScene();
+
             Directory.CreateDirectory("Builds");
             var buildPath = "Builds/StarshipCabin-QuietWatch-MultiVista.apk";
 
@@ -589,19 +595,23 @@ namespace StarshipCabin.EditorTools
         private static VolumeProfile CreatePostFxProfile()
         {
             const string path = "Assets/Settings/Quarters PostFX.asset";
-            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
-            if (existing != null)
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile == null)
             {
-                return existing;
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, path);
             }
 
-            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            AssetDatabase.CreateAsset(profile, path);
-
-            var bloom = profile.Add<Bloom>(overrides: true);
-            bloom.threshold.Override(0.75f);
-            bloom.intensity.Override(0.9f);
-            bloom.scatter.Override(0.62f);
+            if (!profile.TryGet(out Bloom bloom))
+            {
+                bloom = profile.Add<Bloom>(overrides: true);
+            }
+            // Keep luminous windows and engines alive without letting the sill
+            // cove become a featureless white bar in the headset.
+            bloom.threshold.Override(0.86f);
+            bloom.intensity.Override(0.62f);
+            bloom.scatter.Override(0.54f);
+            EditorUtility.SetDirty(profile);
 
             AssetDatabase.SaveAssets();
             return profile;
@@ -971,8 +981,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m5.1-living-exteriors";
-            PlayerSettings.Android.bundleVersionCode = 20005;
+            PlayerSettings.bundleVersion = "2.0.0-m5.2-believable-worlds";
+            PlayerSettings.Android.bundleVersionCode = 20006;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

@@ -22,7 +22,9 @@ namespace StarshipCabin.EditorTools
                 new Vector3(1.5f, 3.2f, -44f), Quaternion.Euler(8f, -5f, -7f), 0.88f);
             QuietWatchArtAssetBuilder.AddExteriorSun(
                 vista.transform, "Harbour Distant Sun", Quaternion.Euler(32f, -38f, -18f),
-                new Color(0.74f, 0.84f, 1.0f), 1.35f, true);
+                new Color(0.74f, 0.84f, 1.0f), 1.62f, true);
+            BuildHarbourHabitation(station);
+            BuildHarbourClearanceVolumes(vista.transform, station);
 
             var travellers = new List<Transform>();
             travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
@@ -35,6 +37,33 @@ namespace StarshipCabin.EditorTools
                 vista.transform, "EscortSpear", "Distant Shuttle",
                 new Vector3(12f, 11f, -66f), Quaternion.Euler(0f, -20f, 0f), 0.24f, false));
 
+            // Every route is authored in station space and converted to the
+            // vista root. This keeps choreography tied to the actual harbour
+            // composition if the station is moved or re-aimed later.
+            ConfigureHarbourRoute(travellers[0], StationRoute(vista.transform, station,
+                    new Vector3(-36f, 10f, -3f),
+                    new Vector3(-39f, 11f, 2f),
+                    new Vector3(-43f, 14f, 10f),
+                    new Vector3(-48f, 19f, 23f),
+                    new Vector3(-55f, 25f, 39f)),
+                58f, 110f, 0f, 3.2f, 9f, false, true);
+            ConfigureHarbourRoute(travellers[1], StationRoute(vista.transform, station,
+                    new Vector3(39f, 14f, 18f),
+                    new Vector3(29f, 15f, 22f),
+                    new Vector3(15f, 15f, 25f),
+                    new Vector3(-4f, 14f, 28f),
+                    new Vector3(-24f, 12f, 32f),
+                    new Vector3(-42f, 10f, 38f)),
+                52f, 112f, 0.16f, 2.8f, 7f, false, false);
+            ConfigureHarbourRoute(travellers[2], StationRoute(vista.transform, station,
+                    new Vector3(-42f, 2f, 34f),
+                    new Vector3(-26f, 3f, 35f),
+                    new Vector3(-8f, 4f, 36f),
+                    new Vector3(12f, 5f, 37f),
+                    new Vector3(30f, 6f, 39f),
+                    new Vector3(45f, 8f, 42f)),
+                70f, 118f, 0.57f, 1.8f, 5f, true, false);
+
             return Configure(vista, "harbour", "HARBOUR OF TEN THOUSAND LIGHTS", "ORBITAL SAFE HARBOUR",
                 AuthoredVistaKind.Harbour, stars, fill, audio, station, travellers.ToArray(), new Color(0.32f, 0.66f, 0.92f));
         }
@@ -44,6 +73,13 @@ namespace StarshipCabin.EditorTools
         {
             var vista = NewVistaRoot("Vista 3 - Blue Morning");
             var worldMaterial = MaterialFromShader("Quiet Watch Blue World", "StarshipCabin/QuietWatchBlueWorld");
+            worldMaterial.SetColor("_OceanColor", new Color(0.008f, 0.085f, 0.24f));
+            worldMaterial.SetColor("_LandColor", new Color(0.075f, 0.27f, 0.15f));
+            worldMaterial.SetColor("_CloudColor", new Color(0.92f, 0.97f, 1.0f));
+            worldMaterial.SetColor("_AtmosphereColor", new Color(0.08f, 0.42f, 1.0f));
+            worldMaterial.SetColor("_SunsetColor", new Color(1.0f, 0.25f, 0.045f));
+            worldMaterial.SetVector("_SunDirection", new Vector4(-0.72f, 0.18f, 0.67f, 0f));
+            EditorUtility.SetDirty(worldMaterial);
             var world = Sphere(vista.transform, "Blue World", worldMaterial, new Vector3(9f, -42f, -78f), 110f);
             world.transform.rotation = Quaternion.Euler(2f, -18f, -8f);
 
@@ -60,10 +96,18 @@ namespace StarshipCabin.EditorTools
         {
             var vista = NewVistaRoot("Vista 4 - The Great Weather");
             var planetMaterial = MaterialFromShader("Quiet Watch Great Weather", "StarshipCabin/QuietWatchGasGiant");
+            planetMaterial.SetColor("_PaleBand", new Color(0.94f, 0.69f, 0.39f));
+            planetMaterial.SetColor("_DarkBand", new Color(0.22f, 0.065f, 0.045f));
+            planetMaterial.SetColor("_StormColor", new Color(1.0f, 0.28f, 0.075f));
+            planetMaterial.SetVector("_SunDirection", new Vector4(-0.62f, 0.30f, 0.72f, 0f));
+            EditorUtility.SetDirty(planetMaterial);
             var planet = Sphere(vista.transform, "Ringed Giant", planetMaterial, new Vector3(8f, 6f, -76f), 58f);
             planet.transform.rotation = Quaternion.Euler(0f, -22f, -8f);
 
             var ringMaterial = MaterialFromShader("Great Weather Rings Authored", "StarshipCabin/QuietWatchRings");
+            ringMaterial.SetColor("_LightColor", new Color(0.82f, 0.61f, 0.38f));
+            ringMaterial.SetColor("_DarkColor", new Color(0.10f, 0.052f, 0.045f));
+            EditorUtility.SetDirty(ringMaterial);
             var rings = ExteriorMesh(vista.transform, "Planetary Rings", Annulus("Great Weather Ring System", 44f, 31.5f, 0.16f, 96), ringMaterial,
                 new Vector3(8f, 6f, -76f), Quaternion.Euler(63f, 8f, -14f));
 
@@ -153,6 +197,127 @@ namespace StarshipCabin.EditorTools
             go.transform.localRotation = rotation;
             GameObjectUtility.SetStaticEditorFlags(go, 0);
             return go;
+        }
+
+        private static void ConfigureHarbourRoute(
+            Transform traveller, Vector3[] points, float livingDuration, float quietDuration,
+            float phaseOffset, float clearanceRadius, float bankDegrees,
+            bool availableInQuiet, bool graceRoute)
+        {
+            var route = traveller.gameObject.AddComponent<HarbourTrafficRoute>();
+            route.Configure(points, livingDuration, quietDuration, phaseOffset,
+                clearanceRadius, bankDegrees, availableInQuiet, graceRoute);
+            if (points.Length > 0)
+            {
+                traveller.localPosition = points[0];
+            }
+        }
+
+        private static Vector3[] StationRoute(Transform vista, Transform station, params Vector3[] stationPoints)
+        {
+            var result = new Vector3[stationPoints.Length];
+            for (var i = 0; i < stationPoints.Length; i++)
+            {
+                result[i] = vista.InverseTransformPoint(station.TransformPoint(stationPoints[i]));
+            }
+            return result;
+        }
+
+        private static void BuildHarbourClearanceVolumes(Transform vista, Transform station)
+        {
+            var scale = Mathf.Max(station.lossyScale.x, Mathf.Max(station.lossyScale.y, station.lossyScale.z));
+
+            // Axial core, observation drums and central machinery.
+            for (var z = -10f; z <= 10f; z += 4f)
+            {
+                AddClearance(vista, station, $"Axial core {z:0}", new Vector3(0f, 0f, z), 5.2f * scale);
+            }
+
+            // The inhabited torus is represented as overlapping conservative
+            // spheres. The open centre remains genuinely open, while no route
+            // can accidentally cut through the ring structure.
+            for (var i = 0; i < 24; i++)
+            {
+                var angle = i * Mathf.PI * 2f / 24f;
+                AddClearance(vista, station, $"Inhabited torus {i:00}",
+                    new Vector3(Mathf.Cos(angle) * 17.4f, Mathf.Sin(angle) * 17.4f, 0f),
+                    4.35f * scale);
+            }
+
+            // Causeways and docking piers need their own envelopes because
+            // they extend well beyond the torus silhouette.
+            foreach (var side in new[] { -1f, 1f })
+            {
+                for (var i = 0; i <= 5; i++)
+                {
+                    var t = i / 5f;
+                    AddClearance(vista, station, $"Docking causeway {side:+0;-0} {i}",
+                        Vector3.Lerp(new Vector3(side * 8f, 8.5f, -1.2f),
+                            new Vector3(side * 27f, 10f, -3f), t), 2.0f * scale);
+                }
+                AddClearance(vista, station, $"Docking pier {side:+0;-0}",
+                    new Vector3(side * 25.7f, 9.9f, -3f), 4.4f * scale);
+            }
+        }
+
+        private static void AddClearance(
+            Transform vista, Transform station, string label, Vector3 stationLocalPosition, float radius)
+        {
+            var marker = new GameObject("Clearance - " + label);
+            marker.transform.SetParent(vista, false);
+            marker.transform.position = station.TransformPoint(stationLocalPosition);
+            marker.hideFlags = HideFlags.HideInHierarchy;
+            marker.AddComponent<HarbourClearanceVolume>().Configure(label, radius);
+            GameObjectUtility.SetStaticEditorFlags(marker, 0);
+        }
+
+        private static void BuildHarbourHabitation(Transform station)
+        {
+            var cyan = QuartersSceneSetup.CreateEmissiveMaterial(
+                "Harbour Habitat Cyan", new Color(0.025f, 0.12f, 0.17f),
+                new Color(0.10f, 0.72f, 1.0f), 5.4f);
+            var amber = QuartersSceneSetup.CreateEmissiveMaterial(
+                "Harbour Guidance Amber", new Color(0.19f, 0.065f, 0.018f),
+                new Color(1.0f, 0.31f, 0.055f), 6.2f);
+
+            var habitat = new MeshDraft();
+            var guidance = new MeshDraft();
+            for (var i = 0; i < 54; i++)
+            {
+                var angleDegrees = -148f + i * (300f / 53f);
+                var angle = angleDegrees * Mathf.Deg2Rad;
+                var radius = i % 3 == 0 ? 18.75f : 16.25f;
+                var z = i % 2 == 0 ? 2.35f : 1.85f;
+                // Blender's +Z becomes Unity -Y at the imported child root.
+                var position = new Vector3(Mathf.Cos(angle) * radius, -Mathf.Sin(angle) * radius, z);
+                QuartersMeshes.AppendChamferedBox(habitat, position,
+                    new Vector3(0.44f + (i % 4) * 0.06f, 0.16f, 0.10f), 0.025f,
+                    Quaternion.Euler(0f, 0f, -angleDegrees - 90f));
+            }
+
+            for (var side = -1; side <= 1; side += 2)
+            {
+                for (var i = 0; i < 11; i++)
+                {
+                    var x = side * (10f + i * 2.05f);
+                    var pulseSize = i % 5 == 0 ? 0.28f : 0.16f;
+                    QuartersMeshes.AppendChamferedBox(guidance,
+                        new Vector3(x, 10.35f, -2.2f),
+                        new Vector3(pulseSize, pulseSize, 0.14f), 0.025f);
+                }
+            }
+
+            // A readable luminous berth marks the cutter as docked before the
+            // grace-note departure. It is infrastructure, not a floating prop.
+            QuartersMeshes.AppendChamferedBox(guidance, new Vector3(-32.8f, 7.2f, -2.9f),
+                new Vector3(0.18f, 5.8f, 0.20f), 0.03f);
+            QuartersMeshes.AppendChamferedBox(guidance, new Vector3(-32.8f, 12.8f, -2.9f),
+                new Vector3(0.18f, 5.8f, 0.20f), 0.03f);
+            QuartersMeshes.AppendChamferedBox(guidance, new Vector3(-32.8f, 10.0f, -2.9f),
+                new Vector3(0.18f, 0.18f, 5.0f), 0.03f);
+
+            ExteriorMesh(station, "Inhabited Window Lattice", habitat.ToMesh("Harbour Inhabited Window Lattice"), cyan);
+            ExteriorMesh(station, "Docking Guidance Lights", guidance.ToMesh("Harbour Docking Guidance Lights"), amber);
         }
 
         private static Mesh Annulus(string name, float outerRadius, float innerRadius, float depth, int segments)

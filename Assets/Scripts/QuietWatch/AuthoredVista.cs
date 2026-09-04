@@ -30,6 +30,7 @@ namespace StarshipCabin.QuietWatch
         private Vector3[] travellerOrigins = Array.Empty<Vector3>();
         private Quaternion[] travellerRotations = Array.Empty<Quaternion>();
         private Vector3[] travellerScales = Array.Empty<Vector3>();
+        private HarbourTrafficRoute[] harbourRoutes = Array.Empty<HarbourTrafficRoute>();
         private Vector3 slowTurnOriginPosition;
         private Quaternion slowTurnOriginRotation;
         private LifeMode lifeMode;
@@ -82,6 +83,7 @@ namespace StarshipCabin.QuietWatch
             travellerOrigins = new Vector3[travellers.Length];
             travellerRotations = new Quaternion[travellers.Length];
             travellerScales = new Vector3[travellers.Length];
+            harbourRoutes = new HarbourTrafficRoute[travellers.Length];
             for (var i = 0; i < travellers.Length; i++)
             {
                 var traveller = travellers[i];
@@ -93,6 +95,7 @@ namespace StarshipCabin.QuietWatch
                 travellerOrigins[i] = traveller.localPosition;
                 travellerRotations[i] = traveller.localRotation;
                 travellerScales[i] = traveller.localScale;
+                harbourRoutes[i] = traveller.GetComponent<HarbourTrafficRoute>();
             }
         }
 
@@ -149,6 +152,8 @@ namespace StarshipCabin.QuietWatch
                     UpdateFormation(elapsed, grace);
                     break;
             }
+
+            UpdateCabinResponse(elapsed, grace);
         }
 
         public override void Enter(LifeMode nextLifeMode, MotionMode nextMotionMode)
@@ -172,16 +177,19 @@ namespace StarshipCabin.QuietWatch
         {
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
-            starWindow?.SetAuthoredVistaBackdrop(kind == AuthoredVistaKind.BlueMorning ? 0.34f : 0.58f);
+            starWindow?.SetAuthoredVistaBackdrop(BackdropDensity());
             audioController?.SetQuietWatchProfile(nextLifeMode == LifeMode.Living);
 
             if (kind == AuthoredVistaKind.Harbour)
             {
-                // Quiet retains only a single distant shipping lane. Living
-                // activates all three causal arrival/departure routes.
+                // Quiet retains one remote lane. Living adds the upper transit
+                // lane and the cutter that waits visibly at its berth until
+                // the authored departure begins.
                 for (var i = 0; i < travellerOrigins.Length; i++)
                 {
-                    SetTravellerActive(i, nextLifeMode == LifeMode.Living || i == travellerOrigins.Length - 1);
+                    var route = i < harbourRoutes.Length ? harbourRoutes[i] : null;
+                    SetTravellerActive(i, route != null
+                        && (nextLifeMode == LifeMode.Living || route.AvailableInQuiet));
                 }
             }
         }
@@ -203,41 +211,37 @@ namespace StarshipCabin.QuietWatch
 
             for (var i = 0; i < travellerOrigins.Length; i++)
             {
+                var route = i < harbourRoutes.Length ? harbourRoutes[i] : null;
+                if (route == null)
+                {
+                    SetTravellerActive(i, false);
+                    continue;
+                }
+
                 var living = lifeMode == LifeMode.Living;
-                var shouldRun = living || i == travellerOrigins.Length - 1;
+                var shouldRun = living || route.AvailableInQuiet;
                 SetTravellerActive(i, shouldRun);
                 if (!shouldRun || travellers[i] == null)
                 {
                     continue;
                 }
 
-                // The routes begin and end beyond the useful window area, so
-                // wrapping reads as separate traffic rather than teleporting.
-                var duration = living ? 34f + i * 11f : 92f;
-                var offset = living ? i * 0.31f : 0.19f;
-                var phase = Mathf.Repeat(elapsed / duration + offset, 1f);
-                var travel = Smooth01(phase);
-                var origin = travellerOrigins[i];
-                var start = HarbourOffset(i, true);
-                var end = HarbourOffset(i, false);
-                var arch = new Vector3(0f, Mathf.Sin(phase * Mathf.PI) * (1.8f + i), 0f);
-                travellers[i].localPosition = origin + Vector3.Lerp(start, end, travel) + arch;
+                // The grace-route cutter remains physically docked at point 0
+                // until its one departure. Other lanes loop only while both
+                // endpoints are outside the useful window area.
+                var phase = route.IsGraceRoute ? grace : route.PhaseAt(elapsed, living);
+                route.Evaluate(phase, out var position, out var tangent, out var curvature);
+                travellers[i].localPosition = position;
 
-                var bank = Mathf.Sin(phase * Mathf.PI) * (i == 0 ? -7f : 4f);
-                var yaw = (i == 0 ? -12f : i == 1 ? 8f : -5f) * Mathf.Sin(phase * Mathf.PI);
-                travellers[i].localRotation = travellerRotations[i] * Quaternion.Euler(0f, yaw, bank);
-            }
-
-            // The review-timed grace note is a close customs cutter departing
-            // the harbour mouth with its tender pacing it.
-            if (grace > 0f && travellerOrigins.Length > 0 && travellers[0] != null)
-            {
-                SetTravellerActive(0, true);
-                var eased = Smooth01(grace);
-                travellers[0].localPosition = travellerOrigins[0]
-                    + Vector3.Lerp(Vector3.zero, new Vector3(-10f, 6f, -5f), eased);
-                travellers[0].localRotation = travellerRotations[0]
-                    * Quaternion.Euler(-3f * eased, 13f * eased, 8f * Mathf.Sin(eased * Mathf.PI));
+                // Blender vessels point down local -Z. Align that nose with the
+                // spline tangent and bank into curvature; no sideways sliding.
+                if (tangent.sqrMagnitude > 0.0001f)
+                {
+                    tangent.Normalize();
+                    var bank = Mathf.Clamp(curvature * route.BankDegrees, -route.BankDegrees, route.BankDegrees);
+                    travellers[i].localRotation = Quaternion.AngleAxis(bank, tangent)
+                        * Quaternion.LookRotation(-tangent, Vector3.up);
+                }
             }
         }
 
@@ -302,10 +306,6 @@ namespace StarshipCabin.QuietWatch
                 traveller.localPosition = travellerOrigins[i] + emergence;
             }
 
-            if (exteriorFill != null)
-            {
-                exteriorFill.intensity = BaseFillIntensity() + grace * 0.12f;
-            }
         }
 
         private void UpdateBlueMorning(float elapsed, float grace)
@@ -316,11 +316,6 @@ namespace StarshipCabin.QuietWatch
                 slowTurn.localRotation = slowTurnOriginRotation * Quaternion.AngleAxis(degrees, Vector3.up);
             }
 
-            if (exteriorFill != null)
-            {
-                exteriorFill.color = Color.Lerp(fillColor, new Color(1.0f, 0.72f, 0.48f), grace);
-                exteriorFill.intensity = BaseFillIntensity() + grace * 0.34f;
-            }
         }
 
         private void RestoreTransforms()
@@ -355,22 +350,62 @@ namespace StarshipCabin.QuietWatch
             }
         }
 
-        private static Vector3 HarbourOffset(int index, bool start)
+        private void UpdateCabinResponse(float elapsed, float grace)
         {
-            switch (index)
+            if (exteriorFill == null)
             {
-                case 0:
-                    return start ? new Vector3(18f, 5f, -24f) : new Vector3(-15f, -2f, 12f);
-                case 1:
-                    return start ? new Vector3(-26f, -5f, -16f) : new Vector3(27f, 1f, 8f);
-                default:
-                    return start ? new Vector3(24f, 4f, -12f) : new Vector3(-35f, -2f, 10f);
+                return;
             }
+
+            var color = fillColor;
+            var intensity = BaseFillIntensity();
+            switch (kind)
+            {
+                case AuthoredVistaKind.Harbour:
+                    var harbourPulse = lifeMode == LifeMode.Living
+                        ? 0.018f * (0.5f + 0.5f * Mathf.Sin(elapsed * 0.19f))
+                        : 0f;
+                    color = Color.Lerp(fillColor, new Color(0.46f, 0.78f, 1.0f), 0.24f + grace * 0.16f);
+                    intensity += harbourPulse + grace * 0.055f;
+                    break;
+                case AuthoredVistaKind.BlueMorning:
+                    color = Color.Lerp(fillColor, new Color(1.0f, 0.72f, 0.48f), grace);
+                    intensity += grace * 0.34f;
+                    break;
+                case AuthoredVistaKind.GreatWeather:
+                    var stormBreath = 0.018f * (0.5f + 0.5f * Mathf.Sin(elapsed * 0.055f));
+                    color = Color.Lerp(fillColor, new Color(1.0f, 0.60f, 0.34f), grace * 0.42f);
+                    intensity += stormBreath + grace * 0.12f;
+                    break;
+                case AuthoredVistaKind.LongFormation:
+                    intensity += grace * 0.045f;
+                    break;
+            }
+
+            exteriorFill.color = color;
+            exteriorFill.intensity = intensity;
         }
 
         private float BaseFillIntensity()
         {
-            return kind == AuthoredVistaKind.BlueMorning ? 0.72f : 0.48f;
+            switch (kind)
+            {
+                case AuthoredVistaKind.BlueMorning: return 0.64f;
+                case AuthoredVistaKind.GreatWeather: return 0.44f;
+                case AuthoredVistaKind.LongFormation: return 0.38f;
+                default: return 0.42f;
+            }
+        }
+
+        private float BackdropDensity()
+        {
+            switch (kind)
+            {
+                case AuthoredVistaKind.BlueMorning: return 0.24f;
+                case AuthoredVistaKind.GreatWeather: return 0.38f;
+                case AuthoredVistaKind.LongFormation: return 0.50f;
+                default: return 0.52f;
+            }
         }
 
         private float GraceDuration()
@@ -384,4 +419,5 @@ namespace StarshipCabin.QuietWatch
             return value * value * (3f - 2f * value);
         }
     }
+
 }

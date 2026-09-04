@@ -2,9 +2,9 @@ Shader "StarshipCabin/QuietWatchGasGiant"
 {
     Properties
     {
-        _PaleBand ("Pale Band", Color) = (0.82, 0.62, 0.38, 1)
-        _DarkBand ("Dark Band", Color) = (0.24, 0.10, 0.08, 1)
-        _StormColor ("Storm", Color) = (0.86, 0.30, 0.12, 1)
+        _PaleBand ("Pale Band", Color) = (0.94, 0.69, 0.39, 1)
+        _DarkBand ("Dark Band", Color) = (0.22, 0.065, 0.045, 1)
+        _StormColor ("Storm", Color) = (1.0, 0.28, 0.075, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.62, 0.30, -0.72, 0)
     }
     SubShader
@@ -115,9 +115,21 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 float turbulent = fbm4(float2(longitude * 28.0 + time * 3.1, warpedLatitude * 92.0));
                 ribbon = saturate(ribbon * 0.70 + turbulent * 0.44 - 0.06);
 
-                float3 ochre = lerp(_DarkBand.rgb, _PaleBand.rgb, smoothstep(0.12, 0.88, ribbon));
+                float3 ochre = lerp(_DarkBand.rgb, _PaleBand.rgb, smoothstep(0.10, 0.90, ribbon));
                 float polarFade = smoothstep(0.52, 0.12, abs(latitude - 0.5));
                 ochre = lerp(ochre * float3(0.64, 0.70, 0.80), ochre, polarFade);
+
+                // Broad belts shift hue as well as brightness. Fine turbulent
+                // ridges then shade the cloud deck, so it reads as stacked
+                // weather at depth rather than stripes painted on a sphere.
+                float warmBelt = smoothstep(0.54, 0.82, broadBands)
+                    * smoothstep(0.18, 0.78, turbulent);
+                float paleZone = smoothstep(0.62, 0.92, narrowBands)
+                    * (1.0 - smoothstep(0.56, 0.90, broadBands));
+                ochre = lerp(ochre, float3(0.66, 0.20, 0.07), warmBelt * 0.42);
+                ochre = lerp(ochre, float3(1.0, 0.78, 0.48), paleZone * 0.34);
+                float cloudRelief = fbm4(float2(longitude * 61.0 - time * 4.0, warpedLatitude * 146.0) + 8.4);
+                ochre *= 0.82 + cloudRelief * 0.34;
 
                 // A primary oval and a smaller trailing storm make the weather
                 // read as embedded circulation rather than a painted dot.
@@ -129,8 +141,9 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 float storm = saturate((primaryStorm + secondaryStorm + roamingStorm) * stormNoise);
                 float eye = smoothstep(0.018, 0.005,
                     length((globeUv - float2(0.61, 0.43)) * float2(1.0, 2.4)));
-                float3 color = lerp(ochre, _StormColor.rgb, storm * 0.82);
-                color = lerp(color, _PaleBand.rgb * 1.18, eye * 0.72);
+                float stormFilaments = 0.64 + 0.36 * sin((longitude + latitude * 0.18) * 510.0 + stormNoise * 13.0);
+                float3 color = lerp(ochre, _StormColor.rgb, storm * (0.70 + stormFilaments * 0.20));
+                color = lerp(color, _PaleBand.rgb * 1.24, eye * 0.78);
 
                 // The ring plane casts a broad soft diagonal shadow across the
                 // dayside. It is intentionally approximate but spatially tied
@@ -149,13 +162,18 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 float forwardGlow = smoothstep(-0.18, 0.42, sunDot);
                 // Reflected ring light keeps the nominal nightside legible in
                 // the cabin; the direct sun still supplies the main contrast.
-                color *= 0.205 + light * 1.02;
-                color += float3(0.52, 0.25, 0.12) * atmosphere * (0.16 + forwardGlow * 0.68);
-                color += float3(0.14, 0.20, 0.34) * atmosphere * (1.0 - light) * 0.18;
+                color *= 0.245 + light * 1.08;
+                color += float3(0.72, 0.30, 0.09) * atmosphere * (0.18 + forwardGlow * 0.82);
+                color += float3(0.12, 0.19, 0.36) * atmosphere * (1.0 - light) * 0.24;
+
+                // A thin forward-scattering veil catches light over the limb
+                // and within bright zones, separating upper haze from belts.
+                float upperHaze = pow(1.0 - viewDot, 5.0) * smoothstep(-0.12, 0.55, sunDot);
+                color += float3(1.0, 0.55, 0.22) * upperHaze * 0.72;
 
                 // Filmic compression preserves storm and shadow structure under
                 // the cabin's restrained bloom without flattening the nightside.
-                color = 1.0 - exp(-color * 1.48);
+                color = 1.0 - exp(-color * 1.58);
                 return half4(color, 1.0);
             }
             ENDHLSL

@@ -5,6 +5,8 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
         _OceanColor ("Ocean", Color) = (0.015, 0.12, 0.28, 1)
         _LandColor ("Land", Color) = (0.10, 0.24, 0.16, 1)
         _CloudColor ("Cloud", Color) = (0.88, 0.94, 1.0, 1)
+        _AtmosphereColor ("Atmosphere", Color) = (0.12, 0.48, 1.0, 1)
+        _SunsetColor ("Sunset", Color) = (1.0, 0.31, 0.08, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.45, 0.28, -0.84, 0)
     }
     SubShader
@@ -27,6 +29,8 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 half4 _OceanColor;
                 half4 _LandColor;
                 half4 _CloudColor;
+                half4 _AtmosphereColor;
+                half4 _SunsetColor;
                 float4 _SunDirection;
             CBUFFER_END
 
@@ -78,6 +82,12 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 return v;
             }
 
+            float ridged(float3 p)
+            {
+                float n = fbm(p);
+                return 1.0 - abs(n * 2.0 - 1.0);
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output;
@@ -97,25 +107,66 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 float3 n = normalize(input.normalWS);
                 float3 v = normalize(input.viewWS);
                 float3 sun = normalize(_SunDirection.xyz);
-                float daylight = smoothstep(-0.16, 0.18, dot(n, sun));
-                float broadLight = 0.08 + 0.92 * saturate(dot(n, sun) * 0.72 + 0.28);
+                float sunDot = dot(n, sun);
+                float daylight = smoothstep(-0.19, 0.14, sunDot);
+                float broadLight = 0.10 + 0.90 * saturate(sunDot * 0.68 + 0.32);
 
-                float continent = fbm(input.globe * float3(3.2, 5.8, 3.2) + float3(1.2, 8.0, 4.5));
-                continent += 0.22 * fbm(input.globe * 11.0 + 19.0);
-                float land = smoothstep(0.54, 0.66, continent);
-                float3 surface = lerp(_OceanColor.rgb, _LandColor.rgb, land);
+                // Domain-warped continents build recognisable continental
+                // masses, shelves, mountain chains and broken archipelagos.
+                float3 globe = normalize(input.globe);
+                float warpA = fbm(globe * 2.15 + float3(8.3, 17.1, 3.7));
+                float warpB = fbm(globe * 2.65 + float3(31.7, 5.4, 12.2));
+                float3 warped = globe + float3(warpA - 0.5, warpB - 0.5, warpA - warpB) * 0.36;
+                float continent = fbm(warped * float3(2.7, 4.2, 2.7) + float3(1.2, 8.0, 4.5));
+                continent = continent * 0.78 + fbm(warped * 7.8 + 19.0) * 0.22;
+                float land = smoothstep(0.515, 0.59, continent);
+                float shelf = smoothstep(0.475, 0.54, continent) - smoothstep(0.54, 0.59, continent);
+                float mountain = ridged(warped * 18.0 + 7.2) * land;
+                mountain *= smoothstep(0.45, 0.82, fbm(warped * 6.0 + 23.1));
 
-                float cloudNoise = fbm(input.globe * float3(7.0, 16.0, 7.0) + float3(31.0, 4.0, 17.0));
-                float cloud = smoothstep(0.61, 0.76, cloudNoise) * daylight;
-                surface = lerp(surface, _CloudColor.rgb, cloud * 0.78);
+                float latitude = abs(globe.y);
+                float ice = smoothstep(0.76, 0.93, latitude) * (0.58 + fbm(warped * 13.0) * 0.42);
+                float oceanVariation = fbm(globe * 9.0 + 6.8);
+                float3 ocean = _OceanColor.rgb * lerp(0.64, 1.28, oceanVariation);
+                ocean = lerp(ocean, float3(0.02, 0.34, 0.48), shelf * 0.74);
+                float vegetation = smoothstep(0.28, 0.70, noise3(warped * 8.0 + 1.4));
+                float3 dryLand = float3(0.33, 0.28, 0.14);
+                float3 wetLand = _LandColor.rgb * 1.18;
+                float3 landColor = lerp(dryLand, wetLand, vegetation);
+                landColor = lerp(landColor, float3(0.34, 0.30, 0.25), mountain * 0.46);
+                float3 surface = lerp(ocean, landColor, land);
+                surface = lerp(surface, float3(0.80, 0.90, 0.97), ice * 0.88);
 
-                float nightLights = smoothstep(0.68, 0.80, noise3(input.globe * 82.0 + 7.0)) * land * (1.0 - daylight);
-                float rim = pow(1.0 - saturate(dot(n, v)), 3.1);
-                float horizonDay = smoothstep(-0.24, 0.10, dot(n, sun));
+                // Two cloud scales move at different geological speeds. A
+                // displaced dark copy gives the upper deck visible altitude.
+                float time = _Time.y * 0.0014;
+                float cloudBroad = fbm(globe * float3(6.0, 13.0, 6.0)
+                    + float3(31.0 + time, 4.0, 17.0 - time * 0.7));
+                float cloudDetail = ridged(globe * float3(17.0, 31.0, 17.0)
+                    + float3(5.0 - time * 1.8, 23.0, 9.0));
+                float cloud = smoothstep(0.57, 0.73, cloudBroad + cloudDetail * 0.18);
+                cloud *= 0.72 + smoothstep(0.18, 0.82, cloudDetail) * 0.28;
+                float shadowCloud = smoothstep(0.58, 0.73,
+                    fbm((globe - sun * 0.018) * float3(6.0, 13.0, 6.0) + float3(31.0 + time, 4.0, 17.0)));
+                surface *= 1.0 - shadowCloud * daylight * 0.16;
+                surface = lerp(surface, _CloudColor.rgb * (0.78 + broadLight * 0.34), cloud * daylight * 0.88);
+
+                // Ocean glint and clustered coastal civilisation make the
+                // horizon feel inhabited without becoming a city-light map.
+                float3 halfVector = normalize(sun + v);
+                float oceanGlint = pow(saturate(dot(n, halfVector)), 54.0) * (1.0 - land) * daylight;
+                float coast = saturate((smoothstep(0.49, 0.55, continent) - smoothstep(0.56, 0.62, continent)) * 2.0);
+                float cityCells = noise3(globe * 118.0 + 7.0) * noise3(globe * 47.0 + 29.0);
+                float nightLights = smoothstep(0.58, 0.79, cityCells) * land * (0.35 + coast) * (1.0 - daylight);
+
+                float rim = pow(1.0 - saturate(dot(n, v)), 2.75);
+                float terminator = 1.0 - smoothstep(0.0, 0.16, abs(sunDot + 0.035));
                 float3 color = surface * broadLight * daylight;
-                color += float3(1.0, 0.55, 0.18) * nightLights * 1.5;
-                color += lerp(float3(0.10, 0.24, 0.65), float3(0.35, 0.72, 1.0), horizonDay) * rim * 1.8;
-                color = 1.0 - exp(-color * 1.35);
+                color += float3(0.35, 0.72, 1.0) * oceanGlint * 1.8;
+                color += float3(1.0, 0.48, 0.12) * nightLights * 2.2;
+                color += _AtmosphereColor.rgb * rim * (0.36 + daylight * 1.32);
+                color += _SunsetColor.rgb * rim * terminator * 1.55;
+                color = 1.0 - exp(-color * 1.42);
                 return half4(color, 1.0);
             }
             ENDHLSL

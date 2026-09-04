@@ -10,10 +10,10 @@ Active development branch: `v2/visual-benchmark`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: M0/M1 foundation, five selectable vistas, Blender-authored exterior art, destination-specific Living choreography, and the first planet/star art pass are implemented and installed; headset art-direction, comfort, and performance sign-off remain open
+- Current branch status: M0/M1 foundation, five selectable vistas, collision-validated harbour choreography, destination-responsive cabin lighting, and the second planet/star art pass are implemented and installed; headset art-direction, comfort, and performance sign-off remain open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
-Current headset build: `Quiet Watch 2.0.0-m5.1-living-exteriors`
+Current headset build: `Quiet Watch 2.0.0-m5.2-believable-worlds`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
@@ -26,16 +26,16 @@ Stable rollback tag: `quarters-v2-m7-tested-20260711`
 
 The older `VisibleStars/Input V10` build is now a previous MVP baseline, not the current tested build.
 
-### Quiet Watch Living Exteriors review build
+### Quiet Watch Believable Worlds review build
 
 Built, desktop-render validated, and installed on 2026-09-04 with Unity 6000.5.2f1:
 
 - Product: `Starship Cabin - The Quiet Watch`
 - Package: `jp.openclaw.starshipcabin.quietwatch`
-- Version: `2.0.0-m5.1-living-exteriors` (`20005`)
+- Version: `2.0.0-m5.2-believable-worlds` (`20006`)
 - APK: `Builds/StarshipCabin-QuietWatch-MultiVista.apk`
-- APK SHA-256: `7bd5c24308b8e4b3c532f5390ca7a0c6c08c80bbabb21533d1efd491ec120365`
-- Installation status: installed successfully on Meta Quest 3 at 2026-09-04 09:24 JST. Package/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
+- APK SHA-256: `8c4238f764cb83fa458b964b17f98df506e7d340ff950fc92c7f30cbed835bda`
+- Installation status: installed successfully on Meta Quest 3 at 2026-09-04 11:53 JST. Package/version/activity resolution passed; Meta's controller-required launch dialog still needs manual confirmation before live telemetry and visual sign-off.
 
 The review build contains:
 
@@ -46,17 +46,18 @@ The review build contains:
 - Four named fixed-seat capture points and repeatable editor renders.
 - Lightweight ten-second CPU/GPU/frame telemetry for `adb logcat` evidence.
 - `The First Question`: a camera-ray-anchored deep-space field with galactic structure, dust, three stellar depth layers, colour variation, and true negative space.
-- `Harbour of Ten Thousand Lights`: a Blender-authored inhabited station sector with layered torus structure, axial core, observation drum, load trusses, docking causeways, hangars, traffic masts, PBR surface response, and three authored service craft. Quiet retains one distant lane; Living adds layered arrival/departure routes and a close customs-cutter departure with eased travel and banking.
-- `Blue Morning`: a curved Earth-like dawn horizon with procedural ocean, continent breakup, clouds, night lights, atmospheric limb, and sunrise.
-- `The Great Weather`: a domain-warped storm giant with multi-scale cloud shear, embedded vortices, atmospheric limb, ring shadow, revised ring structure, and a cratered procedurally shaded moon transit.
+- `Harbour of Ten Thousand Lights`: a Blender-authored inhabited station sector with layered torus structure, axial core, observation drum, load trusses, docking causeways, hangars, traffic masts, PBR surface response, and three authored service craft. Traffic now follows banked Catmull-Rom approach/departure corridors around 44 conservative station clearance volumes, with deterministic station and craft-to-craft separation validation before capture or build. Habitat-light variation and illuminated docking guidance make activity follow the infrastructure.
+- `Blue Morning`: a brighter curved Earth-like dawn horizon with domain-warped continents, ocean depth and glint, shelves, cloud decks and shadows, clustered night lights, a richer atmospheric limb, sunrise colour, and coupled cabin spill.
+- `The Great Weather`: a brighter domain-warped storm giant with coloured cloud belts, embedded vortices and filaments, atmospheric depth, ring shadow, irregular translucent ring structure, a cratered moon transit, and coupled cabin spill.
 - `The Long Formation`: one original command ship and two substantial escorts, all with bevelled hard-surface geometry, functional scale cues, shared navigation/engine-light grammar, and three LODs. The three toy-like distant ships were cut; Living adds coordinated cruise corrections and an authored formation turn.
 - A deterministic Blender 4.5 LTS asset pipeline that produces the editable `.blend`, twelve FBXs, five shared PBR maps, Quest import settings, URP materials, and repeatable silhouette renders without third-party art.
 - `Quiet` plus `Still` as the default; optional extremely slow drift; destination-specific Living events currently use a 45-second review timing so every event can be inspected quickly in-headset.
-- Twenty fixed-seat captures plus deterministic 60-second Living-event captures for Harbour, Great Weather, and Long Formation.
+- Twenty fixed-seat captures plus seven deterministic event/traffic captures for Harbour, Blue Morning, Great Weather, and Long Formation.
+- Automated harbour validation samples every route against station safety envelopes and checks 240 seconds of craft-to-craft motion. The M5.2 report passes with at least 1.99 m station clearance and 2.80 m craft separation after safety radii are deducted.
 
 M1.1 incorporates the first headset review: it removes diffraction spikes and the over-bright blue wash, restores the stronger V3-style brightness distribution at direction-space density, corrects equirectangular star shape, and prevents procedural cell boundaries from leaking as line artifacts. The result is a darker field of clean point stars that remains anchored beyond the glass.
 
-All five vistas are immediately selectable with the controller's primary button. M5.1 replaces generic oscillation and placeholder grace-note logs with visible destination-specific choreography. It does not claim the full M2–M5 exits, which still require in-headset art sign-off, destination-specific audio, live frame evidence, sustained comfort testing, and release-length event timing.
+All five vistas are immediately selectable with the controller's primary button. M5.2 combines collision-safe choreography, an inhabited-harbour detail pass, destination-responsive cabin light, and major Blue Morning/Great Weather art upgrades in one headset drop. It does not claim the full M2–M5 exits, which still require in-headset art sign-off, destination-specific audio, live frame evidence, sustained comfort testing, and release-length event timing.
 
 ### Implemented
 
