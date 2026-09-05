@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -117,8 +118,68 @@ namespace StarshipCabin.EditorTools
             if (family != "HarbourSector")
             {
                 AddDriveGlows(root, family);
+                if (family == "CommandShip")
+                {
+                    var details = AddCommandScaleDetails(root);
+                    for (var i = 0; i < 2; i++)
+                        lods[i] = new LOD(thresholds[i], lods[i].renderers.Concat(details).ToArray());
+                    group.SetLODs(lods.ToArray());
+                    group.RecalculateBounds();
+                }
             }
             return root;
+        }
+
+        private static Renderer[] AddCommandScaleDetails(Transform ship)
+        {
+            var windows = new MeshDraft();
+            var marks = new MeshDraft();
+            // Original import orientation is retained. Recessed cabin decks sit
+            // under the mission shoulder, with room-sized rather than hangar-
+            // sized apertures once the assembly is scaled to fleet metres.
+            for (var side = -1; side <= 1; side += 2)
+            {
+                for (var deck = 0; deck < 3; deck++)
+                {
+                    for (var bay = 0; bay < 36; bay++)
+                    {
+                        if ((bay * 13 + deck * 7) % 11 < 3) continue;
+                        var z = -3.6f + bay * 0.16f;
+                        var x = side * 1.91f;
+                        var y = -1.23f - deck * 0.14f;
+                        var a = new Vector3(x,y-0.026f,z-0.042f);
+                        var b = new Vector3(x,y+0.026f,z-0.042f);
+                        var c = new Vector3(x,y+0.026f,z+0.042f);
+                        var d = new Vector3(x,y-0.026f,z+0.042f);
+                        windows.AddQuadOriented(a,b,c,d,Vector3.right*side);
+                    }
+                }
+                // Repeating service markings establish the length of the hull.
+                for (var bay = 0; bay < 8; bay++)
+                {
+                    var z = -3.6f + bay * 0.75f;
+                    marks.AddQuadOriented(new Vector3(side*1.2f,-1.71f,z),
+                        new Vector3(side*1.65f,-1.71f,z), new Vector3(side*1.65f,-1.71f,z+0.10f),
+                        new Vector3(side*1.2f,-1.71f,z+0.10f),Vector3.down);
+                }
+            }
+            var litWindows = Emissive("Resolute Occupied Decks",new Color(0.21f,0.17f,0.12f),
+                new Color(1f,0.73f,0.42f),1.25f,0f,0.1f);
+            var paint = Lit("Resolute Service Markings",new Color(0.78f,0.68f,0.46f),0f,0.18f);
+            var decks = QuartersSceneSetup.MeshObject(ship,"Room-scale occupied decks",windows.ToMesh("Resolute Occupied Deck Windows"),litWindows);
+            var stripes = QuartersSceneSetup.MeshObject(ship,"Hull service markings",marks.ToMesh("Resolute Service Markings"),paint);
+            foreach (var detail in new[] { decks, stripes })
+            {
+                detail.transform.localPosition = Vector3.zero;
+                detail.transform.localRotation = Quaternion.identity;
+                detail.transform.localScale = Vector3.one;
+                detail.layer = ExteriorLayer;
+                GameObjectUtility.SetStaticEditorFlags(detail,0);
+                var renderer = detail.GetComponent<Renderer>();
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+            }
+            return new[] { decks.GetComponent<Renderer>(), stripes.GetComponent<Renderer>() };
         }
 
         private static void AddDriveGlows(Transform ship, string family)

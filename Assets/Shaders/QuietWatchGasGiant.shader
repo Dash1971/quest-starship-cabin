@@ -87,7 +87,7 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 float storm = weather.a;
 
                 float sunDot = dot(n, sun);
-                float light = smoothstep(-0.16, 0.22, sunDot);
+                float light = smoothstep(-0.04, 0.085, sunDot);
                 light *= QWRingTransmission(input.positionWS);
 
                 float viewDot = saturate(dot(n, v));
@@ -95,14 +95,14 @@ Shader "StarshipCabin/QuietWatchGasGiant"
                 float forwardGlow = smoothstep(-0.18, 0.42, sunDot);
                 // Reflected ring light keeps the nominal nightside legible in
                 // the cabin; the direct sun still supplies the main contrast.
-                color *= 0.045 + light * 1.08;
-                color += float3(0.72, 0.30, 0.09) * atmosphere * (0.18 + forwardGlow * 0.82);
-                color += float3(0.12, 0.19, 0.36) * atmosphere * (1.0 - light) * 0.24;
+                color *= 0.018 + light * (0.16 + 1.12 * saturate(sunDot));
+                color += float3(0.62, 0.52, 0.39) * atmosphere * forwardGlow * 0.20;
+                color += float3(0.12, 0.19, 0.36) * atmosphere * (1.0 - light) * 0.035;
 
                 // A thin forward-scattering veil catches light over the limb
                 // and within bright zones, separating upper haze from belts.
                 float upperHaze = pow(1.0 - viewDot, 5.0) * smoothstep(-0.12, 0.55, sunDot);
-                color += float3(1.0, 0.55, 0.22) * upperHaze * 0.72;
+                color += float3(1.0, 0.55, 0.22) * upperHaze * 0.22;
                 color += _StormColor.rgb * storm * _WeatherPulse * 0.075;
                 color += float3(0.88, 0.48, 0.20) * atmosphere * _WeatherPulse * 0.055;
 
