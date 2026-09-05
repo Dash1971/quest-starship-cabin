@@ -13,7 +13,6 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SpatialTracking;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
-using UnityEngine.XR.OpenXR.Features;
 using UnityEngine.XR.OpenXR.Features.Meta;
 using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 using UnityEngine.XR.OpenXR.Features.Interactions;
@@ -583,7 +582,10 @@ namespace StarshipCabin.EditorTools
                 AssetDatabase.CreateAsset(settings, path);
             }
 
-            settings.lightmapper = LightingSettings.Lightmapper.ProgressiveGPU;
+            // The development Mac's Intel GPU is below Unity 6's GPU
+            // lightmapper requirement. Progressive CPU is slower but portable
+            // and produces a real verifiable bake instead of ambient probes only.
+            settings.lightmapper = LightingSettings.Lightmapper.ProgressiveCPU;
             settings.bakedGI = true;
             settings.realtimeGI = false;
             settings.mixedBakeMode = MixedLightingMode.IndirectOnly;
@@ -1008,7 +1010,7 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-scale-study.1";
+            PlayerSettings.bundleVersion = "2.0.0-m6.3-reliability-scale";
             PlayerSettings.Android.bundleVersionCode = 20010;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
@@ -1054,8 +1056,6 @@ namespace StarshipCabin.EditorTools
 
             EnableFeature<MetaQuestFeature>(openXrSettings);
             EnableFeature<DisplayUtilitiesFeature>(openXrSettings);
-            EnableFeature<FoveatedRenderingFeature>(openXrSettings);
-            openXrSettings.foveatedRenderingApi = OpenXRSettings.BackendFovationApi.SRPFoveation;
             EnableFeature<MetaQuestTouchPlusControllerProfile>(openXrSettings);
             EnableFeature<MetaQuestTouchProControllerProfile>(openXrSettings);
             EnableFeature<OculusTouchControllerProfile>(openXrSettings);

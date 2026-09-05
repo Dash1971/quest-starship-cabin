@@ -6,20 +6,20 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-The September scale study implements transition/timing fixes and a Great Weather distance, weather-map and shared-shadow benchmark. **It has not been built or approved on Quest.** OpenClaw/Codes should follow the [implementation and review guide](docs/development/reliability-great-weather-review.md) for source checks, clean scene regeneration, lighting bake, captures and device acceptance. The candidate builds as `2.0.0-scale-study.1` (`20010`) to `Builds/StarshipCabin-QuietWatch-Review.apk`.
+The September M6.3 candidate implements transition/timing fixes and a Great Weather distance, weather-map and shared-shadow benchmark. It was source-tested, regenerated, baked, desktop-render reviewed, package-audited and installed on Quest 3 on 2026-09-05. **In-headset visual, comfort and performance approval remains open.** Follow the [implementation and review guide](docs/development/reliability-great-weather-review.md) for the remaining device acceptance. The installed candidate is `2.0.0-m6.3-reliability-scale` (`20010`); APK SHA-256: `7ea7e41f258b445a06ab8078e19bdd857edcb89ab77010e84424a43709407531`.
 
-The records below describe the earlier M6.2 baseline. In this candidate, Quiet pauses an underway event, B preview starts continuously, and Formation Still settles to rest; the guide supersedes the historical control and motion descriptions below.
+The records below describe the earlier M6.2 baseline. M6.3 preserves its approved controls: switching to Quiet cancels and resets event state, holding B jumps directly to a readable preview phase, and the formation remains visibly underway in both Quiet and Living even when comfort motion is set to Still.
 
 ## Previous baseline status
 
-Active development branch: `v2/visual-benchmark`
+Active development branch: `main`
 
 - Foundation: tested Milestone 8 `main` commit `25e1d818`
 - Direction: exterior-first 2.0 replacement vision
-- Current branch status: the M6.2 Release Candidate is implemented and installed with five selectable vistas, collision-validated harbour choreography, clearly readable formation flight, destination-responsive cabin lighting, spatial ambience, release-length grace-note timing, an explicit event-preview control, a requested 72 Hz display rate, and expanded on-device performance/thermal evidence; headset art-direction, comfort, thermal, and live performance sign-off remain open
+- Current branch status: M6.3 extends the installed M6.2 foundation with reliability hardening and the Great Weather scale study; headset art-direction, comfort, thermal, and live performance sign-off remain open
 - Historical experiments: `beta/m9-opus-fix` and `newhope` remain available for comparison but are not the 2.0 foundation
 
-Current headset build: `Quiet Watch 2.0.0-m6.2-release-candidate`
+Current headset build: `Quiet Watch 2.0.0-m6.3-reliability-scale`
 
 Stable rollback tag: `quarters-v2-m7-tested-20260711`
 

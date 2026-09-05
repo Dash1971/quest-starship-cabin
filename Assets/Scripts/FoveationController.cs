@@ -2,8 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
-using UnityEngine.XR.OpenXR;
-using UnityEngine.XR.OpenXR.Features;
 
 namespace StarshipCabin
 {
@@ -22,12 +20,6 @@ namespace StarshipCabin
 
         private IEnumerator Start()
         {
-            var feature = OpenXRSettings.Instance?.GetFeature<FoveatedRenderingFeature>();
-            if (feature == null || !feature.enabled)
-            {
-                Debug.LogWarning("QUIET_WATCH_FOVEATION requested=false reason=feature_disabled");
-                yield break;
-            }
             var elapsed = 0f;
             var displays = new List<XRDisplaySubsystem>();
 

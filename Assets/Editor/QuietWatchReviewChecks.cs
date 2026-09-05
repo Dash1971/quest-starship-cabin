@@ -63,7 +63,7 @@ namespace StarshipCabin.EditorTools
                 weather.PreviewAt(1020, LifeMode.Living, MotionMode.Still);
                 Require((moon.localPosition - first).sqrMagnitude < 1e-8f, "Capture depends on previous seek order.");
                 weather.ApplyComfort(LifeMode.Quiet, MotionMode.Still);
-                Require((moon.localPosition - first).sqrMagnitude < 1e-8f, "Quiet rewound the event pose.");
+                Require((moon.localPosition - origin).sqrMagnitude < 1e-8f, "Quiet did not reset the event pose.");
                 var mesh = planet.GetComponent<MeshFilter>().sharedMesh;
                 var vertices = mesh.vertices;
                 var triangles = mesh.triangles;
@@ -72,8 +72,21 @@ namespace StarshipCabin.EditorTools
                     var a = vertices[triangles[i]]; var b = vertices[triangles[i + 1]]; var c = vertices[triangles[i + 2]];
                     Require(Vector3.Dot(Vector3.Cross(b - a, c - a), a + b + c) > 0f, "Planet triangle faces inward or is degenerate.");
                 }
+                weather.Exit();
+                var formation = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
+                formation.gameObject.SetActive(true);
+                formation.Enter(LifeMode.Quiet, MotionMode.Still);
+                var rig = formation.transform.Find("Formation Flight Rig");
+                formation.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
+                var formationStart = rig.localPosition;
+                formation.PreviewAt(10, LifeMode.Quiet, MotionMode.Still);
+                Require(Vector3.Distance(formationStart, rig.localPosition) > 0.5f,
+                    "Formation must remain visibly underway in Quiet/Still.");
+                formation.ApplyComfort(LifeMode.Living, MotionMode.Still);
+                Require(formation.PreviewGraceNote(), "Formation event preview must work in Still.");
+                formation.Exit();
                 QuietWatchTrafficValidation.ValidateOpenScene();
-                Debug.Log("QUIET_WATCH_REVIEW_CHECKS PASS: scene identity, weather materials/geometry, shadow path, reentry and seek order. Stereo rendering and device performance still require Quest review.");
+                Debug.Log("QUIET_WATCH_REVIEW_CHECKS PASS: scene identity, weather materials/geometry, shadow path, event reset, formation travel/preview, reentry and seek order. Stereo rendering and device performance still require Quest review.");
             }
             finally
             {

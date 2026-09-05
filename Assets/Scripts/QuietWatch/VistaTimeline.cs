@@ -4,8 +4,8 @@ namespace StarshipCabin.QuietWatch
 {
     /// <summary>
     /// Engine-independent, injectable observation clock. Mode changes affect
-    /// future velocity, never the accumulated pose. Quiet pauses a started
-    /// event rather than rewinding the world. One event is allowed per entry.
+    /// future velocity, never the accumulated pose. Quiet cancels and resets
+    /// event state while preserving ordinary environmental travel.
     /// </summary>
     public sealed class VistaTimeline
     {
@@ -44,7 +44,15 @@ namespace StarshipCabin.QuietWatch
 
         public void SetModes(bool isLiving, bool isDrifting)
         {
-            if (living != isLiving) LivingElapsed = 0;
+            if (living != isLiving)
+            {
+                LivingElapsed = 0;
+                if (!isLiving)
+                {
+                    EventAge = -1;
+                    preview = false;
+                }
+            }
             living = isLiving;
             drifting = isDrifting;
         }
@@ -77,13 +85,14 @@ namespace StarshipCabin.QuietWatch
             return started;
         }
 
-        // A review runs from the current state at 8x event speed. No mid-event
-        // teleport; a completed event can be replayed by re-entering the vista.
-        public bool Preview(bool accelerated = true)
+        // A deliberate review request may jump to the event's readable phase.
+        // This preserves the headset-approved M6.2 preview contract while the
+        // normal unattended event still starts gently at zero.
+        public bool Preview(double startFraction = 0.55, bool accelerated = false)
         {
-            if (!living || EventAge >= duration) return false;
+            if (!living) return false;
             preview = accelerated;
-            if (EventAge < 0) EventAge = 0;
+            EventAge = duration * Math.Max(0, Math.Min(1, startFraction));
             return true;
         }
 

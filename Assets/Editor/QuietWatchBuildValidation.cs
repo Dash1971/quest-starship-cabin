@@ -13,17 +13,48 @@ namespace StarshipCabin.EditorTools
     {
         public static string SourceHash()
         {
-            // Generated materials/scenes and import metadata are excluded;
-            // generator code, shaders and authored source assets are included.
-            var paths = Directory.GetFiles("Assets", "*", SearchOption.AllDirectories)
-                .Where(path => new[] { ".cs", ".shader", ".hlsl", ".png", ".fbx", ".obj", ".blend" }
-                    .Contains(Path.GetExtension(path).ToLowerInvariant()))
-                .OrderBy(path => path.Replace('\\', '/'), StringComparer.Ordinal);
+            // Resolve from the Unity project rather than the launcher's working
+            // directory. Include generator inputs and import settings outside
+            // Assets so the stamp actually covers the claimed source surface.
+            var root = Directory.GetParent(Application.dataPath)?.FullName
+                ?? throw new InvalidOperationException("Cannot resolve Unity project root.");
+            var extensions = new[] { ".cs", ".shader", ".hlsl", ".png", ".fbx", ".obj", ".blend", ".py" };
+            var roots = new[]
+                {
+                    "Assets/Art/QuietWatch",
+                    "Assets/Editor",
+                    "Assets/Scripts",
+                    "Assets/Shaders",
+                    "ArtSource",
+                    "tools"
+                }
+                .Select(path => Path.Combine(root, path))
+                .Where(Directory.Exists);
+            var sourcePaths = roots.SelectMany(path => Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+                .Where(path => extensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
+                .Concat(new[]
+                {
+                    // The manifest is authored input. Unity rewrites the lock
+                    // and several ProjectSettings files during import/bake, so
+                    // those mutable outputs cannot define scene identity; the
+                    // checked-in generator code that configures them is hashed.
+                    Path.Combine(root, "Packages/manifest.json")
+                }.Where(File.Exists))
+                .Distinct()
+                .ToArray();
+            var authoredArtRoot = Path.Combine(root, "Assets/Art/QuietWatch") + Path.DirectorySeparatorChar;
+            var importMetadata = sourcePaths
+                .Where(path => path.StartsWith(authoredArtRoot, StringComparison.Ordinal))
+                .Select(path => path + ".meta")
+                .Where(File.Exists);
+            var paths = sourcePaths.Concat(importMetadata)
+                .OrderBy(path => Path.GetRelativePath(root, path).Replace('\\', '/'), StringComparer.Ordinal);
             using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             foreach (var path in paths)
             {
                 var data = File.ReadAllBytes(path);
-                hash.AppendData(Encoding.UTF8.GetBytes(path.Replace('\\', '/') + "\n" + data.Length + "\n"));
+                var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
+                hash.AppendData(Encoding.UTF8.GetBytes(relative + "\n" + data.Length + "\n"));
                 hash.AppendData(data);
             }
             return BitConverter.ToString(hash.GetHashAndReset()).Replace("-", "").ToLowerInvariant();

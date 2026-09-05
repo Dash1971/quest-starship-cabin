@@ -66,12 +66,14 @@ namespace StarshipCabin.QuietWatch
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode motionMode)
         {
-            if (lifeMode != nextLifeMode)
+            if (lifeMode == LifeMode.Living && nextLifeMode == LifeMode.Quiet)
             {
-                if (nextLifeMode == LifeMode.Quiet) audioController?.CancelQuietWatchGrace();
+                audioController?.CancelQuietWatchGrace();
+                starWindow?.ClearGraceNote();
             }
             lifeMode = nextLifeMode;
             timeline?.SetModes(nextLifeMode == LifeMode.Living, motionMode == MotionMode.Drift);
+            starWindow?.SetGraceAge(timeline == null ? -1f : (float)timeline.EventAge);
             starWindow?.SetQuietWatchComfort(
                 living: nextLifeMode == LifeMode.Living,
                 drifting: motionMode == MotionMode.Drift);
@@ -88,7 +90,7 @@ namespace StarshipCabin.QuietWatch
 
         public override bool PreviewGraceNote()
         {
-            if (!active || timeline == null || timeline.EventAge >= 0 || !timeline.Preview(false)) return false;
+            if (!active || timeline == null || !timeline.Preview(0, false)) return false;
             starWindow?.TriggerFirstQuestionComet();
             audioController?.TriggerQuietWatchGrace(VistaId);
             return true;

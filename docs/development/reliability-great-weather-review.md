@@ -1,6 +1,6 @@
 # Quiet Watch reliability and Great Weather scale study
 
-This is the first implementation package from the September 2026 audit: R0 reliability work plus the R1 Great Weather distance/lighting study. Base: `b589b09625f2403c3b22598acecae90bc97388fd`. It is a review candidate for OpenClaw/Codes, not a headset-approved release. The existing installed M6.2 and rollback records in README are historical evidence for those builds only.
+This is the first implementation package from the September 2026 audit: R0 reliability work plus the R1 Great Weather distance/lighting study. Base: `b589b09625f2403c3b22598acecae90bc97388fd`. It is a maintainer review candidate, not a headset-approved release. The existing installed M6.2 and rollback records in README are historical evidence for those builds only.
 
 ## Intended result
 
@@ -16,14 +16,14 @@ This is an art-directed distant-space approximation, not an orbital physics or v
 
 - Rapid destination requests during a seat/vista fade are ignored. A refused or missing fader cannot expose an immediate vista swap. Disabling the fader clears its overlay and releases the completion callback once. The overlay shader includes URP stereo/instancing support.
 - A double-precision observation timeline integrates future movement instead of multiplying the entire session age by a newly selected speed. Drift and traffic activity ease over two seconds. Application pause/focus loss stops visual clocks; large stall deltas are capped at 0.1 s instead of catching up visibly.
-- Quiet pauses an underway event at its current pose. Returning to Living resumes it; before an event starts, changing Life mode resets its dwell. Each entry permits one event. Hold B previews continuously at 8× event speed, without jumping into the middle. The already-short First Question comet previews at real time. Completed events require reentry to replay. Formation course changes require Drift; Still settles the formation to rest and rejects a preview that would force it to move.
+- Returning to Quiet cancels and resets an event and its uninterrupted Living dwell, preserving the headset-approved M6.2 behavior. Hold B enters Living and jumps directly to a readable event phase; the short First Question comet begins at its natural start. The formation remains visibly underway in both Life modes and in Still, while integrated clocks prevent mode changes from rebasing its pose.
 - Audio uses two destination sources to fade the outgoing bed while the incoming bed arrives. Event audio has a dedicated cancellable source. Destination/event synthesis is prewarmed during runtime startup; editor captures do not synthesize audio. Startup time and audio memory still need profiling.
-- Android foveated rendering is enabled, with SRP foveation and a conservative requested level of 0.5. A reported level is not proof that the device is foveating.
+- Fixed foveation retains the existing `XRDisplaySubsystem` path with a conservative requested level of 0.5. The generic OpenXR foveation feature remains disabled because it adds an unused eye-tracking permission on this package; a reported fixed level is still not proof that the device is foveating.
 - Release frame timing is enabled. Logs distinguish missing CPU/GPU data from zero, deduplicate timing samples, separate vista/mode/transition windows, and discard the resume gap. CPU/GPU figures are valid-sample averages. p95/p99 measure application frame deltas, **not** GPU percentiles or compositor missed frames. Use device profiling alongside these logs.
-- Scene generation stamps a hash of source C#, shaders and authored geometry/image inputs. Build refuses stale generation or a missing verified bake. A successful synchronous bake marks and saves the scene. APK provenance records its SHA-256, source hash, Unity version and build GUID. This checks generated-source freshness, not arbitrary manual scene edits or every external toolchain setting; rebuild from a clean checkout for release evidence.
+- Scene generation stamps a hash of source C#, shaders, authored-art import metadata, the package manifest, generator scripts and authored geometry/image inputs. Mutable Unity-generated package-lock and ProjectSettings outputs are excluded to keep the identity stable across import and bake; their configuration code remains covered. Build refuses stale generation or a missing verified bake. A successful synchronous bake marks and saves the scene. APK provenance records its SHA-256, source hash, Unity version and build GUID. This checks generated-source freshness, not arbitrary manual scene edits; rebuild from a clean checkout for release evidence.
 - Captures use explicit observation times, immutable pose origins, a unique run directory and a manifest. The saved scene is reopened afterward so preview transforms and lighting cannot leak into a later build. Current coverage is four seats × five vistas plus harbour/formation review frames, three Great Weather shadow phases and two comet phases (33 images when all expected capture points exist). The manifest records the actual files and whether lighting was baked.
 
-## Checks performed without Unity
+## Source checks
 
 Run from the repository root with .NET 8 and Python 3.12+/NumPy 2.3.5:
 
@@ -34,14 +34,20 @@ python3 tests/check_weather_atlas.py
 git diff --check
 ```
 
-The linked production `VistaTimeline.cs` passes 27 assertions covering event boundaries, one event per entry, preview continuity, multi-hour mode changes, easing, invalid deltas and seek versus 72 Hz simulation. Roslyn parses the project's C# using Editor/Android symbol sets. Independent geometry reference checks cover each eye, head sway, a reclining seat, and the moon's shadow path. The actual atlas generator repeats deterministically and agrees with the checked-in PNG within one byte of platform rounding. GitHub Actions runs these same checks.
+The linked production `VistaTimeline.cs` checks event boundaries, reset and preview behavior, multi-hour mode changes, easing, invalid deltas and seek versus 72 Hz simulation. Roslyn parses the project's C# using Editor/Android symbol sets. Independent geometry reference checks cover each eye, head sway, a reclining seat, and the moon's shadow path. The actual atlas generator repeats deterministically and agrees with the checked-in PNG within one byte of platform rounding. GitHub Actions runs these same checks.
 
-**These are not a Unity compilation, shader compilation, desktop render, APK build or Quest performance test.** This implementation environment has no Unity editor or attached headset. None of those results is claimed here. `QuietWatchReviewChecks.Run` supplies additional real Unity scene checks, but has not been run here.
+These source checks do not replace Unity, render, package or Quest validation.
+
+## Maintainer validation completed
+
+On 2026-09-05, Unity 6000.5.2f1 compiled and regenerated the project, passed `QuietWatchReviewChecks`, completed a synchronous Progressive CPU bake with two directional lightmaps, compiled GLES3/Vulkan shaders, and produced an ARM64 IL2CPP APK. Thirty-three fixed-seat and event captures were generated and visually reviewed. The APK package/version/ABI, v2 signature and permissions were audited before successful installation on Quest 3. Eye tracking is not requested. APK SHA-256: `7ea7e41f258b445a06ab8078e19bdd857edcb89ab77010e84424a43709407531`.
+
+Stereo parallax, in-headset art/audio, comfort, sustained 72 Hz and thermal acceptance remain open.
 
 ## Maintainer build and review
 
 1. Use a clean checkout of this PR with Unity **6000.5.2f1**, the committed package versions and Android IL2CPP support. Preserve the known-good APK and device settings before testing. Keep the PR in draft until the following evidence is attached.
-2. Run **Starship Cabin → Quiet Watch → Regenerate, Bake and Build Review APK**. This regenerates the scene, runs the Unity scene checks, bakes synchronously and builds. In batch mode (requires graphics for lightmapping; do not use `-nographics`):
+2. Run **Starship Cabin → Quiet Watch → Regenerate, Bake and Build Review APK**. This regenerates the scene, runs the Unity scene checks, performs a portable synchronous Progressive CPU bake, and builds. In batch mode (requires graphics for lightmapping; do not use `-nographics`):
 
 ```sh
 "$UNITY_EDITOR" -batchmode -quit -projectPath "$PWD" \
@@ -49,12 +55,12 @@ The linked production `VistaTimeline.cs` passes 27 assertions covering event bou
   -logFile Builds/review-build.log
 ```
 
-Create `Builds/` first when using a fresh checkout. Output: `Builds/StarshipCabin-QuietWatch-Review.apk` plus `.provenance.txt`. Candidate version: `2.0.0-scale-study.1`, Android version code `20010`, existing Quiet Watch package ID. A maintainer choosing another version code should update the source and regenerate.
+Create `Builds/` first when using a fresh checkout. Output: `Builds/StarshipCabin-QuietWatch-Review.apk` plus `.provenance.txt`. Candidate version: `2.0.0-m6.3-reliability-scale`, Android version code `20010`, existing Quiet Watch package ID. A maintainer choosing another version code should update the source and regenerate.
 
 3. Run **Capture Fixed Seats** twice, reversing the order of manual seeks as an additional check. Compare the two manifests and corresponding image pixels, not directory names. The Unity scene checks already check repeated seeks and reentry, shared materials, moon clearance, sphere winding and supported weather shaders. Attach the baked captures; inspect poles, meridian seam, shadow edges, moon visibility and every seat. Captures made with `RegenerateAndCaptureAll` are explicitly unbaked unless lighting is separately baked first.
 4. In Play Mode and then Quest, alternate seat hops, vista changes and mode input rapidly. Verify full black in each eye, no exposed swaps, no stuck busy state, and correct settings after a declined preview. Disable/re-enable the fader during each half of a transition. Test headset removal/resume before and during an event.
 5. Test Great Weather at all seats with 15 cm head sway. Compare the window's stereo disparity against the astronomical bodies. Check ring/glass sorting and silhouettes when leaning at the window edges. Watch the normal 15-minute dwell and full four-minute emergence as well as preview. Quiet/Still should support a convincing uninterrupted 20-minute stay.
-6. Collect Quest CPU/GPU/compositor and thermal evidence at 72 Hz, first cold and then after a two-hour soak. Compare M6.2 and this candidate from matching seats/modes. Aim for CPU and GPU application work individually ≤11 ms, with tails recorded, within the 13.89 ms refresh interval. This is a target, not a measured result. Compare foveation 0 and 0.5, especially peripheral stars and ring bands. Do not infer success from `requested_level` or application delta statistics.
+6. Collect Quest CPU/GPU/compositor and thermal evidence at 72 Hz, first cold and then after a two-hour soak. Compare M6.2 and this candidate from matching seats/modes. Aim for CPU and GPU application work individually ≤11 ms, with tails recorded, within the 13.89 ms refresh interval. This is a target, not a measured result. Compare fixed foveation 0 and 0.5, especially peripheral stars and ring bands. Do not infer success from `requested_level` or application delta statistics.
 
 ## Remaining roadmap
 
@@ -70,4 +76,4 @@ Known limits retained for separate work: harbour lane visibility still changes i
 
 ## API references
 
-The OpenXR 1.17 [settings API](https://docs.unity3d.com/Packages/com.unity.xr.openxr@1.17/api/UnityEngine.XR.OpenXR.OpenXRSettings.html) exposes the SRP foveation setting; [FoveatedRenderingFeature](https://docs.unity3d.com/Packages/com.unity.xr.openxr@1.17/api/UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature.html) supplies the feature. Unity documents [synchronous lightmap baking](https://docs.unity.cn/6000.2/Documentation/ScriptReference/Lightmapping.Bake.html). These references establish API intent, not validation of this particular player build.
+Unity documents [synchronous lightmap baking](https://docs.unity.cn/6000.2/Documentation/ScriptReference/Lightmapping.Bake.html). This reference establishes API intent, not validation of this particular player build.

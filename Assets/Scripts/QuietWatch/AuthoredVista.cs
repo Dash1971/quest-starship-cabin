@@ -134,8 +134,9 @@ namespace StarshipCabin.QuietWatch
             UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
         }
 
-        private bool AllowEventMotion => kind != AuthoredVistaKind.LongFormation
-            || motionMode == MotionMode.Drift;
+        // Still/Drift controls optional comfort motion. It must not freeze
+        // physically underway traffic, ships, or their authored grace notes.
+        private const bool AllowEventMotion = true;
 
         private void OnApplicationPause(bool value) => paused = value;
         private void OnApplicationFocus(bool value) => focused = value;
@@ -201,10 +202,16 @@ namespace StarshipCabin.QuietWatch
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode nextMotionMode)
         {
+            var cancelEvent = lifeMode == LifeMode.Living && nextLifeMode == LifeMode.Quiet;
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
             timeline?.SetModes(nextLifeMode == LifeMode.Living, nextMotionMode == MotionMode.Drift);
-            if (nextLifeMode == LifeMode.Quiet) audioController?.CancelQuietWatchGrace();
+            if (cancelEvent)
+            {
+                audioController?.CancelQuietWatchGrace();
+                if (active && timeline != null)
+                    UpdateComposition((float)timeline.Elapsed, 0f);
+            }
 
             starWindow?.SetAuthoredVistaBackdrop(BackdropDensity());
             audioController?.SetQuietWatchProfile(VistaId, nextLifeMode == LifeMode.Living);
@@ -233,9 +240,10 @@ namespace StarshipCabin.QuietWatch
 
         public override bool PreviewGraceNote()
         {
-            if (!active || !AllowEventMotion || timeline == null || !timeline.Preview()) return false;
+            if (!active || timeline == null || !timeline.Preview()) return false;
             audioController?.TriggerQuietWatchGrace(VistaId);
-            Debug.Log($"Quiet Watch continuous event preview: {DisplayName}");
+            UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
+            Debug.Log($"Quiet Watch event preview started: {DisplayName}");
             return true;
         }
 
@@ -289,15 +297,16 @@ namespace StarshipCabin.QuietWatch
         {
             if (slowTurn != null)
             {
-                // Shared velocity is invisible in a comoving cabin. Only
-                // restrained relative corrections remain; Still eases to rest.
-                const float activity = 1f;
-                var flightPhase = (float)timeline.DriftTravel * 0.006f;
+                // The formation remains visibly underway in both Quiet and
+                // Living, including default Still. Integrated clocks preserve
+                // its pose when Life mode changes instead of rebasing motion.
+                var flightPhase = (float)(timeline.LivingTravel * 0.064
+                    + timeline.QuietTravel * 0.052);
                 var cruise = new Vector3(
-                    Mathf.Sin(flightPhase) * 0.38f * activity,
-                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 0.105f * activity,
-                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 0.58f * activity);
-                var courseYaw = Mathf.Cos(flightPhase) * 0.28f * activity;
+                    Mathf.Sin(flightPhase) * 3.8f,
+                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 1.05f,
+                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 5.8f);
+                var courseYaw = Mathf.Cos(flightPhase) * 2.8f;
                 var turn = Quaternion.Euler(
                     -2.0f * grace,
                     courseYaw - 10.0f * grace,
@@ -315,8 +324,9 @@ namespace StarshipCabin.QuietWatch
                 }
 
                 traveller.gameObject.SetActive(true);
-                var phase = (float)timeline.DriftTravel * (0.018f + i * 0.002f) + i * 2.1f;
-                const float correctionScale = 0.15f;
+                var stationTime = (float)(timeline.LivingTravel + timeline.QuietTravel * 0.80);
+                var phase = stationTime * (0.118f + i * 0.015f) + i * 2.1f;
+                var correctionScale = Mathf.Lerp(0.72f, 1f, (float)timeline.Activity);
                 var correction = new Vector3(
                     Mathf.Sin(phase) * (0.38f + i * 0.075f),
                     Mathf.Sin(phase * 0.71f) * (0.22f + i * 0.040f),
@@ -339,7 +349,10 @@ namespace StarshipCabin.QuietWatch
         {
             if (slowTurn != null)
             {
-                var degrees = (float)timeline.DriftTravel * 0.035f;
+                // The weather keeps its geological motion in Still; Drift adds
+                // speed without rebasing the already observed pose.
+                var stillTravel = timeline.Elapsed - timeline.DriftTravel;
+                var degrees = (float)(stillTravel * 0.010 + timeline.DriftTravel * 0.035);
                 slowTurn.localRotation = slowTurnOriginRotation * Quaternion.AngleAxis(degrees, Vector3.up);
             }
 
