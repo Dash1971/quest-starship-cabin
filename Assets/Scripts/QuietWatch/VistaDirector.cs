@@ -21,6 +21,7 @@ namespace StarshipCabin.QuietWatch
         public MotionMode Motion { get; private set; }
         public VistaEnvironment ActiveVista => activeVista;
         public int VistaCount => vistas?.Length ?? 0;
+        public bool IsTransitioning => screenFader != null && screenFader.IsBusy;
         public bool IsPreviewNoticeActive => Time.unscaledTime < previewNoticeUntil;
 
         private float previewNoticeUntil;
@@ -33,7 +34,7 @@ namespace StarshipCabin.QuietWatch
 
         private void Start()
         {
-            if (vistas == null || vistas.Length == 0)
+            if (vistas == null || vistas.Length == 0 || Array.Exists(vistas, vista => vista == null))
             {
                 Debug.LogError("Quiet Watch has no registered vistas.");
                 return;
@@ -70,6 +71,7 @@ namespace StarshipCabin.QuietWatch
 
         public void ToggleLifeMode()
         {
+            if (activeVista == null || IsTransitioning) return;
             Life = Life == LifeMode.Quiet ? LifeMode.Living : LifeMode.Quiet;
             activeVista?.ApplyComfort(Life, Motion);
             SaveAndNotify();
@@ -77,6 +79,7 @@ namespace StarshipCabin.QuietWatch
 
         public void ToggleMotionMode()
         {
+            if (activeVista == null || IsTransitioning) return;
             Motion = Motion == MotionMode.Still ? MotionMode.Drift : MotionMode.Still;
             activeVista?.ApplyComfort(Life, Motion);
             SaveAndNotify();
@@ -84,13 +87,14 @@ namespace StarshipCabin.QuietWatch
 
         public bool PreviewGraceNote()
         {
-            if (activeVista == null)
+            if (activeVista == null || IsTransitioning)
             {
                 return false;
             }
 
             // A grace note is a Living-mode event. Holding B from Quiet is a
             // deliberate request, so enter Living before starting the preview.
+            var previousLife = Life;
             if (Life != LifeMode.Living)
             {
                 Life = LifeMode.Living;
@@ -99,6 +103,8 @@ namespace StarshipCabin.QuietWatch
 
             if (!activeVista.PreviewGraceNote())
             {
+                Life = previousLife;
+                activeVista.ApplyComfort(Life, Motion);
                 return false;
             }
 
@@ -110,7 +116,8 @@ namespace StarshipCabin.QuietWatch
 
         private void SelectVista(int nextIndex)
         {
-            if (nextIndex == activeIndex || nextIndex < 0 || nextIndex >= vistas.Length)
+            if (activeVista == null || IsTransitioning || nextIndex == activeIndex
+                || nextIndex < 0 || nextIndex >= vistas.Length)
             {
                 return;
             }
@@ -125,10 +132,14 @@ namespace StarshipCabin.QuietWatch
                 SaveAndNotify();
             }
 
-            if (screenFader == null || !screenFader.TryBlackout(Swap))
+            if (screenFader == null)
             {
-                Swap();
+                Debug.LogError("Quiet Watch requires a ScreenFader for vista changes.");
+                return;
             }
+            // Busy requests are deliberately ignored, as they are for seat hops.
+            // A refused blackout must never expose a swap or queue a stale callback.
+            screenFader.TryBlackout(Swap);
         }
 
         private int FindVista(string id)

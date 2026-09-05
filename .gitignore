@@ -34,3 +34,8 @@ Thumbs.db
 *.aab
 *.symbols.zip
 
+# Standalone regression harness (outside Unity Assets)
+!tests/**/*.csproj
+/tests/**/bin/
+/tests/**/obj/
+__pycache__/

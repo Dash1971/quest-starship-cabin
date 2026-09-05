@@ -2,6 +2,14 @@ Shader "StarshipCabin/QuietWatchRings"
 {
     Properties
     {
+        _DistanceScale ("Physical Distance Scale", Float) = 1
+        _DistanceOrigin ("Distance Reference Eye", Vector) = (-1.6,1.1,-1.42,0)
+        _RingCenter ("Ring Center", Vector) = (8,6,-76,0)
+        _RingNormal ("Ring Plane Normal", Vector) = (0,1,0,0)
+        _RingRadii ("Ring Inner / Outer Radius", Vector) = (31.5,44,0,0)
+        _PlanetSphere ("Planet Center / Radius", Vector) = (8,6,-76,29)
+
+        _SunDirection ("Sun Direction", Vector) = (-0.62,0.1,0.78,0)
         _LightColor ("Ice and Dust", Color) = (0.72, 0.55, 0.36, 1)
         _DarkColor ("Rock Bands", Color) = (0.16, 0.10, 0.08, 1)
     }
@@ -21,48 +29,26 @@ Shader "StarshipCabin/QuietWatchRings"
             #pragma fragment frag
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            CBUFFER_START(UnityPerMaterial)
-                half4 _LightColor;
-                half4 _DarkColor;
-            CBUFFER_END
+            #include "QuietWatchWeatherCommon.hlsl"
             struct Attributes { float4 positionOS:POSITION; float2 uv:TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
-            float hash11(float p) { return frac(sin(p * 127.1) * 43758.5453); }
-            float noise1(float p)
-            {
-                float i=floor(p), f=frac(p);
-                f=f*f*(3.0-2.0*f);
-                return lerp(hash11(i),hash11(i+1.0),f);
-            }
+            struct Varyings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
             Varyings vert(Attributes input)
             {
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
-                output.positionCS=TransformObjectToHClip(input.positionOS.xyz);
-                output.uv=input.uv;
+                output.positionWS=TransformObjectToWorld(input.positionOS.xyz);
+                output.positionCS=TransformWorldToHClip(QWProjectionPosition(output.positionWS));
                 return output;
             }
             half4 frag(Varyings input):SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-                float radius=length(input.uv);
-                float radialWarp=(noise1(radius*0.72+3.8)-0.5)*0.72;
-                float broad=0.5+0.5*sin(radius*1.83+radialWarp+sin(radius*0.29)*1.25);
-                float medium=0.5+0.5*sin(radius*6.4+noise1(radius*1.9)*2.1);
-                float fine=0.5+0.5*sin(radius*19.7+sin(radius*4.7)*0.62);
-                float dust=noise1(radius*11.3+17.0);
-                float structure=saturate(broad*0.50+medium*0.27+fine*0.13+dust*0.10);
-
-                // Several narrow divisions and broad low-density regions break
-                // the vinyl-record regularity while preserving readable rings.
-                float divisions=smoothstep(0.035,0.13,abs(sin(radius*0.91+0.7)));
-                divisions*=smoothstep(0.025,0.10,abs(sin(radius*2.37+1.9)));
-                float gaps=smoothstep(0.15,0.34,broad*0.52+medium*0.28+fine*0.10+dust*0.10);
-                gaps*=lerp(0.42,1.0,divisions);
-                float3 color=lerp(_DarkColor.rgb,_LightColor.rgb,structure);
-                color*=0.76+fine*0.19+dust*0.13;
-                float alpha=(0.10+structure*0.42)*gaps;
-                return half4(color,alpha);
+                float radius=length(input.positionWS-_RingCenter.xyz);
+                float density=QWRingDensity(radius);
+                float3 color=lerp(_DarkColor.rgb,_LightColor.rgb,density);
+                color*=0.12+0.88*QWPlanetTransmission(input.positionWS)
+                    *(0.3+0.7*abs(dot(normalize(_RingNormal.xyz),normalize(_SunDirection.xyz))));
+                return half4(color,density*0.68);
             }
             ENDHLSL
         }

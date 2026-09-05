@@ -14,9 +14,9 @@ namespace StarshipCabin.QuietWatch
         [SerializeField, Min(15f)] private float graceNoteAtSeconds = 780f;
 
         private LifeMode lifeMode;
-        private float enteredAt;
-        private float livingStartedAt;
-        private bool graceNotePlayed;
+        private VistaTimeline timeline;
+        private bool paused;
+        private bool focused = true;
         private bool active;
 
         public void Configure(StarWindowSurface window, Light fill, AmbientAudioController audio)
@@ -28,23 +28,29 @@ namespace StarshipCabin.QuietWatch
 
         private void Update()
         {
-            if (!active || graceNotePlayed || lifeMode != LifeMode.Living)
+            if (!active || paused || !focused) return;
+            if (timeline.Advance(Mathf.Min(Time.unscaledDeltaTime, 0.1f)))
             {
-                return;
+                starWindow?.TriggerFirstQuestionComet();
+                audioController?.TriggerQuietWatchGrace(VistaId);
             }
+            starWindow?.SetGraceAge((float)timeline.EventAge);
+        }
 
-            if (Time.unscaledTime - livingStartedAt >= graceNoteAtSeconds)
-            {
-                StartGraceNote(false);
-            }
+        private void OnApplicationPause(bool value) => paused = value;
+        private void OnApplicationFocus(bool value) => focused = value;
+
+        public void PreviewAt(float elapsed, LifeMode life, MotionMode motion)
+        {
+            starWindow?.PreviewAt(elapsed, motion == MotionMode.Drift,
+                life == LifeMode.Living && elapsed >= graceNoteAtSeconds ? elapsed - graceNoteAtSeconds : -1f);
         }
 
         public override void Enter(LifeMode nextLifeMode, MotionMode motionMode)
         {
             active = true;
-            enteredAt = Time.unscaledTime;
-            livingStartedAt = enteredAt;
-            graceNotePlayed = false;
+            timeline = new VistaTimeline(graceNoteAtSeconds, 8);
+            timeline.Reset(nextLifeMode == LifeMode.Living, motionMode == MotionMode.Drift);
             lifeMode = nextLifeMode;
             starWindow?.ResetVistaClock();
             ApplyComfort(nextLifeMode, motionMode);
@@ -62,11 +68,10 @@ namespace StarshipCabin.QuietWatch
         {
             if (lifeMode != nextLifeMode)
             {
-                livingStartedAt = Time.unscaledTime;
-                graceNotePlayed = false;
-                starWindow?.ClearGraceNote();
+                if (nextLifeMode == LifeMode.Quiet) audioController?.CancelQuietWatchGrace();
             }
             lifeMode = nextLifeMode;
+            timeline?.SetModes(nextLifeMode == LifeMode.Living, motionMode == MotionMode.Drift);
             starWindow?.SetQuietWatchComfort(
                 living: nextLifeMode == LifeMode.Living,
                 drifting: motionMode == MotionMode.Drift);
@@ -76,29 +81,17 @@ namespace StarshipCabin.QuietWatch
         public override void Exit()
         {
             active = false;
+            audioController?.CancelQuietWatchGrace();
             starWindow?.ClearGraceNote();
             gameObject.SetActive(false);
         }
 
         public override bool PreviewGraceNote()
         {
-            if (!active)
-            {
-                return false;
-            }
-
-            StartGraceNote(true);
-            return true;
-        }
-
-        private void StartGraceNote(bool preview)
-        {
-            graceNotePlayed = true;
+            if (!active || timeline == null || timeline.EventAge >= 0 || !timeline.Preview(false)) return false;
             starWindow?.TriggerFirstQuestionComet();
-            audioController?.TriggerQuietWatchGrace("first-question");
-            Debug.Log(preview
-                ? "Quiet Watch event preview: First Question comet"
-                : "Quiet Watch grace note: First Question comet");
+            audioController?.TriggerQuietWatchGrace(VistaId);
+            return true;
         }
     }
 }

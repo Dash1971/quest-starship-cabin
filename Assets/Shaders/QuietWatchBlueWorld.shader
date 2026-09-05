@@ -8,6 +8,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
         _AtmosphereColor ("Atmosphere", Color) = (0.12, 0.48, 1.0, 1)
         _SunsetColor ("Sunset", Color) = (1.0, 0.31, 0.08, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.45, 0.28, -0.84, 0)
+        _ObservationTime ("Observation Time", Float) = 0
         _DawnProgress ("Dawn Progress", Range(0, 1)) = 0
     }
     SubShader
@@ -34,6 +35,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 half4 _SunsetColor;
                 float4 _SunDirection;
                 float _DawnProgress;
+                float _ObservationTime;
             CBUFFER_END
 
             struct Attributes
@@ -142,7 +144,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
 
                 // Two cloud scales move at different geological speeds. A
                 // displaced dark copy gives the upper deck visible altitude.
-                float time = _Time.y * 0.0014;
+                float time = _ObservationTime * 0.0014;
                 float cloudBroad = fbm(globe * float3(6.0, 13.0, 6.0)
                     + float3(31.0 + time, 4.0, 17.0 - time * 0.7));
                 float cloudDetail = ridged(globe * float3(17.0, 31.0, 17.0)

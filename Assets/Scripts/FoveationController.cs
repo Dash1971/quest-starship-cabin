@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features;
 
 namespace StarshipCabin
 {
@@ -15,11 +17,17 @@ namespace StarshipCabin
     /// </summary>
     public class FoveationController : MonoBehaviour
     {
-        [Range(0f, 1f)] public float foveationLevel = 0.66f;
+        [Range(0f, 1f)] public float foveationLevel = 0.5f;
         public float maxWaitSeconds = 5f;
 
         private IEnumerator Start()
         {
+            var feature = OpenXRSettings.Instance?.GetFeature<FoveatedRenderingFeature>();
+            if (feature == null || !feature.enabled)
+            {
+                Debug.LogWarning("QUIET_WATCH_FOVEATION requested=false reason=feature_disabled");
+                yield break;
+            }
             var elapsed = 0f;
             var displays = new List<XRDisplaySubsystem>();
 
@@ -47,7 +55,7 @@ namespace StarshipCabin
         {
             display.foveatedRenderingLevel = Mathf.Clamp01(foveationLevel);
             display.foveatedRenderingFlags = XRDisplaySubsystem.FoveatedRenderingFlags.None;
-            Debug.Log($"Starship Cabin: fixed foveated rendering set to {foveationLevel:0.00}.");
+            Debug.Log($"QUIET_WATCH_FOVEATION requested_level={foveationLevel:0.00} reported_level={display.foveatedRenderingLevel:0.00} verification=device_profile_required");
         }
     }
 }

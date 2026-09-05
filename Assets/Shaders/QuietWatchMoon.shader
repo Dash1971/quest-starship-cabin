@@ -2,6 +2,13 @@ Shader "StarshipCabin/QuietWatchMoon"
 {
     Properties
     {
+        _DistanceScale ("Physical Distance Scale", Float) = 1
+        _DistanceOrigin ("Distance Reference Eye", Vector) = (-1.6,1.1,-1.42,0)
+        _RingCenter ("Ring Center", Vector) = (8,6,-76,0)
+        _RingNormal ("Ring Plane Normal", Vector) = (0,1,0,0)
+        _RingRadii ("Ring Inner / Outer Radius", Vector) = (31.5,44,0,0)
+        _PlanetSphere ("Planet Center / Radius", Vector) = (8,6,-76,29)
+
         _Highland ("Highland", Color) = (0.48, 0.43, 0.36, 1)
         _Maria ("Maria", Color) = (0.16, 0.15, 0.15, 1)
         _SunDirection ("Sun Direction", Vector) = (-0.42, 0.52, 0.74, 0)
@@ -22,11 +29,7 @@ Shader "StarshipCabin/QuietWatchMoon"
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            CBUFFER_START(UnityPerMaterial)
-                half4 _Highland;
-                half4 _Maria;
-                float4 _SunDirection;
-            CBUFFER_END
+            #include "QuietWatchWeatherCommon.hlsl"
 
             struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings
@@ -34,7 +37,7 @@ Shader "StarshipCabin/QuietWatchMoon"
                 float4 positionCS:SV_POSITION;
                 float3 normalWS:TEXCOORD0;
                 float3 globe:TEXCOORD1;
-                float3 viewWS:TEXCOORD2;
+                float3 positionWS:TEXCOORD2;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -69,10 +72,10 @@ Shader "StarshipCabin/QuietWatchMoon"
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 VertexPositionInputs p=GetVertexPositionInputs(input.positionOS.xyz);
-                output.positionCS=p.positionCS;
+                output.positionCS=TransformWorldToHClip(QWProjectionPosition(p.positionWS));
                 output.normalWS=TransformObjectToWorldNormal(input.normalOS);
                 output.globe=normalize(input.normalOS);
-                output.viewWS=GetCameraPositionWS()-p.positionWS;
+                output.positionWS=p.positionWS;
                 return output;
             }
 
@@ -93,11 +96,12 @@ Shader "StarshipCabin/QuietWatchMoon"
                 surface*=1.0+relief*0.42;
 
                 float3 n=normalize(input.normalWS);
-                float3 v=normalize(input.viewWS);
+                float3 v=QWViewDirection(input.positionWS);
                 float light=smoothstep(-0.10,0.20,dot(n,normalize(_SunDirection.xyz)));
                 float rim=pow(1.0-saturate(dot(n,v)),2.2);
-                float3 color=surface*(0.07+light*1.08);
-                color+=float3(0.22,0.16,0.11)*rim*light*0.18;
+                float transmission=QWRingTransmission(input.positionWS)*QWPlanetTransmission(input.positionWS);
+                float3 color=surface*(0.035+light*transmission*1.08);
+                color+=float3(0.22,0.16,0.11)*rim*light*transmission*0.18;
                 color=1.0-exp(-color*1.55);
                 return half4(color,1.0);
             }

@@ -95,33 +95,63 @@ namespace StarshipCabin.EditorTools
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
             var vista = NewVistaRoot("Vista 4 - The Great Weather");
+            var center = new Vector3(8f, 6f, -76f);
+            var ringRotation = Quaternion.Euler(63f, 8f, -14f);
+            var sun = new Vector3(-0.62f, 0.10f, 0.78f).normalized;
             var planetMaterial = MaterialFromShader("Quiet Watch Great Weather", "StarshipCabin/QuietWatchGasGiant");
-            planetMaterial.SetColor("_PaleBand", new Color(0.94f, 0.69f, 0.39f));
-            planetMaterial.SetColor("_DarkBand", new Color(0.22f, 0.065f, 0.045f));
-            planetMaterial.SetColor("_StormColor", new Color(1.0f, 0.28f, 0.075f));
-            planetMaterial.SetVector("_SunDirection", new Vector4(-0.62f, 0.30f, 0.72f, 0f));
-            EditorUtility.SetDirty(planetMaterial);
-            var planet = Sphere(vista.transform, "Ringed Giant", planetMaterial, new Vector3(8f, 6f, -76f), 58f);
-            planet.transform.rotation = Quaternion.Euler(0f, -22f, -8f);
-
             var ringMaterial = MaterialFromShader("Great Weather Rings Authored", "StarshipCabin/QuietWatchRings");
-            ringMaterial.SetColor("_LightColor", new Color(0.82f, 0.61f, 0.38f));
-            ringMaterial.SetColor("_DarkColor", new Color(0.10f, 0.052f, 0.045f));
-            EditorUtility.SetDirty(ringMaterial);
-            var rings = ExteriorMesh(vista.transform, "Planetary Rings", Annulus("Great Weather Ring System", 44f, 31.5f, 0.16f, 96), ringMaterial,
-                new Vector3(8f, 6f, -76f), Quaternion.Euler(63f, 8f, -14f));
-
-            var moonMaterial = MaterialFromShader(
-                "Great Weather Moon", "StarshipCabin/QuietWatchMoon");
-            // The giant's visual sphere extends much closer than its origin;
-            // place the moon in front of that surface so the transit survives
-            // depth testing instead of disappearing inside the planet mesh.
-            var shadowMoon = Sphere(vista.transform, "Moon in Ring Shadow", moonMaterial, new Vector3(0f, 3.5f, -16f), 2.5f);
-            var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(34f, 25f, -96f), 3.0f);
-
-            return Configure(vista, "great-weather", "THE GREAT WEATHER", "RING SHADOW AND STORMS",
+            var moonMaterial = MaterialFromShader("Great Weather Moon", "StarshipCabin/QuietWatchMoon");
+            foreach (var material in new[] { planetMaterial, ringMaterial, moonMaterial })
+            {
+                // One proxy metre represents 1,000 km. Keep every member of
+                // this system on the same projection and illumination model.
+                material.SetFloat("_DistanceScale", 1000000f);
+                material.SetVector("_DistanceOrigin", new Vector4(-1.6f, 1.1f, -1.42f, 0f));
+                material.SetVector("_SunDirection", sun);
+                material.SetVector("_RingCenter", center);
+                material.SetVector("_RingNormal", ringRotation * Vector3.forward);
+                material.SetVector("_RingRadii", new Vector4(31.5f, 44f, 0f, 0f));
+                material.SetVector("_PlanetSphere", new Vector4(center.x, center.y, center.z, 29f));
+                EditorUtility.SetDirty(material);
+            }
+            const string texturePath = "Assets/Art/QuietWatch/Textures/QW_GreatWeather.png";
+            var importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
+            if (importer == null) throw new InvalidOperationException("Missing authored weather atlas: " + texturePath);
+            importer.sRGBTexture = true;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = false; // Alpha encodes storm coverage.
+            importer.mipmapEnabled = true;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
+            {
+                name = "Android", overridden = true, maxTextureSize = 2048,
+                format = TextureImporterFormat.ASTC_6x6
+            });
+            importer.SaveAndReimport();
+            planetMaterial.SetTexture("_WeatherMap", AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath));
+            planetMaterial.SetColor("_StormColor", new Color(0.58f, 0.29f, 0.12f));
+            ringMaterial.SetColor("_LightColor", new Color(0.71f, 0.62f, 0.48f));
+            ringMaterial.SetColor("_DarkColor", new Color(0.11f, 0.09f, 0.075f));
+            var planet = ExteriorMesh(vista.transform, "Ringed Giant", WeatherSphere(), planetMaterial, center);
+            planet.transform.localScale = Vector3.one * 58f;
+            planet.transform.rotation = Quaternion.Euler(0f, -22f, -8f);
+            var rings = ExteriorMesh(vista.transform, "Planetary Rings",
+                Annulus("Great Weather Ring System", 44f, 31.5f, 192), ringMaterial, center, ringRotation);
+            var radial = ringRotation * Vector3.left;
+            // Start four proxy metres behind an actual ring-shadow ray. The
+            // moon gradually clears the outer ring; the distant moon stays put.
+            var shadowMoon = Sphere(vista.transform, "Moon in Ring Shadow", moonMaterial,
+                center + radial * 39.5f - sun * 4f, 1.6f);
+            var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(34f, 25f, -96f), 3f);
+            foreach (var body in new[] { planet, rings, shadowMoon, farMoon })
+                body.AddComponent<DistantVistaBounds>();
+            var authored = Configure(vista, "great-weather", "THE GREAT WEATHER", "RING SHADOW AND STORMS",
                 AuthoredVistaKind.GreatWeather, stars, fill, audio, planet.transform,
-                new[] { shadowMoon.transform, farMoon.transform }, new Color(0.92f, 0.50f, 0.26f));
+                new[] { shadowMoon.transform, farMoon.transform }, new Color(0.75f, 0.60f, 0.43f));
+            authored.ConfigureMoonEmergence(radial * 8f);
+            return authored;
         }
 
         public static AuthoredVista BuildLongFormation(
@@ -320,26 +350,50 @@ namespace StarshipCabin.EditorTools
             ExteriorMesh(station, "Docking Guidance Lights", guidance.ToMesh("Harbour Docking Guidance Lights"), amber);
         }
 
-        private static Mesh Annulus(string name, float outerRadius, float innerRadius, float depth, int segments)
+        private static Mesh WeatherSphere()
         {
+            const int longitude = 128, latitude = 64;
+            var vertices = new Vector3[(longitude + 1) * (latitude + 1)];
+            var normals = new Vector3[vertices.Length];
+            var triangles = new List<int>(longitude * latitude * 6);
+            for (var y = 0; y <= latitude; y++)
+            {
+                var angle = Mathf.PI * y / latitude;
+                for (var x = 0; x <= longitude; x++)
+                {
+                    var azimuth = 2f * Mathf.PI * x / longitude;
+                    var index = y * (longitude + 1) + x;
+                    normals[index] = new Vector3(Mathf.Sin(angle) * Mathf.Cos(azimuth),
+                        Mathf.Cos(angle), Mathf.Sin(angle) * Mathf.Sin(azimuth));
+                    vertices[index] = normals[index] * 0.5f;
+                    if (y == latitude || x == longitude) continue;
+                    var next = index + longitude + 1;
+                    // Outward winding, with non-degenerate pole triangles.
+                    if (y > 0) triangles.AddRange(new[] { index, index + 1, next });
+                    if (y < latitude - 1) triangles.AddRange(new[] { index + 1, next + 1, next });
+                }
+            }
+            var mesh = new Mesh { name = "Great Weather Smooth Globe" };
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static Mesh Annulus(string name, float outerRadius, float innerRadius, int segments)
+        {
+            // One double-sided sheet: a closed transparent slab blended the
+            // front and back surfaces twice at almost identical depths.
             var draft = new MeshDraft();
-            var hz = depth * 0.5f;
             for (var i = 0; i < segments; i++)
             {
                 var a0 = i * Mathf.PI * 2f / segments;
                 var a1 = (i + 1) * Mathf.PI * 2f / segments;
-                var o0f = new Vector3(Mathf.Cos(a0) * outerRadius, Mathf.Sin(a0) * outerRadius, hz);
-                var o1f = new Vector3(Mathf.Cos(a1) * outerRadius, Mathf.Sin(a1) * outerRadius, hz);
-                var i0f = new Vector3(Mathf.Cos(a0) * innerRadius, Mathf.Sin(a0) * innerRadius, hz);
-                var i1f = new Vector3(Mathf.Cos(a1) * innerRadius, Mathf.Sin(a1) * innerRadius, hz);
-                var o0b = new Vector3(o0f.x, o0f.y, -hz);
-                var o1b = new Vector3(o1f.x, o1f.y, -hz);
-                var i0b = new Vector3(i0f.x, i0f.y, -hz);
-                var i1b = new Vector3(i1f.x, i1f.y, -hz);
-                draft.AddQuadOriented(i0f, i1f, o1f, o0f, Vector3.forward);
-                draft.AddQuadOriented(i0b, o0b, o1b, i1b, Vector3.back);
-                draft.AddQuadOriented(o0f, o1f, o1b, o0b, (o0f + o1f).normalized);
-                draft.AddQuadOriented(i1f, i0f, i0b, i1b, -(i0f + i1f).normalized);
+                var d0 = new Vector3(Mathf.Cos(a0), Mathf.Sin(a0), 0f);
+                var d1 = new Vector3(Mathf.Cos(a1), Mathf.Sin(a1), 0f);
+                draft.AddQuadOriented(d0 * innerRadius, d1 * innerRadius,
+                    d1 * outerRadius, d0 * outerRadius, Vector3.forward);
             }
             return draft.ToMesh(name);
         }

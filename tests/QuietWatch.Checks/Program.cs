@@ -1,0 +1,82 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using StarshipCabin.QuietWatch;
+
+var checks = 0;
+void Check(bool ok, string label)
+{
+    if (!ok) throw new Exception("FAIL: " + label);
+    checks++;
+    Console.WriteLine("PASS: " + label);
+}
+void Near(double a, double b, string label, double tolerance = 1e-8) => Check(Math.Abs(a - b) < tolerance, label);
+VistaTimeline Clock() { var value = new VistaTimeline(900, 240); value.Reset(true, true); return value; }
+var clock = Clock();
+Check(!clock.Advance(899.9), "event does not start before dwell");
+Check(clock.Advance(0.2), "event starts on crossing dwell");
+Near(clock.EventAge, 0.1, "event preserves boundary overshoot");
+Check(!clock.Advance(20), "event start fires once");
+var pose = clock.Progress;
+clock.SetModes(false, false);
+Near(clock.Progress, pose, "Quiet does not rewind an underway event");
+clock.Advance(7200);
+Near(clock.Progress, pose, "Quiet preserves event pose across two hours");
+var distance = clock.DriftTravel;
+clock.SetModes(true, true);
+Near(clock.DriftTravel, distance, "Drift mode does not rebase accumulated position");
+Near(clock.Progress, pose, "resuming Living preserves event pose");
+clock.Advance(1);
+Check(clock.Progress > pose, "resumed event moves forwards");
+pose = clock.Progress;
+Check(clock.Preview(), "ongoing event can accelerate for review");
+Near(clock.Progress, pose, "preview never jumps to a mid-event composition");
+clock.Advance(1000);
+Near(clock.Progress, 1, "event reaches stable final pose");
+Check(!clock.Advance(10000) && !clock.Preview(), "completed event does not retrigger within entry");
+clock.Reset(true, true);
+Near(clock.Progress, 0, "reentry resets event");
+Near(clock.DriftTravel, 0, "reentry resets drift");
+Check(clock.EventAge < 0, "reentry permits a new event");
+var single = Clock(); var split = Clock();
+single.Advance(7200); split.Advance(7200);
+single.SetModes(false, false); split.SetModes(false, false);
+single.Advance(20);
+for (var i = 0; i < 2000; i++) split.Advance(0.01);
+Near(single.DriftTravel, split.DriftTravel, "drift easing independent of frame partition", 1e-6);
+Near(single.LivingTravel, split.LivingTravel, "traffic easing independent of frame partition", 1e-6);
+Near(single.QuietTravel + single.LivingTravel, single.Elapsed, "traffic clock conserves elapsed observation time");
+var invalid = Clock();
+invalid.Advance(double.NaN); invalid.Advance(double.PositiveInfinity); invalid.Advance(-2); invalid.Advance(0);
+Near(invalid.Elapsed, 0, "invalid deltas cannot corrupt clock");
+var seek = Clock(); var run = Clock();
+seek.Seek(1000, true, true);
+for (var i = 0; i < 72000; i++) run.Advance(1d / 72);
+Near(run.Progress, seek.Progress, "capture seek agrees with 72 Hz event simulation", 1e-7);
+Near(run.DriftTravel, seek.DriftTravel, "capture seek agrees with 72 Hz drift simulation", 1e-6);
+var still = Clock();
+still.Advance(1200, false);
+Check(still.EventAge < 0, "Still formation suppresses event scheduling");
+still.Advance(901, true);
+var frozen = still.Progress;
+still.Advance(10, false);
+Near(still.Progress, frozen, "Still formation freezes an underway correction");
+var dwell = Clock(); dwell.Advance(899); dwell.SetModes(false, false); dwell.Advance(10); dwell.SetModes(true, false);
+Check(!dwell.Advance(1), "return to Living requires a fresh uninterrupted dwell before first event");
+var comet = Clock(); Check(comet.Preview(false), "short comet supports real-time preview"); comet.Advance(1);
+Near(comet.EventAge, 1, "short preview does not accelerate the comet clock");
+
+// Parser diagnostics are deliberately separate from Unity API/type checking.
+var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
+var files = Directory.GetFiles(Path.Combine(root, "Assets"), "*.cs", SearchOption.AllDirectories);
+foreach (var file in files)
+{
+    foreach (var symbols in new[] { new[] { "UNITY_EDITOR", "UNITY_ANDROID" }, new[] { "UNITY_ANDROID" } })
+    {
+        var tree = CSharpSyntaxTree.ParseText(File.ReadAllText(file),
+            new CSharpParseOptions(LanguageVersion.CSharp9, preprocessorSymbols: symbols), path: file);
+        var errors = tree.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToArray();
+        if (errors.Length != 0) throw new Exception(string.Join("\n", errors.Select(e => e.ToString())));
+    }
+}
+Console.WriteLine($"PASS: C# syntax in {files.Length} source files (Editor/Android symbols; not Unity compilation)");
+Console.WriteLine($"Completed {checks} timeline checks.");

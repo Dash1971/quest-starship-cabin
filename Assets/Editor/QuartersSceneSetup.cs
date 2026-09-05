@@ -13,6 +13,7 @@ using UnityEngine.Rendering.Universal;
 using UnityEngine.SpatialTracking;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features;
 using UnityEngine.XR.OpenXR.Features.Meta;
 using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 using UnityEngine.XR.OpenXR.Features.Interactions;
@@ -113,6 +114,8 @@ namespace StarshipCabin.EditorTools
             AddCapturePoints();
             BuildPostProcessing();
 
+            var stamp = new GameObject("Quiet Watch Generation").AddComponent<GeneratedVistaStamp>();
+            stamp.SetSource(QuietWatchBuildValidation.SourceHash());
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
             AssetDatabase.SaveAssets();
@@ -136,8 +139,13 @@ namespace StarshipCabin.EditorTools
             }
 
             ConfigureLightingSettings();
-            Lightmapping.BakeAsync();
-            Debug.Log("Starship Cabin: lightmap bake started. Save the scene when it completes, then Build Quarters APK.");
+            var stamp = QuietWatchBuildValidation.RequireCurrentScene(false);
+            if (!Lightmapping.Bake()) throw new InvalidOperationException("Quarters lightmap bake failed or was cancelled.");
+            stamp.MarkBaked();
+            EditorUtility.SetDirty(stamp);
+            EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+            QuietWatchBuildValidation.RequireCurrentScene(true);
+            Debug.Log("Starship Cabin: completed and saved the current source's lightmap bake.");
         }
 
         [MenuItem("Starship Cabin/Build Quarters APK")]
@@ -160,10 +168,11 @@ namespace StarshipCabin.EditorTools
             {
                 EditorSceneManager.OpenScene(ScenePath);
             }
+            var generation = QuietWatchBuildValidation.RequireCurrentScene(true);
             QuietWatchTrafficValidation.ValidateOpenScene();
 
             Directory.CreateDirectory("Builds");
-            var buildPath = "Builds/StarshipCabin-QuietWatch-MultiVista.apk";
+            var buildPath = "Builds/StarshipCabin-QuietWatch-Review.apk";
 
             var options = new BuildPlayerOptions
             {
@@ -177,6 +186,14 @@ namespace StarshipCabin.EditorTools
             var report = BuildPipeline.BuildPlayer(options);
             var summary = report.summary;
 
+            if (summary.result == BuildResult.Succeeded)
+            {
+                using var apkStream = File.OpenRead(buildPath);
+                using var sha = System.Security.Cryptography.SHA256.Create();
+                var apkHash = BitConverter.ToString(sha.ComputeHash(apkStream)).Replace("-", "").ToLowerInvariant();
+                File.WriteAllText(buildPath + ".provenance.txt",
+                    $"apk_sha256={apkHash}\nsource_sha256={generation.SourceHash}\nbuild_guid={summary.guid}\nunity={Application.unityVersion}\ncreated_utc={DateTime.UtcNow:O}\nquest_validation=pending\n");
+            }
             Console.WriteLine($"Build result: {summary.result}");
             Console.WriteLine($"Build output: {Path.GetFullPath(buildPath)}");
             Console.WriteLine($"Build size: {summary.totalSize}");
@@ -186,6 +203,15 @@ namespace StarshipCabin.EditorTools
             {
                 throw new Exception($"Build failed: {summary.result}");
             }
+        }
+
+        [MenuItem("Starship Cabin/Quiet Watch/Regenerate, Bake and Build Review APK")]
+        public static void RegenerateBakeAndBuildReview()
+        {
+            SetupQuartersScene();
+            QuietWatchReviewChecks.Run();
+            BakeQuartersLighting();
+            BuildQuartersApk();
         }
 
         // ------------------------------------------------------------------
@@ -982,13 +1008,14 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m6.2-release-candidate";
-            PlayerSettings.Android.bundleVersionCode = 20009;
+            PlayerSettings.bundleVersion = "2.0.0-scale-study.1";
+            PlayerSettings.Android.bundleVersionCode = 20010;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+            PlayerSettings.enableFrameTimingStats = true;
         }
 
         private static void ConfigureOpenXrForQuest()
@@ -1027,6 +1054,8 @@ namespace StarshipCabin.EditorTools
 
             EnableFeature<MetaQuestFeature>(openXrSettings);
             EnableFeature<DisplayUtilitiesFeature>(openXrSettings);
+            EnableFeature<FoveatedRenderingFeature>(openXrSettings);
+            openXrSettings.foveatedRenderingApi = OpenXRSettings.BackendFovationApi.SRPFoveation;
             EnableFeature<MetaQuestTouchPlusControllerProfile>(openXrSettings);
             EnableFeature<MetaQuestTouchProControllerProfile>(openXrSettings);
             EnableFeature<OculusTouchControllerProfile>(openXrSettings);

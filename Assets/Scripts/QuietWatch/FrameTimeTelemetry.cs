@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -30,7 +31,18 @@ namespace StarshipCabin.QuietWatch
         private float frameTotal;
         private float worstFrame;
         private int samples;
-        private int timingSamples;
+        private int cpuSamples, gpuSamples;
+        private ulong lastTimingTimestamp;
+        private readonly float[] frameSamples = new float[4096];
+        private int storedFrames;
+        private string windowVista;
+        private LifeMode windowLife;
+        private MotionMode windowMotion;
+        private bool windowTransition;
+        private bool discardResumeFrame;
+        private bool paused;
+        private bool focused = true;
+        private int stateWarmupFrames;
         private int overBudgetFrames;
 
         public void Configure(VistaDirector vistaDirector)
@@ -44,6 +56,8 @@ namespace StarshipCabin.QuietWatch
             Application.targetFrameRate = Mathf.RoundToInt(TargetRefreshHz);
             sessionStartedAt = Time.unscaledTime;
             windowStartedAt = Time.unscaledTime;
+            ResetWindow();
+            Debug.Log($"QUIET_WATCH_BUILD version={Application.version} build_guid={Application.buildGUID} api={SystemInfo.graphicsDeviceType} timing_enabled={FrameTimingManager.IsFeatureEnabled()}");
             FrameTimingManager.CaptureFrameTimings();
         }
 
@@ -80,23 +94,47 @@ namespace StarshipCabin.QuietWatch
             Debug.LogWarning("QUIET_WATCH_DISPLAY requested_hz=72 accepted=false actual_hz=unavailable reason=no_running_display");
         }
 
+        private void OnApplicationPause(bool value) { paused = value; discardResumeFrame = true; ResetWindow(); }
+        private void OnApplicationFocus(bool value) { focused = value; discardResumeFrame = true; ResetWindow(); }
+
         private void LateUpdate()
         {
+            if (paused || !focused) return;
+            if (discardResumeFrame)
+            {
+                discardResumeFrame = false;
+                FrameTimingManager.CaptureFrameTimings();
+                return;
+            }
+            var vista = director?.ActiveVista?.VistaId ?? "none";
+            if (vista != windowVista || (director != null &&
+                (director.Life != windowLife || director.Motion != windowMotion || director.IsTransitioning != windowTransition)))
+            {
+                if (samples > 0) Report();
+                ResetWindow();
+            }
             var frameMs = Time.unscaledDeltaTime * 1000f;
             frameTotal += frameMs;
             worstFrame = Mathf.Max(worstFrame, frameMs);
             samples++;
+            if (storedFrames < frameSamples.Length) frameSamples[storedFrames++] = frameMs;
             if (frameMs > TargetFrameMs * 1.05f)
             {
                 overBudgetFrames++;
             }
 
             FrameTimingManager.CaptureFrameTimings();
-            if (FrameTimingManager.GetLatestTimings(1, timings) > 0)
+            // Timings arrive asynchronously. Do not label the previous vista's
+            // trailing GPU sample as this one, or count the same sample twice.
+            if (stateWarmupFrames > 0) stateWarmupFrames--;
+            else if (FrameTimingManager.IsFeatureEnabled() && FrameTimingManager.GetLatestTimings(1, timings) > 0
+                && timings[0].frameStartTimestamp > lastTimingTimestamp)
             {
-                cpuTotal += (float)timings[0].cpuFrameTime;
-                gpuTotal += (float)timings[0].gpuFrameTime;
-                timingSamples++;
+                lastTimingTimestamp = timings[0].frameStartTimestamp;
+                var cpu = (float)timings[0].cpuFrameTime;
+                var gpu = (float)timings[0].gpuFrameTime;
+                if (Valid(cpu)) { cpuTotal += cpu; cpuSamples++; }
+                if (Valid(gpu)) { gpuTotal += gpu; gpuSamples++; }
             }
 
             if (Time.unscaledTime - windowStartedAt >= reportEverySeconds)
@@ -111,23 +149,23 @@ namespace StarshipCabin.QuietWatch
             var text = new StringBuilder(256);
             text.Append("QUIET_WATCH_PERF session_s=")
                 .Append((Time.unscaledTime - sessionStartedAt).ToString("F0"))
-                .Append(" vista=").Append(director?.ActiveVista?.VistaId ?? "none")
-                .Append(" life=").Append(director != null ? director.Life.ToString() : "unknown")
-                .Append(" motion=").Append(director != null ? director.Motion.ToString() : "unknown")
+                .Append(" vista=").Append(windowVista)
+                .Append(" life=").Append(windowLife)
+                .Append(" motion=").Append(windowMotion)
+                .Append(" transition=").Append(windowTransition)
                 .Append(" samples=").Append(samples)
                 .Append(" frame_avg_ms=").Append((samples > 0 ? frameTotal / samples : 0f).ToString("F2"))
                 .Append(" frame_worst_ms=").Append(worstFrame.ToString("F2"))
                 .Append(" over_budget_pct=").Append((samples > 0 ? overBudgetFrames * 100f / samples : 0f).ToString("F2"));
 
-            if (timingSamples > 0)
-            {
-                text.Append(" cpu_avg_ms=").Append((cpuTotal / timingSamples).ToString("F2"))
-                    .Append(" gpu_avg_ms=").Append((gpuTotal / timingSamples).ToString("F2"));
-            }
-            else
-            {
-                text.Append(" cpu_avg_ms=unavailable gpu_avg_ms=unavailable");
-            }
+            text.Append(" cpu_avg_ms=").Append(cpuSamples > 0 ? (cpuTotal / cpuSamples).ToString("F2") : "unavailable")
+                .Append(" gpu_avg_ms=").Append(gpuSamples > 0 ? (gpuTotal / gpuSamples).ToString("F2") : "unavailable")
+                .Append(" cpu_samples=").Append(cpuSamples).Append(" gpu_samples=").Append(gpuSamples);
+            Array.Sort(frameSamples, 0, storedFrames);
+            text.Append(" app_frame_p95_ms=").Append(Percentile(0.95f).ToString("F2"))
+                .Append(" app_frame_p99_ms=").Append(Percentile(0.99f).ToString("F2"))
+                .Append(" percentile_samples=").Append(storedFrames)
+                .Append(" lateness_source=application_delta_not_compositor");
 
             if (display != null && display.running && display.TryGetDisplayRefreshRate(out var refreshHz))
             {
@@ -186,15 +224,25 @@ namespace StarshipCabin.QuietWatch
 #endif
         }
 
+        private static bool Valid(float value) => value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+        private float Percentile(float percentile) => storedFrames > 0
+            ? frameSamples[Mathf.Clamp(Mathf.CeilToInt(storedFrames * percentile) - 1, 0, storedFrames - 1)] : 0f;
+
         private void ResetWindow()
         {
+            windowVista = director?.ActiveVista?.VistaId ?? "none";
+            windowLife = director != null ? director.Life : LifeMode.Quiet;
+            windowMotion = director != null ? director.Motion : MotionMode.Still;
+            windowTransition = director != null && director.IsTransitioning;
+            storedFrames = 0;
+            stateWarmupFrames = 4;
             windowStartedAt = Time.unscaledTime;
             cpuTotal = 0f;
             gpuTotal = 0f;
             frameTotal = 0f;
             worstFrame = 0f;
             samples = 0;
-            timingSamples = 0;
+            cpuSamples = gpuSamples = 0;
             overBudgetFrames = 0;
         }
     }

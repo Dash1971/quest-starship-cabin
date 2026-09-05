@@ -18,7 +18,6 @@ namespace StarshipCabin.QuietWatch
     /// </summary>
     public sealed class AuthoredVista : VistaEnvironment
     {
-        private const float PreviewLeadFraction = 0.55f;
 
         [SerializeField] private AuthoredVistaKind kind;
         [SerializeField] private StarWindowSurface starWindow;
@@ -28,6 +27,9 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private Transform[] travellers;
         [SerializeField] private Color fillColor = Color.white;
         [SerializeField, Min(15f)] private float graceNoteAtSeconds = 45f;
+
+        [SerializeField] private Vector3 moonEmergence;
+        public void ConfigureMoonEmergence(Vector3 displacement) => moonEmergence = displacement;
 
         private Vector3[] travellerOrigins = Array.Empty<Vector3>();
         private Quaternion[] travellerRotations = Array.Empty<Quaternion>();
@@ -40,10 +42,10 @@ namespace StarshipCabin.QuietWatch
         private MaterialPropertyBlock heroBlock;
         private LifeMode lifeMode;
         private MotionMode motionMode;
-        private float enteredAt;
-        private float livingStartedAt;
-        private float graceNoteStartedAt;
-        private bool graceNotePlayed;
+        private VistaTimeline timeline;
+        private bool originsCached;
+        private bool paused;
+        private bool focused = true;
         private bool active;
 
         public float GraceNoteAtSeconds => graceNoteAtSeconds;
@@ -70,6 +72,7 @@ namespace StarshipCabin.QuietWatch
             travellers = movingElements ?? Array.Empty<Transform>();
             fillColor = lightColor;
             graceNoteAtSeconds = GraceDelayFor(vistaKind);
+            originsCached = false;
             CacheOrigins();
         }
 
@@ -80,6 +83,8 @@ namespace StarshipCabin.QuietWatch
 
         private void CacheOrigins()
         {
+            if (originsCached) return;
+            originsCached = true;
             if (slowTurn != null)
             {
                 slowTurnOriginPosition = slowTurn.localPosition;
@@ -122,19 +127,18 @@ namespace StarshipCabin.QuietWatch
                 return;
             }
 
-            var elapsed = Time.unscaledTime - enteredAt;
-            var livingElapsed = Time.unscaledTime - livingStartedAt;
-            if (!graceNotePlayed && lifeMode == LifeMode.Living && livingElapsed >= graceNoteAtSeconds)
-            {
-                StartGraceNote(false);
-            }
-
-            var grace = graceNotePlayed
-                ? Smooth01((Time.unscaledTime - graceNoteStartedAt) / GraceDuration())
-                : 0f;
-
-            UpdateComposition(elapsed, grace);
+            if (paused || !focused) return;
+            // Do not catch up a suspended app or a large stall in one visible frame.
+            if (timeline.Advance(Mathf.Min(Time.unscaledDeltaTime, 0.1f), AllowEventMotion))
+                audioController?.TriggerQuietWatchGrace(VistaId);
+            UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
         }
+
+        private bool AllowEventMotion => kind != AuthoredVistaKind.LongFormation
+            || motionMode == MotionMode.Drift;
+
+        private void OnApplicationPause(bool value) => paused = value;
+        private void OnApplicationFocus(bool value) => focused = value;
 
         /// <summary>
         /// Editor capture hook for deterministic inspection of Living motion
@@ -142,13 +146,15 @@ namespace StarshipCabin.QuietWatch
         /// </summary>
         public void PreviewAt(float elapsed, LifeMode previewLifeMode, MotionMode previewMotionMode)
         {
+            CacheOrigins();
             RestoreTransforms();
             lifeMode = previewLifeMode;
             motionMode = previewMotionMode;
-            var grace = previewLifeMode == LifeMode.Living
-                ? Smooth01((elapsed - graceNoteAtSeconds) / GraceDuration())
-                : 0f;
-            UpdateComposition(Mathf.Max(0f, elapsed), grace);
+            timeline ??= new VistaTimeline(graceNoteAtSeconds, GraceDuration());
+            timeline.Seek(elapsed, lifeMode == LifeMode.Living, motionMode == MotionMode.Drift, AllowEventMotion);
+            ApplyComfort(previewLifeMode, previewMotionMode);
+            starWindow?.PreviewAt(elapsed, false, -1f);
+            UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
         }
 
         private void UpdateComposition(float elapsed, float grace)
@@ -169,6 +175,7 @@ namespace StarshipCabin.QuietWatch
                     break;
             }
 
+            SetHeroFloat("_ObservationTime", elapsed);
             UpdateCabinResponse(elapsed, grace);
         }
 
@@ -177,10 +184,8 @@ namespace StarshipCabin.QuietWatch
             CacheOrigins();
             RestoreTransforms();
             active = true;
-            enteredAt = Time.unscaledTime;
-            livingStartedAt = enteredAt;
-            graceNoteStartedAt = 0f;
-            graceNotePlayed = false;
+            timeline = new VistaTimeline(graceNoteAtSeconds, GraceDuration());
+            timeline.Reset(nextLifeMode == LifeMode.Living, nextMotionMode == MotionMode.Drift);
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
             starWindow?.ResetVistaClock();
@@ -191,24 +196,15 @@ namespace StarshipCabin.QuietWatch
                 exteriorFill.color = fillColor;
                 exteriorFill.intensity = BaseFillIntensity();
             }
+            UpdateComposition(0f, 0f);
         }
 
         public override void ApplyComfort(LifeMode nextLifeMode, MotionMode nextMotionMode)
         {
-            var lifeChanged = lifeMode != nextLifeMode;
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
-
-            if (lifeChanged)
-            {
-                livingStartedAt = Time.unscaledTime;
-                graceNotePlayed = false;
-                graceNoteStartedAt = 0f;
-                if (active)
-                {
-                    UpdateComposition(Time.unscaledTime - enteredAt, 0f);
-                }
-            }
+            timeline?.SetModes(nextLifeMode == LifeMode.Living, nextMotionMode == MotionMode.Drift);
+            if (nextLifeMode == LifeMode.Quiet) audioController?.CancelQuietWatchGrace();
 
             starWindow?.SetAuthoredVistaBackdrop(BackdropDensity());
             audioController?.SetQuietWatchProfile(VistaId, nextLifeMode == LifeMode.Living);
@@ -230,32 +226,17 @@ namespace StarshipCabin.QuietWatch
         public override void Exit()
         {
             active = false;
+            audioController?.CancelQuietWatchGrace();
             RestoreTransforms();
             gameObject.SetActive(false);
         }
 
         public override bool PreviewGraceNote()
         {
-            if (!active)
-            {
-                return false;
-            }
-
-            StartGraceNote(true);
-            return true;
-        }
-
-        private void StartGraceNote(bool preview)
-        {
-            graceNotePlayed = true;
-            // Review preview lands directly in the event's readable middle
-            // phase. Release-timed playback still begins gently from zero.
-            graceNoteStartedAt = Time.unscaledTime
-                - (preview ? GraceDuration() * PreviewLeadFraction : 0f);
+            if (!active || !AllowEventMotion || timeline == null || !timeline.Preview()) return false;
             audioController?.TriggerQuietWatchGrace(VistaId);
-            Debug.Log(preview
-                ? $"Quiet Watch event preview started: {DisplayName}"
-                : $"Quiet Watch grace note started: {DisplayName}");
+            Debug.Log($"Quiet Watch continuous event preview: {DisplayName}");
+            return true;
         }
 
         private void UpdateHarbourTraffic(float elapsed, float grace)
@@ -286,7 +267,9 @@ namespace StarshipCabin.QuietWatch
                 // The grace-route cutter remains physically docked at point 0
                 // until its one departure. Other lanes loop only while both
                 // endpoints are outside the useful window area.
-                var phase = route.IsGraceRoute ? grace : route.PhaseAt(elapsed, living);
+                var phase = route.IsGraceRoute ? grace : Mathf.Repeat(route.PhaseOffset
+                    + (float)(timeline.LivingTravel / route.LivingDuration
+                        + timeline.QuietTravel / route.QuietDuration), 1f);
                 route.Evaluate(phase, out var position, out var tangent, out var curvature);
                 travellers[i].localPosition = position;
 
@@ -306,17 +289,15 @@ namespace StarshipCabin.QuietWatch
         {
             if (slowTurn != null)
             {
-                var living = lifeMode == LifeMode.Living;
-                // The whole formation is underway in both modes. A broad,
-                // bounded flight curve gives an immediately readable change
-                // against the window while preserving a restful composition.
-                var activity = living ? 1.0f : 0.80f;
-                var flightPhase = elapsed * (living ? 0.064f : 0.052f);
+                // Shared velocity is invisible in a comoving cabin. Only
+                // restrained relative corrections remain; Still eases to rest.
+                const float activity = 1f;
+                var flightPhase = (float)timeline.DriftTravel * 0.006f;
                 var cruise = new Vector3(
-                    Mathf.Sin(flightPhase) * 3.8f * activity,
-                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 1.05f * activity,
-                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 5.8f * activity);
-                var courseYaw = Mathf.Cos(flightPhase) * 2.8f * activity;
+                    Mathf.Sin(flightPhase) * 0.38f * activity,
+                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 0.105f * activity,
+                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 0.58f * activity);
+                var courseYaw = Mathf.Cos(flightPhase) * 0.28f * activity;
                 var turn = Quaternion.Euler(
                     -2.0f * grace,
                     courseYaw - 10.0f * grace,
@@ -334,9 +315,8 @@ namespace StarshipCabin.QuietWatch
                 }
 
                 traveller.gameObject.SetActive(true);
-                var living = lifeMode == LifeMode.Living;
-                var phase = elapsed * (0.118f + i * 0.015f) + i * 2.1f;
-                var correctionScale = living ? 1.0f : 0.72f;
+                var phase = (float)timeline.DriftTravel * (0.018f + i * 0.002f) + i * 2.1f;
+                const float correctionScale = 0.15f;
                 var correction = new Vector3(
                     Mathf.Sin(phase) * (0.38f + i * 0.075f),
                     Mathf.Sin(phase * 0.71f) * (0.22f + i * 0.040f),
@@ -349,7 +329,8 @@ namespace StarshipCabin.QuietWatch
                         Mathf.Sin(phase) * 2.10f * correctionScale);
                 if (i < formationEngines.Length && formationEngines[i] != null)
                 {
-                    formationEngines[i].SetActivity(living ? 1.0f : 0.68f);
+                    formationEngines[i].SetActivity(Mathf.Lerp(0.68f, 1f, (float)timeline.Activity));
+                    formationEngines[i].EvaluateAt(elapsed);
                 }
             }
         }
@@ -358,7 +339,7 @@ namespace StarshipCabin.QuietWatch
         {
             if (slowTurn != null)
             {
-                var degrees = elapsed * (motionMode == MotionMode.Drift ? 0.035f : 0.010f);
+                var degrees = (float)timeline.DriftTravel * 0.035f;
                 slowTurn.localRotation = slowTurnOriginRotation * Quaternion.AngleAxis(degrees, Vector3.up);
             }
 
@@ -370,18 +351,17 @@ namespace StarshipCabin.QuietWatch
                     continue;
                 }
 
-                var distanceScale = i == 0 ? 1f : 0.45f;
-                var emergence = new Vector3(12f, 4.2f, -2f) * grace * distanceScale;
+                var emergence = i == 0 ? moonEmergence * grace : Vector3.zero;
                 traveller.localPosition = travellerOrigins[i] + emergence;
             }
-            SetHeroFloat("_WeatherPulse", grace);
+            SetHeroFloat("_WeatherPulse", 0f);
         }
 
         private void UpdateBlueMorning(float elapsed, float grace)
         {
             if (slowTurn != null)
             {
-                var degrees = motionMode == MotionMode.Drift ? elapsed * 0.028f : 0f;
+                var degrees = (float)timeline.DriftTravel * 0.028f;
                 slowTurn.localRotation = slowTurnOriginRotation * Quaternion.AngleAxis(degrees, Vector3.up);
             }
             SetHeroFloat("_DawnProgress", grace);
@@ -395,6 +375,7 @@ namespace StarshipCabin.QuietWatch
                 slowTurn.localRotation = slowTurnOriginRotation;
             }
 
+            SetHeroFloat("_ObservationTime", 0f);
             SetHeroFloat("_DawnProgress", 0f);
             SetHeroFloat("_WeatherPulse", 0f);
 
@@ -445,9 +426,8 @@ namespace StarshipCabin.QuietWatch
                     intensity += grace * 0.34f;
                     break;
                 case AuthoredVistaKind.GreatWeather:
-                    var stormBreath = 0.018f * (0.5f + 0.5f * Mathf.Sin(elapsed * 0.055f));
-                    color = Color.Lerp(fillColor, new Color(1.0f, 0.60f, 0.34f), grace * 0.42f);
-                    intensity += stormBreath + grace * 0.12f;
+                    // A distant moon emerging from shadow cannot relight an
+                    // entire cabin. Keep the giant's reflected fill stable.
                     break;
                 case AuthoredVistaKind.LongFormation:
                     intensity += grace * 0.045f;
@@ -486,7 +466,7 @@ namespace StarshipCabin.QuietWatch
             {
                 case AuthoredVistaKind.Harbour: return 72f;
                 case AuthoredVistaKind.BlueMorning: return 110f;
-                case AuthoredVistaKind.GreatWeather: return 96f;
+                case AuthoredVistaKind.GreatWeather: return 240f;
                 case AuthoredVistaKind.LongFormation: return 84f;
                 default: return 90f;
             }

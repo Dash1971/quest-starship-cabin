@@ -45,6 +45,7 @@ namespace StarshipCabin
         public float holdRecenterSeconds = 1.0f;
 
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly XRNode[] ControllerNodes = { XRNode.RightHand, XRNode.LeftHand };
 
         private readonly List<XRInputDevice> devices = new();
         private MaterialPropertyBlock block;
@@ -209,7 +210,7 @@ namespace StarshipCabin
 
         private bool IsGripPressed()
         {
-            foreach (var node in new[] { XRNode.RightHand, XRNode.LeftHand })
+            foreach (var node in ControllerNodes)
             {
                 devices.Clear();
                 InputDevices.GetDevicesAtXRNode(node, devices);
@@ -244,7 +245,7 @@ namespace StarshipCabin
 
         private void SendHapticTick()
         {
-            foreach (var node in new[] { XRNode.RightHand, XRNode.LeftHand })
+            foreach (var node in ControllerNodes)
             {
                 devices.Clear();
                 InputDevices.GetDevicesAtXRNode(node, devices);

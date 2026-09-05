@@ -4,7 +4,13 @@ A small Unity/OpenXR relaxation cabin for Meta Quest, built for sideloaded immer
 
 The current prototype is a seated, comfort-first VR room with a forward starfield window, warm cabin lighting, simple procedural furnishings, and generated ambient audio. It is intended as an original optimistic sci-fi relaxation space, not a recreation of any copyrighted franchise.
 
-## Current Status
+## Current review candidate
+
+The September scale study implements transition/timing fixes and a Great Weather distance, weather-map and shared-shadow benchmark. **It has not been built or approved on Quest.** OpenClaw/Codes should follow the [implementation and review guide](docs/development/reliability-great-weather-review.md) for source checks, clean scene regeneration, lighting bake, captures and device acceptance. The candidate builds as `2.0.0-scale-study.1` (`20010`) to `Builds/StarshipCabin-QuietWatch-Review.apk`.
+
+The records below describe the earlier M6.2 baseline. In this candidate, Quiet pauses an underway event, B preview starts continuously, and Formation Still settles to rest; the guide supersedes the historical control and motion descriptions below.
+
+## Previous baseline status
 
 Active development branch: `v2/visual-benchmark`
 

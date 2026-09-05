@@ -12,7 +12,13 @@ namespace StarshipCabin.EditorTools
     public static class QuietWatchCaptureTool
     {
         private const string ScenePath = "Assets/Scenes/Cabin_Quarters_V2.unity";
-        private const string OutputFolder = "Builds/Captures";
+        private static string OutputFolder;
+        [Serializable] private sealed class CaptureManifest
+        {
+            public string sourceHash, unityVersion, createdUtc;
+            public bool baked;
+            public string[] files;
+        }
 
         public static void RegenerateAndCaptureAll()
         {
@@ -32,7 +38,9 @@ namespace StarshipCabin.EditorTools
                 EditorSceneManager.OpenScene(ScenePath);
             }
 
+            var generation = QuietWatchBuildValidation.RequireCurrentScene(false);
             QuietWatchTrafficValidation.ValidateOpenScene();
+            OutputFolder = Path.Combine("Builds/Captures", DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fffffff"));
 
             var camera = Camera.main;
             if (camera == null)
@@ -40,7 +48,7 @@ namespace StarshipCabin.EditorTools
                 throw new InvalidOperationException("Quiet Watch capture requires the generated Main Camera.");
             }
 
-            var points = UnityEngine.Object.FindObjectsByType<VistaCapturePoint>();
+            var points = UnityEngine.Object.FindObjectsByType<VistaCapturePoint>(FindObjectsSortMode.None);
             if (points.Length == 0)
             {
                 throw new InvalidOperationException("Quiet Watch capture points are missing; regenerate the scene.");
@@ -51,10 +59,11 @@ namespace StarshipCabin.EditorTools
             var previousPosition = camera.transform.position;
             var previousRotation = camera.transform.rotation;
             var previousTarget = camera.targetTexture;
+            var previousActive = RenderTexture.active;
             var target = new RenderTexture(1536, 1024, 24, RenderTextureFormat.ARGB32);
             var pixels = new Texture2D(target.width, target.height, TextureFormat.RGB24, false);
 
-            var vistas = UnityEngine.Object.FindObjectsByType<VistaEnvironment>(FindObjectsInactive.Include)
+            var vistas = UnityEngine.Object.FindObjectsByType<VistaEnvironment>(FindObjectsInactive.Include, FindObjectsSortMode.None)
                 .OrderBy(vista => vista.VistaId)
                 .ToArray();
 
@@ -70,6 +79,8 @@ namespace StarshipCabin.EditorTools
                         candidate.gameObject.SetActive(candidate == vista);
                     }
                     vista.Enter(LifeMode.Quiet, MotionMode.Still);
+                    if (vista is AuthoredVista fixedAuthored) fixedAuthored.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
+                    if (vista is FirstQuestionVista fixedStars) fixedStars.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
 
                     foreach (var point in points)
                     {
@@ -87,9 +98,8 @@ namespace StarshipCabin.EditorTools
                     vista.Exit();
                 }
 
-                // Deterministic Living-mode review frames prove that
-                // choreography and grace-note compositions remain inside the
-                // observation window before the headset build is installed.
+                // Deterministic Living frames support composition review;
+                // they do not establish stereo comfort or headset performance.
                 var couch = points.FirstOrDefault(point => point.CaptureName == "Couch");
                 if (couch != null)
                 {
@@ -112,11 +122,14 @@ namespace StarshipCabin.EditorTools
                             ? new[] { 28f, 52f, eventPreview }
                             : authored.VistaId == "long-formation"
                                 ? new[] { 0f, 10f, 45f, eventPreview }
-                                : new[] { eventPreview };
+                                : authored.VistaId == "great-weather"
+                                    ? new[] { authored.GraceNoteAtSeconds, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.5f, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds }
+                                    : new[] { eventPreview };
                         foreach (var previewAt in previewTimes)
                         {
-                            authored.Enter(LifeMode.Living, MotionMode.Still);
-                            authored.PreviewAt(previewAt, LifeMode.Living, MotionMode.Still);
+                            var motion = authored.VistaId == "long-formation" ? MotionMode.Drift : MotionMode.Still;
+                            authored.Enter(LifeMode.Living, motion);
+                            authored.PreviewAt(previewAt, LifeMode.Living, motion);
                             camera.transform.SetPositionAndRotation(couch.transform.position, couch.transform.rotation);
                             camera.Render();
                             RenderTexture.active = target;
@@ -124,10 +137,10 @@ namespace StarshipCabin.EditorTools
                             pixels.Apply(false);
 
                             var beforeEvent = previewAt < authored.GraceNoteAtSeconds;
-                            var suffix = authored.VistaId == "harbour"
+                            var suffix = authored.VistaId == "harbour" || authored.VistaId == "great-weather"
                                 ? $"living-{previewAt:000}s-couch"
                                 : authored.VistaId == "long-formation" && beforeEvent
-                                    ? $"living-cruise-{previewAt:000}s-couch"
+                                    ? $"living-drift-cruise-{previewAt:000}s-couch"
                                     : "living-event-couch";
                             var path = Path.Combine(OutputFolder, $"{Slug(authored.VistaId)}-{suffix}.png");
                             File.WriteAllBytes(path, pixels.EncodeToPNG());
@@ -135,17 +148,42 @@ namespace StarshipCabin.EditorTools
                         }
                         authored.Exit();
                     }
+                    var firstQuestion = vistas.OfType<FirstQuestionVista>().Single();
+                    firstQuestion.gameObject.SetActive(true);
+                    firstQuestion.Enter(LifeMode.Living, MotionMode.Still);
+                    foreach (var previewAt in new[] { 782f, 786f })
+                    {
+                        firstQuestion.PreviewAt(previewAt, LifeMode.Living, MotionMode.Still);
+                        camera.transform.SetPositionAndRotation(couch.transform.position, couch.transform.rotation);
+                        camera.Render();
+                        RenderTexture.active = target;
+                        pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                        pixels.Apply(false);
+                        File.WriteAllBytes(Path.Combine(OutputFolder, $"first-question-living-{previewAt:000}s-couch.png"), pixels.EncodeToPNG());
+                    }
+                    firstQuestion.Exit();
                 }
+                var manifest = new CaptureManifest
+                {
+                    sourceHash = generation.SourceHash, unityVersion = Application.unityVersion,
+                    createdUtc = DateTime.UtcNow.ToString("O"),
+                    baked = generation.BakedSourceHash == generation.SourceHash && LightmapSettings.lightmaps.Length > 0,
+                    files = Directory.GetFiles(OutputFolder, "*.png").Select(Path.GetFileName).OrderBy(name => name).ToArray()
+                };
+                File.WriteAllText(Path.Combine(OutputFolder, "manifest.json"), JsonUtility.ToJson(manifest, true));
             }
             finally
             {
-                RenderTexture.active = null;
+                RenderTexture.active = previousActive;
                 camera.targetTexture = previousTarget;
                 camera.transform.SetParent(previousParent, true);
                 camera.transform.SetPositionAndRotation(previousPosition, previousRotation);
                 UnityEngine.Object.DestroyImmediate(pixels);
                 target.Release();
                 UnityEngine.Object.DestroyImmediate(target);
+                // Capture hooks alter transforms, shared lights and property
+                // blocks. Restore the saved scene, never save preview poses.
+                EditorSceneManager.OpenScene(ScenePath);
             }
         }
 

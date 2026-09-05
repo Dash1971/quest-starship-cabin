@@ -41,6 +41,9 @@ namespace StarshipCabin
         private const int SampleRate = 24000;
         private readonly Dictionary<string, AudioClip> destinationClips = new Dictionary<string, AudioClip>();
         private readonly Dictionary<string, AudioClip> graceClips = new Dictionary<string, AudioClip>();
+        private AudioSource outgoingBed;
+        private AudioSource graceSource;
+        private bool fadingGrace;
         private float nextBeepAt;
         private float destinationTargetVolume;
         private string currentDestination = string.Empty;
@@ -50,6 +53,12 @@ namespace StarshipCabin
             if (createProceduralLoops)
             {
                 EnsureProceduralAudio();
+                // Synthesis belongs to startup, never a rare event's first frame.
+                foreach (var id in new[] { "first-question", "harbour", "blue-morning", "great-weather", "long-formation" })
+                {
+                    DestinationClip(id);
+                    graceClips[id] = CreateGraceClip(id);
+                }
             }
 
             ScheduleNextBeep();
@@ -68,6 +77,17 @@ namespace StarshipCabin
             {
                 destinationBed.volume = Mathf.MoveTowards(
                     destinationBed.volume, destinationTargetVolume, Time.unscaledDeltaTime * 0.10f);
+            }
+
+            if (outgoingBed != null && outgoingBed.isPlaying)
+            {
+                outgoingBed.volume = Mathf.MoveTowards(outgoingBed.volume, 0f, Time.unscaledDeltaTime * 0.6f);
+                if (outgoingBed.volume <= 0f) outgoingBed.Stop();
+            }
+            if (fadingGrace && graceSource != null)
+            {
+                graceSource.volume = Mathf.MoveTowards(graceSource.volume, 0f, Time.unscaledDeltaTime * 0.64f);
+                if (graceSource.volume <= 0f) { graceSource.Stop(); fadingGrace = false; }
             }
 
             if (panelBeeps == null || panelBeeps.Length == 0 || oneShotSource == null)
@@ -117,24 +137,23 @@ namespace StarshipCabin
         /// </summary>
         public void SetQuietWatchProfile(string vistaId, bool living)
         {
+            if (!Application.isPlaying) return;
             EnsureProceduralAudio();
             currentDestination = string.IsNullOrEmpty(vistaId) ? "first-question" : vistaId;
             SetMasterCalmVolume(living ? 0.68f : 0.54f);
 
             var clip = DestinationClip(currentDestination);
-            if (destinationBed != null)
-            {
-                destinationBed.transform.localPosition = DestinationPosition(currentDestination);
-            }
             if (destinationBed != null && destinationBed.clip != clip)
             {
+                // Preserve the outgoing source and its position while fading.
+                var previous = destinationBed;
+                destinationBed = outgoingBed;
+                outgoingBed = previous;
                 destinationBed.Stop();
+                destinationBed.transform.localPosition = DestinationPosition(currentDestination);
                 destinationBed.clip = clip;
                 destinationBed.volume = 0f;
-                if (clip != null)
-                {
-                    destinationBed.Play();
-                }
+                if (clip != null) destinationBed.Play();
             }
 
             destinationTargetVolume = DestinationVolume(currentDestination) * (living ? 1.0f : 0.72f);
@@ -145,10 +164,7 @@ namespace StarshipCabin
 
         public void TriggerQuietWatchGrace(string vistaId)
         {
-            if (oneShotSource == null)
-            {
-                return;
-            }
+            if (graceSource == null) return;
 
             var id = string.IsNullOrEmpty(vistaId) ? currentDestination : vistaId;
             if (!graceClips.TryGetValue(id, out var clip))
@@ -159,9 +175,15 @@ namespace StarshipCabin
 
             if (clip != null)
             {
-                oneShotSource.PlayOneShot(clip, id == "first-question" ? 0.075f : 0.16f);
+                fadingGrace = false;
+                graceSource.Stop();
+                graceSource.clip = clip;
+                graceSource.volume = id == "first-question" ? 0.075f : 0.16f;
+                graceSource.Play();
             }
         }
+
+        public void CancelQuietWatchGrace() => fadingGrace = true;
 
         private void PlayLoop(AudioSource source)
         {
@@ -208,22 +230,14 @@ namespace StarshipCabin
                 airCirculation.volume = 0.26f;
             }
 
-            if (destinationBed == null)
+            if (destinationBed == null) destinationBed = CreateDestinationSource("Destination Spatial Bed A");
+            if (outgoingBed == null) outgoingBed = CreateDestinationSource("Destination Spatial Bed B");
+            if (graceSource == null)
             {
-                var bedObject = new GameObject("Destination Spatial Bed");
-                bedObject.transform.SetParent(transform, false);
-                bedObject.transform.localPosition = new Vector3(-2.6f, 1.7f, -4.8f);
-                destinationBed = bedObject.AddComponent<AudioSource>();
-                destinationBed.loop = true;
-                destinationBed.playOnAwake = false;
-                destinationBed.spatialBlend = 0.72f;
-                destinationBed.rolloffMode = AudioRolloffMode.Linear;
-                destinationBed.minDistance = 1.5f;
-                destinationBed.maxDistance = 18f;
-                destinationBed.dopplerLevel = 0f;
-                var lowPass = bedObject.AddComponent<AudioLowPassFilter>();
-                lowPass.cutoffFrequency = 1450f;
-                lowPass.lowpassResonanceQ = 0.72f;
+                graceSource = gameObject.AddComponent<AudioSource>();
+                graceSource.playOnAwake = false;
+                graceSource.spatialBlend = 0.45f;
+                graceSource.dopplerLevel = 0f;
             }
 
             if (oneShotSource == null)
@@ -243,6 +257,25 @@ namespace StarshipCabin
             }
 
             beepVolume = 0.10f;
+        }
+
+        private AudioSource CreateDestinationSource(string name)
+        {
+            var bedObject = new GameObject(name);
+            bedObject.transform.SetParent(transform, false);
+            var source = bedObject.AddComponent<AudioSource>();
+            source.loop = true;
+            source.playOnAwake = false;
+            source.volume = 0f;
+            source.spatialBlend = 0.72f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 1.5f;
+            source.maxDistance = 18f;
+            source.dopplerLevel = 0f;
+            var lowPass = bedObject.AddComponent<AudioLowPassFilter>();
+            lowPass.cutoffFrequency = 1450f;
+            lowPass.lowpassResonanceQ = 0.72f;
+            return source;
         }
 
         private AudioClip DestinationClip(string vistaId)
@@ -288,7 +321,10 @@ namespace StarshipCabin
         {
             const float seconds = 12f;
             var samples = new float[(int)(SampleRate * seconds)];
-            var random = new System.Random(vistaId.GetHashCode());
+            // Stable seed across Mono/IL2CPP and separate capture processes.
+            var seed = 17;
+            unchecked { foreach (var character in vistaId) seed = seed * 31 + character; }
+            var random = new System.Random(seed);
             var filteredNoise = 0f;
 
             for (var i = 0; i < samples.Length; i++)

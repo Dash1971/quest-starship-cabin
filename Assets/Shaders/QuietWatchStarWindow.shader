@@ -24,6 +24,9 @@ Shader "StarshipCabin/QuietWatchStarWindow"
         _Meteors ("Legacy Meteors", Range(0, 1)) = 0
         _GraceStart ("Grace Note Start", Float) = -1000
         _VistaClock ("Vista Clock", Float) = 0
+        _ObservationTime ("Observation Time", Float) = 0
+        _GraceAge ("Event Age", Float) = -1
+        _SkyOffset ("Accumulated Drift", Vector) = (0,0,0,0)
     }
 
     SubShader
@@ -60,6 +63,9 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float _Meteors;
                 float _GraceStart;
                 float _VistaClock;
+                float _ObservationTime;
+                float _GraceAge;
+                float4 _SkyOffset;
             CBUFFER_END
 
             struct Attributes
@@ -160,8 +166,8 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float elapsed)
             {
                 float2 layerSky = sky;
-                layerSky.x += _Speed * elapsed * 0.00065 * parallax;
-                layerSky.y += sin(elapsed * 0.018) * _Drift * 0.0009 * parallax;
+                layerSky.x += _SkyOffset.x * parallax;
+                layerSky.y += _SkyOffset.y * parallax;
 
                 float2 grid = layerSky * scale;
                 float2 cell = floor(grid);
@@ -219,7 +225,7 @@ Shader "StarshipCabin/QuietWatchStarWindow"
 
             float3 firstQuestionComet(float2 sky, float now)
             {
-                float age = now - _GraceStart;
+                float age = _GraceAge;
                 float alive = step(0.0, age) * step(age, 8.0);
                 float progress = saturate(age / 8.0);
                 float ease = progress * progress * (3.0 - 2.0 * progress);
@@ -242,7 +248,7 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 ray = normalize(input.positionWS - GetCameraPositionWS());
                 float2 sky = DirectionToSky(ray);
-                float elapsed = max(0.0, _Time.y - _VistaClock);
+                float elapsed = _ObservationTime;
                 float band = galacticMask(sky);
 
                 float hazeStructure = fbm(sky * float2(4.0, 7.0) + 2.7);
@@ -263,7 +269,7 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 stars += starLayer(sky + 37.51, 176.0, 0.030, 0.26, 0.40, band, 0.52, 0.0, elapsed);
                 stars += starLayer(sky + 73.21, 320.0, 0.050, 0.10, 0.22, band, 0.31, 0.0, elapsed);
                 color += stars;
-                color += firstQuestionComet(sky, _Time.y);
+                color += firstQuestionComet(sky, _ObservationTime);
 
                 // Filmic response keeps true negative space while preserving
                 // brilliant stellar cores for the existing restrained bloom.

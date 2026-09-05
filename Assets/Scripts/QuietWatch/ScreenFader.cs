@@ -13,6 +13,7 @@ namespace StarshipCabin.QuietWatch
         [SerializeField, Min(0.05f)] private float fadeSeconds = 0.55f;
 
         private MaterialPropertyBlock block;
+        private Action completion;
 
         public bool IsBusy { get; private set; }
 
@@ -33,24 +34,46 @@ namespace StarshipCabin.QuietWatch
 
         public bool TryBlackout(Action atBlack, Action onComplete = null)
         {
-            if (IsBusy)
+            if (IsBusy || !isActiveAndEnabled || fadeRenderer == null)
             {
                 return false;
             }
 
-            StartCoroutine(BlackoutRoutine(atBlack, onComplete));
+            IsBusy = true;
+            completion = onComplete;
+            StartCoroutine(BlackoutRoutine(atBlack));
             return true;
         }
 
-        private IEnumerator BlackoutRoutine(Action atBlack, Action onComplete)
+        private IEnumerator BlackoutRoutine(Action atBlack)
         {
-            IsBusy = true;
-            yield return Fade(0f, 1f);
-            atBlack?.Invoke();
-            yield return null;
-            yield return Fade(1f, 0f);
+            try
+            {
+                yield return Fade(0f, 1f);
+                atBlack?.Invoke();
+                yield return null;
+                yield return Fade(1f, 0f);
+            }
+            finally
+            {
+                Finish();
+            }
+        }
+
+        private void OnDisable()
+        {
+            StopAllCoroutines();
+            Finish();
+        }
+
+        private void Finish()
+        {
+            SetAlpha(0f);
+            if (fadeRenderer != null) fadeRenderer.enabled = false;
             IsBusy = false;
-            onComplete?.Invoke();
+            var callback = completion;
+            completion = null;
+            callback?.Invoke();
         }
 
         private IEnumerator Fade(float from, float to)
@@ -81,6 +104,7 @@ namespace StarshipCabin.QuietWatch
                 return;
             }
 
+            block ??= new MaterialPropertyBlock();
             fadeRenderer.GetPropertyBlock(block);
             block.SetColor(ColorId, new Color(0f, 0f, 0f, alpha));
             fadeRenderer.SetPropertyBlock(block);
