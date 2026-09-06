@@ -135,7 +135,9 @@ namespace StarshipCabin.EditorTools
             void CheckReceivers()
             {
                 var receivers = weather.GetComponentsInChildren<Renderer>()
-                    .Where(r => r.sharedMaterial.HasProperty("_OccultorSphere")).ToArray();
+                    .Where(r => r.sharedMaterial.shader.name == "StarshipCabin/QuietWatchGasGiant"
+                        || r.sharedMaterial.shader.name == "StarshipCabin/QuietWatchRings"
+                        || r.sharedMaterial.shader.name == "StarshipCabin/QuietWatchAtmosphere").ToArray();
                 Require(receivers.Length == 3, "Planet, rings and atmosphere must share the eclipse.");
                 foreach (var receiver in receivers)
                 {
