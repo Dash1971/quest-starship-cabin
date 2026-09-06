@@ -6,7 +6,9 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-The M6.4 exterior study is a new **source-tested, not yet Unity-built** review candidate based on reviewed main `637b15f`. It enlarges Great Weather, adds original terrain/cloud/city maps and atmosphere limbs, places the fleet and harbour in a larger physical setting, and removes sharp chess-piece reflections. See the [M6.4 build and visual review guide](docs/development/exterior-spectacle-review.md). Its proposed version is `2.0.0-m6.4-exterior-study` (`20011`). The M6.3 installation described below remains the latest device-built evidence.
+M6.5 proposes a focused chess-lighting correction and removes the view sign and obsolete table indicator pad. It has **not yet been Unity-built or headset-approved**. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
+
+M6.4 was merged as `46447d5`; OpenClaw's merge record reports Unity/bake/capture/APK/install validation. The September 6 headset feedback confirms a substantial exterior improvement but unchanged chess highlights. Its version is `2.0.0-m6.4-exterior-study` (`20011`). The [M6.4 implementation guide](docs/development/exterior-spectacle-review.md) records the original source-stage work; M6.5 addresses the remaining chess issue.
 
 The September M6.3 candidate implements transition/timing fixes and a Great Weather distance, weather-map and shared-shadow benchmark. It was source-tested, regenerated, baked, desktop-render reviewed, package-audited and installed on Quest 3 on 2026-09-05. **In-headset visual, comfort and performance approval remains open.** Follow the [implementation and review guide](docs/development/reliability-great-weather-review.md) for the remaining device acceptance. The installed candidate is `2.0.0-m6.3-reliability-scale` (`20010`); APK SHA-256: `7ea7e41f258b445a06ab8078e19bdd857edcb89ab77010e84424a43709407531`.
 

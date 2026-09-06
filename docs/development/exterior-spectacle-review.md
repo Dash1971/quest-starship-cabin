@@ -1,5 +1,7 @@
 # M6.4 exterior scale and material study
 
+**Post-review note (September 6):** merged as `46447d5`, whose record reports Unity/bake/capture/APK/install validation. The user reports a substantial exterior improvement but unchanged chess highlights. The evidence sections below describe the original authoring stage; see [M6.5 chess diagnosis](chess-lighting-review.md) for the follow-up.
+
 The M6.3 headset feedback was clear: cabin illumination improved, but the exterior change was hard to notice, and chess pieces caught distracting mirror-like highlights. This candidate makes the exterior composition visibly larger and adds layered planetary scenery. It starts from OpenClaw's reviewed `637b15f` and retains its controls, privacy, timeline and portable build fixes.
 
 ## Intended visible changes

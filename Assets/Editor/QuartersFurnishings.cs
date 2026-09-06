@@ -7,16 +7,9 @@ namespace StarshipCabin.EditorTools
     /// <summary>
     /// Milestone 2: procedural furnishings for the Crew Quarters V2 scene.
     /// Couch + low table (lounge), raised platform + bed (sleep alcove), desk +
-    /// stool, diegetic console pad with the ambience mode strips, entry door
-    /// detail, plants and sill dressing. Everything is a beveled ChamferedBox
-    /// or a small MeshDraft — no raw cube primitives, no colliders.
-    ///
-    /// The three mode strips are named exactly "Amber Mode Strip",
-    /// "Teal Mode Strip" and "Blue Status Strip" so the existing
-    /// CabinExperienceController indicator lookup finds them. They are built
-    /// from a shared UNIT mesh and sized via transform.localScale, because
-    /// SetIndicator() animates localScale.y with absolute values (0.045/0.075).
-    /// They are deliberately NOT static (runtime scale + material changes).
+    /// stool, entry door detail, plants and sill dressing. Everything is a
+    /// beveled ChamferedBox or a small MeshDraft. The obsolete ambience pad
+    /// and strips are retired; the low table is reserved for the chess set.
     /// </summary>
     internal static class QuartersFurnishings
     {
@@ -110,41 +103,9 @@ namespace StarshipCabin.EditorTools
             // Low table on the rug.
             Box(parent, mats.Graphite, "Low Table Plinth", 0.85f, 0.33f, 0.42f, 0.03f,
                 new Vector3(couchX, 0.165f, 0.05f));
-            var tableTop = Box(parent, mats.Wood, "Low Table Top", 1.25f, 0.06f, 0.70f, 0.02f,
+            Box(parent, mats.Wood, "Low Table Top", 1.25f, 0.06f, 0.70f, 0.02f,
                 new Vector3(couchX, 0.36f, 0.05f));
 
-            BuildConsolePad(parent, mats, tableTop.transform.position);
-        }
-
-        /// <summary>
-        /// Diegetic console pad on the low table, tilted toward the couch,
-        /// carrying the three ambience mode strips the controller drives.
-        /// </summary>
-        private static void BuildConsolePad(Transform parent, FurnishingMaterials mats, Vector3 tableTopCenter)
-        {
-            var padCenter = tableTopCenter + new Vector3(0.33f, 0.055f, 0.13f);
-            var padRotation = Quaternion.Euler(-10f, 0f, 0f); // face tilts toward the couch (-Z)
-            var pad = Box(parent, mats.Graphite, "Console Pad", 0.42f, 0.05f, 0.28f, 0.015f,
-                padCenter, padRotation);
-
-            // Shared unit mesh; sizes come from localScale so that
-            // CabinExperienceController.SetIndicator's absolute y-scale
-            // animation (0.045 inactive / 0.075 active) behaves as designed.
-            var unit = QuartersMeshes.ChamferedBox("Quarters Indicator Unit", 1f, 1f, 1f, 0.08f);
-
-            Strip(pad.transform, unit, mats.Amber, "Amber Mode Strip", new Vector3(-0.12f, 0.048f, 0f), new Vector3(0.14f, 0.045f, 0.05f));
-            Strip(pad.transform, unit, mats.Teal, "Teal Mode Strip", new Vector3(0.03f, 0.048f, 0f), new Vector3(0.10f, 0.045f, 0.05f));
-            Strip(pad.transform, unit, mats.Blue, "Blue Status Strip", new Vector3(0.15f, 0.048f, 0f), new Vector3(0.07f, 0.045f, 0.05f));
-        }
-
-        private static void Strip(Transform pad, Mesh unit, Material material, string name, Vector3 localPos, Vector3 localScale)
-        {
-            var strip = QuartersSceneSetup.MeshObject(pad, name, unit, material);
-            strip.transform.localPosition = localPos;
-            strip.transform.localRotation = Quaternion.identity;
-            strip.transform.localScale = localScale;
-            // Runtime scale + material animation: must not be static-batched.
-            GameObjectUtility.SetStaticEditorFlags(strip, 0);
         }
 
         // ------------------------------------------------------------------

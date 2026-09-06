@@ -90,13 +90,10 @@ namespace StarshipCabin.EditorTools
                     }
                 }
                 Require(Camera.main.farClipPlane >= 5000f, "Camera clips distant backdrops.");
-                foreach (var piece in new[] { "Chess Pieces White", "Chess Pieces Black" })
-                {
-                    var material = GameObject.Find(piece).GetComponent<Renderer>().sharedMaterial;
-                    Require(material.GetFloat("_Smoothness") <= 0.1f && material.GetFloat("_Metallic") == 0f
-                        && material.IsKeywordEnabled("_SPECULARHIGHLIGHTS_OFF")
-                        && material.IsKeywordEnabled("_ENVIRONMENTREFLECTIONS_OFF"), "Chess material regained sharp reflections.");
-                }
+                QuartersDecor.ValidateChessLighting(false);
+                Require(UnityEngine.Object.FindObjectsByType<QuietWatchSelectorPanel>(
+                    FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0
+                    && GameObject.Find("Quiet Watch Selector") == null && GameObject.Find("Console Pad") == null, "Backdrop sign must not be generated.");
                 var formation = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 formation.gameObject.SetActive(true);
                 formation.Enter(LifeMode.Quiet, MotionMode.Still);
