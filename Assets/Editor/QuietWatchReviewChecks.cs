@@ -50,9 +50,9 @@ namespace StarshipCabin.EditorTools
                     Require(distance > 0f, "Moon must be behind the sun-facing ring plane.");
                     return (position + sun * distance - ring.position).magnitude;
                 }
-                Require(Mathf.Abs(ShadowRayRadius(moon.position) - 39.5f) < 0.001f, "Moon does not start behind the authored ring band.");
+                Require(Mathf.Abs(ShadowRayRadius(moon.position) - QuietWatchExteriorBuilder.MoonShadowRadius) < 0.001f, "Moon does not start behind the authored ring band.");
                 weather.PreviewAt(weather.GraceNoteAtSeconds + weather.GraceDurationSeconds, LifeMode.Living, MotionMode.Still);
-                Require(ShadowRayRadius(moon.position) > 44f + 0.8f, "Whole moon must clear the outer ring shadow.");
+                Require(ShadowRayRadius(moon.position) > QuietWatchExteriorBuilder.RingOuter + QuietWatchExteriorBuilder.MoonDiameter * 0.5f, "Whole moon must clear the outer ring shadow.");
                 weather.Exit();
                 weather.gameObject.SetActive(true);
                 weather.Enter(LifeMode.Living, MotionMode.Still);
@@ -73,10 +73,37 @@ namespace StarshipCabin.EditorTools
                     Require(Vector3.Dot(Vector3.Cross(b - a, c - a), a + b + c) > 0f, "Planet triangle faces inward or is degenerate.");
                 }
                 weather.Exit();
+                foreach (var vista in vistas.OfType<AuthoredVista>().Where(v => v.VistaId != "great-weather"))
+                {
+                    if (vista.VistaId == "harbour" || vista.VistaId == "long-formation")
+                        Require(Mathf.Abs(vista.transform.lossyScale.x - QuietWatchExteriorBuilder.FleetScale) < 0.001f,
+                            "Fleet/station physical scale was lost.");
+                    Require(vista.GetComponent<VistaBackdropLayers>() != null, "Missing deterministic backdrop layers.");
+                    foreach (var body in vista.GetComponentsInChildren<DistantVistaBounds>(true))
+                    {
+                        var renderer = body.GetComponent<MeshRenderer>();
+                        Require(renderer.GetComponent<MeshFilter>().sharedMesh != null, "Generated backdrop mesh was overwritten.");
+                        Require(renderer.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(renderer.sharedMaterial.shader),
+                            "Backdrop shader failed: " + renderer.sharedMaterial.shader.name);
+                        Require(Mathf.Abs(renderer.sharedMaterial.GetVector("_PlanetSphere").w *
+                            renderer.sharedMaterial.GetFloat("_DistanceScale") - 6371000f) < 2f, "Backdrop physical radius mismatch.");
+                    }
+                }
+                Require(Camera.main.farClipPlane >= 5000f, "Camera clips distant backdrops.");
+                foreach (var piece in new[] { "Chess Pieces White", "Chess Pieces Black" })
+                {
+                    var material = GameObject.Find(piece).GetComponent<Renderer>().sharedMaterial;
+                    Require(material.GetFloat("_Smoothness") <= 0.1f && material.GetFloat("_Metallic") == 0f
+                        && material.IsKeywordEnabled("_SPECULARHIGHLIGHTS_OFF")
+                        && material.IsKeywordEnabled("_ENVIRONMENTREFLECTIONS_OFF"), "Chess material regained sharp reflections.");
+                }
                 var formation = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 formation.gameObject.SetActive(true);
                 formation.Enter(LifeMode.Quiet, MotionMode.Still);
                 var rig = formation.transform.Find("Formation Flight Rig");
+                var command = rig.Find("Command Ship Resolute");
+                foreach (var detailName in new[] { "Room-scale occupied decks", "Hull service markings" })
+                    Require(command.Find(detailName).localScale == Vector3.one, "Hull details do not inherit fleet scale.");
                 formation.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
                 var formationStart = rig.localPosition;
                 formation.PreviewAt(10, LifeMode.Quiet, MotionMode.Still);

@@ -10,28 +10,20 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DistanceOrigin;
     float4 _RingCenter, _RingNormal, _RingRadii, _PlanetSphere;
     float _DistanceScale, _WeatherPulse, _ObservationTime;
+    half4 _AtmosphereColor;
+    float _AtmosphereHeight, _DawnProgress;
 CBUFFER_END
 
-float3 QWProjectionPosition(float3 proxyWS)
-{
-    // P - E/scale is equivalent in direction to scale*P - E. Evaluate after
-    // UNITY_SETUP_INSTANCE_ID: E must be this eye, not a shared centre camera.
-    float inverseScale = rcp(max(1.0, _DistanceScale));
-    return proxyWS + (GetCameraPositionWS() - _DistanceOrigin.xyz) * (1.0 - inverseScale);
-}
-
-float3 QWViewDirection(float3 proxyWS)
-{
-    float3 eyeInProxy = _DistanceOrigin.xyz
-        + (GetCameraPositionWS() - _DistanceOrigin.xyz) / max(1.0, _DistanceScale);
-    return normalize(eyeInProxy - proxyWS);
-}
+#include "QuietWatchDistance.hlsl"
 
 float QWRingDensity(float radius)
 {
     float t = saturate((radius - _RingRadii.x) / max(0.01, _RingRadii.y - _RingRadii.x));
     float edge = smoothstep(0.0, 0.025, t) * (1.0 - smoothstep(0.965, 1.0, t));
-    float structure = 0.68 + 0.18 * sin(radius * 2.9) + 0.10 * sin(radius * 9.7);
+    float footprint = max(fwidth(radius), 0.00001);
+    float broad = 1.0 - smoothstep(1.0, 3.14159, footprint * 2.9);
+    float fine = 1.0 - smoothstep(1.0, 3.14159, footprint * 9.7);
+    float structure = 0.68 + 0.18 * sin(radius * 2.9) * broad + 0.10 * sin(radius * 9.7) * fine;
     float division = 1.0 - 0.92 * exp(-pow((t - 0.64) / 0.027, 2.0));
     return saturate(structure * edge * division);
 }

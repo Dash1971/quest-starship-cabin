@@ -664,7 +664,7 @@ namespace StarshipCabin.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
-            camera.farClipPlane = 180f;
+            camera.farClipPlane = 5000f; // Actual fleet metres and a separate deep planetary backdrop.
             var cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = true;
             cameraData.antialiasing = AntialiasingMode.None;
@@ -1010,8 +1010,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m6.3-reliability-scale";
-            PlayerSettings.Android.bundleVersionCode = 20010;
+            PlayerSettings.bundleVersion = "2.0.0-m6.4-exterior-study";
+            PlayerSettings.Android.bundleVersionCode = 20011;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

@@ -13,6 +13,14 @@ namespace StarshipCabin.EditorTools
     /// </summary>
     internal static class QuietWatchExteriorBuilder
     {
+        internal static readonly Vector3 WeatherCenter = new Vector3(32f, -12f, -104f);
+        internal static readonly Vector3 WeatherSun = new Vector3(-0.78f, 0.14f, 0.50f);
+        internal static readonly Vector3 WeatherRingAngles = new Vector3(63f, 8f, -14f);
+        internal const float WeatherRadius = 70f;
+        internal const float RingInner = 76f, RingOuter = 112f;
+        internal const float MoonShadowRadius = 96f, MoonTravel = 24f, MoonDiameter = 2.6f;
+        internal const float FleetScale = 12f;
+
         public static AuthoredVista BuildHarbour(
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
@@ -64,6 +72,9 @@ namespace StarshipCabin.EditorTools
                     new Vector3(45f, 8f, 42f)),
                 70f, 118f, 0.57f, 1.8f, 5f, true, false);
 
+            vista.transform.localScale = Vector3.one * FleetScale;
+            AddBlueBackdrop(vista, "Harbour Night World", new Vector3(450f, -1300f, -3000f), 1300f,
+                new Vector3(-0.75f, 0.12f, 0.12f), new Vector3(10f, -35f, -18f));
             return Configure(vista, "harbour", "HARBOUR OF TEN THOUSAND LIGHTS", "ORBITAL SAFE HARBOUR",
                 AuthoredVistaKind.Harbour, stars, fill, audio, station, travellers.ToArray(), new Color(0.32f, 0.66f, 0.92f));
         }
@@ -72,32 +83,20 @@ namespace StarshipCabin.EditorTools
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
             var vista = NewVistaRoot("Vista 3 - Blue Morning");
-            var worldMaterial = MaterialFromShader("Quiet Watch Blue World", "StarshipCabin/QuietWatchBlueWorld");
-            worldMaterial.SetColor("_OceanColor", new Color(0.008f, 0.085f, 0.24f));
-            worldMaterial.SetColor("_LandColor", new Color(0.075f, 0.27f, 0.15f));
-            worldMaterial.SetColor("_CloudColor", new Color(0.92f, 0.97f, 1.0f));
-            worldMaterial.SetColor("_AtmosphereColor", new Color(0.08f, 0.42f, 1.0f));
-            worldMaterial.SetColor("_SunsetColor", new Color(1.0f, 0.25f, 0.045f));
-            worldMaterial.SetVector("_SunDirection", new Vector4(-0.72f, 0.18f, 0.67f, 0f));
-            EditorUtility.SetDirty(worldMaterial);
-            var world = Sphere(vista.transform, "Blue World", worldMaterial, new Vector3(9f, -42f, -78f), 110f);
-            world.transform.rotation = Quaternion.Euler(2f, -18f, -8f);
-
-            var sunrise = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Blue Morning Sun", new Color(0.8f, 0.45f, 0.12f), new Color(1.0f, 0.58f, 0.25f), 5.0f);
-            Sphere(vista.transform, "Dawn Sun", sunrise, new Vector3(-46f, 25f, -106f), 6.5f);
-
+            var world = AddBlueBackdrop(vista, "Blue World", new Vector3(22f, -83f, -135f), 116f,
+                new Vector3(-0.82f, 0.12f, 0.24f), new Vector3(10f, -28f, -12f));
             return Configure(vista, "blue-morning", "BLUE MORNING", "DAWN ABOVE A LIVING WORLD",
-                AuthoredVistaKind.BlueMorning, stars, fill, audio, world.transform, Array.Empty<Transform>(), new Color(1.0f, 0.54f, 0.30f));
+                AuthoredVistaKind.BlueMorning, stars, fill, audio, world,
+                Array.Empty<Transform>(), new Color(1.0f, 0.54f, 0.30f));
         }
 
         public static AuthoredVista BuildGreatWeather(
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
         {
             var vista = NewVistaRoot("Vista 4 - The Great Weather");
-            var center = new Vector3(8f, 6f, -76f);
-            var ringRotation = Quaternion.Euler(63f, 8f, -14f);
-            var sun = new Vector3(-0.62f, 0.10f, 0.78f).normalized;
+            var center = WeatherCenter;
+            var ringRotation = Quaternion.Euler(WeatherRingAngles);
+            var sun = WeatherSun.normalized;
             var planetMaterial = MaterialFromShader("Quiet Watch Great Weather", "StarshipCabin/QuietWatchGasGiant");
             var ringMaterial = MaterialFromShader("Great Weather Rings Authored", "StarshipCabin/QuietWatchRings");
             var moonMaterial = MaterialFromShader("Great Weather Moon", "StarshipCabin/QuietWatchMoon");
@@ -110,13 +109,14 @@ namespace StarshipCabin.EditorTools
                 material.SetVector("_SunDirection", sun);
                 material.SetVector("_RingCenter", center);
                 material.SetVector("_RingNormal", ringRotation * Vector3.forward);
-                material.SetVector("_RingRadii", new Vector4(31.5f, 44f, 0f, 0f));
-                material.SetVector("_PlanetSphere", new Vector4(center.x, center.y, center.z, 29f));
+                material.SetVector("_RingRadii", new Vector4(RingInner, RingOuter, 0f, 0f));
+                material.SetVector("_PlanetSphere", new Vector4(center.x, center.y, center.z, WeatherRadius));
                 EditorUtility.SetDirty(material);
             }
             const string texturePath = "Assets/Art/QuietWatch/Textures/QW_GreatWeather.png";
             var importer = AssetImporter.GetAtPath(texturePath) as TextureImporter;
             if (importer == null) throw new InvalidOperationException("Missing authored weather atlas: " + texturePath);
+            importer.maxTextureSize = 4096;
             importer.sRGBTexture = true;
             importer.alphaSource = TextureImporterAlphaSource.FromInput;
             importer.alphaIsTransparency = false; // Alpha encodes storm coverage.
@@ -126,7 +126,7 @@ namespace StarshipCabin.EditorTools
             importer.filterMode = FilterMode.Trilinear;
             importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
             {
-                name = "Android", overridden = true, maxTextureSize = 2048,
+                name = "Android", overridden = true, maxTextureSize = 4096,
                 format = TextureImporterFormat.ASTC_6x6
             });
             importer.SaveAndReimport();
@@ -134,23 +134,25 @@ namespace StarshipCabin.EditorTools
             planetMaterial.SetColor("_StormColor", new Color(0.58f, 0.29f, 0.12f));
             ringMaterial.SetColor("_LightColor", new Color(0.71f, 0.62f, 0.48f));
             ringMaterial.SetColor("_DarkColor", new Color(0.11f, 0.09f, 0.075f));
-            var planet = ExteriorMesh(vista.transform, "Ringed Giant", WeatherSphere(), planetMaterial, center);
-            planet.transform.localScale = Vector3.one * 58f;
+            var planet = ExteriorMesh(vista.transform, "Ringed Giant", WeatherSphere("Great Weather Smooth Globe"), planetMaterial, center);
+            planet.transform.localScale = Vector3.one * (WeatherRadius * 2f);
             planet.transform.rotation = Quaternion.Euler(0f, -22f, -8f);
             var rings = ExteriorMesh(vista.transform, "Planetary Rings",
-                Annulus("Great Weather Ring System", 44f, 31.5f, 192), ringMaterial, center, ringRotation);
+                Annulus("Great Weather Ring System", RingOuter, RingInner, 256), ringMaterial, center, ringRotation);
             var radial = ringRotation * Vector3.left;
-            // Start four proxy metres behind an actual ring-shadow ray. The
+            // Start eight proxy metres behind an actual ring-shadow ray. The
             // moon gradually clears the outer ring; the distant moon stays put.
             var shadowMoon = Sphere(vista.transform, "Moon in Ring Shadow", moonMaterial,
-                center + radial * 39.5f - sun * 4f, 1.6f);
-            var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(34f, 25f, -96f), 3f);
+                center + radial * MoonShadowRadius - sun * 8f, MoonDiameter);
+            var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(92f, 35f, -174f), 3.6f);
             foreach (var body in new[] { planet, rings, shadowMoon, farMoon })
                 body.AddComponent<DistantVistaBounds>();
+            AddAtmosphere(vista.transform, "Great Weather Atmospheric Limb", planet, planetMaterial,
+                new Color(0.46f, 0.64f, 0.82f), 0.006f);
             var authored = Configure(vista, "great-weather", "THE GREAT WEATHER", "RING SHADOW AND STORMS",
                 AuthoredVistaKind.GreatWeather, stars, fill, audio, planet.transform,
                 new[] { shadowMoon.transform, farMoon.transform }, new Color(0.75f, 0.60f, 0.43f));
-            authored.ConfigureMoonEmergence(radial * 8f);
+            authored.ConfigureMoonEmergence(radial * MoonTravel);
             return authored;
         }
 
@@ -162,6 +164,10 @@ namespace StarshipCabin.EditorTools
                 vista.transform, "Formation Distant Sun", Quaternion.Euler(26f, -44f, -12f),
                 new Color(0.78f, 0.88f, 1.0f), 1.45f, true);
 
+            // Scale the entire choreography coherently: a 20 m model now reads
+            // as a 240 m vessel hundreds of metres away, with the same movement
+            // and angular relationships that were reviewed in M6.3.
+            vista.transform.localScale = Vector3.one * FleetScale;
             var formationRig = new GameObject("Formation Flight Rig").transform;
             formationRig.SetParent(vista.transform, false);
             GameObjectUtility.SetStaticEditorFlags(formationRig.gameObject, 0);
@@ -172,15 +178,81 @@ namespace StarshipCabin.EditorTools
             var ships = new List<Transform>
             {
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "CommandShip", "Command Ship Resolute",
-                    new Vector3(3.5f, 1.4f, -29f), Quaternion.Euler(0f, -3f, 0f), 0.96f),
+                    new Vector3(3.5f, 1.4f, -29f), Quaternion.Euler(0f, -25f, 0f), 0.96f),
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortSpear", "Port Escort",
-                    new Vector3(-13.5f, 5.0f, -43f), Quaternion.Euler(0f, 5f, -2f), 0.78f),
+                    new Vector3(-13.5f, 5.0f, -43f), Quaternion.Euler(0f, -20f, -2f), 0.78f),
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortWing", "Starboard Escort",
-                    new Vector3(11.5f, 6.0f, -46f), Quaternion.Euler(0f, -5f, 2f), 0.72f)
+                    new Vector3(11.5f, 6.0f, -46f), Quaternion.Euler(0f, -26f, 2f), 0.72f)
             };
 
+            AddBlueBackdrop(vista, "Formation Crescent World", new Vector3(260f, -820f, -1900f), 850f,
+                new Vector3(-0.70f, 0.12f, 0.30f), new Vector3(18f, 28f, -24f));
             return Configure(vista, "long-formation", "THE LONG FORMATION", "FORMATION UNDERWAY",
                 AuthoredVistaKind.LongFormation, stars, fill, audio, formationRig, ships.ToArray(), new Color(0.34f, 0.58f, 0.84f));
+        }
+
+        private static Transform AddBlueBackdrop(GameObject vista, string name, Vector3 center, float radius,
+            Vector3 sun, Vector3 rotation)
+        {
+            var skyRoot = new GameObject(name + " Distant Space").transform;
+            skyRoot.SetParent(vista.transform, false);
+            skyRoot.position = Vector3.zero;
+            skyRoot.localScale = Vector3.one / vista.transform.lossyScale.x;
+            var material = MaterialFromShader(name + " Surface", "StarshipCabin/QuietWatchBlueWorld");
+            material.SetVector("_DistanceOrigin", new Vector4(-1.6f, 1.1f, -1.42f, 0f));
+            material.SetFloat("_DistanceScale", 6371000f / radius);
+            material.SetVector("_PlanetSphere", new Vector4(center.x, center.y, center.z, radius));
+            material.SetVector("_SunDirection", sun.normalized);
+            material.SetTexture("_SurfaceMap", CelestialTexture("QW_BlueSurface.png", true, 2048));
+            material.SetTexture("_CloudMap", CelestialTexture("QW_BlueClouds.png", false, 2048));
+            EditorUtility.SetDirty(material);
+            var world = ExteriorMesh(skyRoot, name, WeatherSphere(name + " Mesh"), material, center, Quaternion.Euler(rotation));
+            world.transform.localScale = Vector3.one * radius * 2f;
+            world.AddComponent<DistantVistaBounds>();
+            var atmosphere = AddAtmosphere(skyRoot, name + " Atmospheric Limb", world, material,
+                new Color(0.12f, 0.42f, 1.0f), 0.005f);
+            var layers = vista.GetComponent<VistaBackdropLayers>() ?? vista.AddComponent<VistaBackdropLayers>();
+            layers.Configure(new[] { world.GetComponent<Renderer>(), atmosphere.GetComponent<Renderer>() });
+            return world.transform;
+        }
+
+        private static GameObject AddAtmosphere(Transform parent, string name, GameObject planet,
+            Material surface, Color color, float height)
+        {
+            var material = MaterialFromShader(name, "StarshipCabin/QuietWatchAtmosphere");
+            foreach (var property in new[] { "_DistanceOrigin", "_SunDirection", "_PlanetSphere", "_RingCenter", "_RingNormal", "_RingRadii" })
+                if (surface.HasProperty(property)) material.SetVector(property, surface.GetVector(property));
+            material.SetFloat("_DistanceScale", surface.GetFloat("_DistanceScale"));
+            material.SetColor("_AtmosphereColor", color);
+            material.SetFloat("_AtmosphereHeight", height);
+            EditorUtility.SetDirty(material);
+            var shell = ExteriorMesh(parent, name, WeatherSphere(name + " Mesh"), material);
+            shell.transform.position = planet.transform.position;
+            shell.transform.localScale = planet.transform.localScale * (1f + height * 8f);
+            shell.AddComponent<DistantVistaBounds>();
+            return shell;
+        }
+
+        private static Texture2D CelestialTexture(string name, bool srgb, int resolution)
+        {
+            var path = "Assets/Art/QuietWatch/Textures/" + name;
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) throw new InvalidOperationException("Missing authored celestial texture: " + path);
+            importer.sRGBTexture = srgb;
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = false;
+            importer.mipmapEnabled = true;
+            importer.wrapModeU = TextureWrapMode.Repeat;
+            importer.wrapModeV = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Trilinear;
+            importer.maxTextureSize = resolution;
+            importer.SetPlatformTextureSettings(new TextureImporterPlatformSettings
+            {
+                name = "Android", overridden = true, maxTextureSize = resolution, format = TextureImporterFormat.ASTC_6x6
+            });
+            if (AssetDatabase.WriteImportSettingsIfDirty(path))
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
         private static GameObject NewVistaRoot(string name)
@@ -225,6 +297,7 @@ namespace StarshipCabin.EditorTools
             var go = QuartersSceneSetup.MeshObject(parent, name, mesh, material, position, rotation);
             go.transform.localPosition = position;
             go.transform.localRotation = rotation;
+            go.transform.localScale = Vector3.one;
             GameObjectUtility.SetStaticEditorFlags(go, 0);
             return go;
         }
@@ -310,6 +383,25 @@ namespace StarshipCabin.EditorTools
                 "Harbour Guidance Amber", new Color(0.19f, 0.065f, 0.018f),
                 new Color(1.0f, 0.31f, 0.055f), 6.2f);
 
+            var residenceMaterial = QuartersSceneSetup.CreateEmissiveMaterial(
+                "Harbour Residence Windows", new Color(0.12f,0.09f,0.06f),new Color(1f,0.74f,0.43f),1.4f);
+            var residences = new MeshDraft();
+            for (var deck = 0; deck < 4; deck++)
+            {
+                for (var bay = 0; bay < 180; bay++)
+                {
+                    if ((bay * 17 + deck * 11) % 13 < 4) continue;
+                    var angle = (-140f + bay * 280f / 179f) * Mathf.Deg2Rad;
+                    var radial = new Vector3(Mathf.Cos(angle),-Mathf.Sin(angle),0f);
+                    var tangent = new Vector3(-Mathf.Sin(angle),-Mathf.Cos(angle),0f);
+                    var center = radial * (17.6f + deck * 0.24f) + Vector3.forward * 2.42f;
+                    residences.AddQuadOriented(center-tangent*0.045f-radial*0.029f,
+                        center+tangent*0.045f-radial*0.029f,center+tangent*0.045f+radial*0.029f,
+                        center-tangent*0.045f+radial*0.029f,Vector3.forward);
+                }
+            }
+            ExteriorMesh(station,"Occupied residential decks",residences.ToMesh("Harbour Room-sized Windows"),residenceMaterial);
+
             var habitat = new MeshDraft();
             var guidance = new MeshDraft();
             for (var i = 0; i < 54; i++)
@@ -350,7 +442,7 @@ namespace StarshipCabin.EditorTools
             ExteriorMesh(station, "Docking Guidance Lights", guidance.ToMesh("Harbour Docking Guidance Lights"), amber);
         }
 
-        private static Mesh WeatherSphere()
+        internal static Mesh WeatherSphere(string name)
         {
             const int longitude = 128, latitude = 64;
             var vertices = new Vector3[(longitude + 1) * (latitude + 1)];
@@ -373,7 +465,7 @@ namespace StarshipCabin.EditorTools
                     if (y < latitude - 1) triangles.AddRange(new[] { index + 1, next + 1, next });
                 }
             }
-            var mesh = new Mesh { name = "Great Weather Smooth Globe" };
+            var mesh = new Mesh { name = name };
             mesh.vertices = vertices;
             mesh.normals = normals;
             mesh.SetTriangles(triangles, 0);

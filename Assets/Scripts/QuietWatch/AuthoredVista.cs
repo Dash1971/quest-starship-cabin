@@ -43,6 +43,7 @@ namespace StarshipCabin.QuietWatch
         private LifeMode lifeMode;
         private MotionMode motionMode;
         private VistaTimeline timeline;
+        private VistaBackdropLayers backdropLayers;
         private bool originsCached;
         private bool paused;
         private bool focused = true;
@@ -85,6 +86,7 @@ namespace StarshipCabin.QuietWatch
         {
             if (originsCached) return;
             originsCached = true;
+            backdropLayers = GetComponent<VistaBackdropLayers>();
             if (slowTurn != null)
             {
                 slowTurnOriginPosition = slowTurn.localPosition;
@@ -176,6 +178,7 @@ namespace StarshipCabin.QuietWatch
                     break;
             }
 
+            backdropLayers?.EvaluateAt(elapsed, kind == AuthoredVistaKind.BlueMorning ? grace : 0f);
             SetHeroFloat("_ObservationTime", elapsed);
             UpdateCabinResponse(elapsed, grace);
         }
@@ -382,6 +385,7 @@ namespace StarshipCabin.QuietWatch
 
         private void RestoreTransforms()
         {
+            backdropLayers?.EvaluateAt(0f, 0f);
             if (slowTurn != null)
             {
                 slowTurn.localPosition = slowTurnOriginPosition;

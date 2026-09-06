@@ -163,6 +163,19 @@ namespace StarshipCabin.EditorTools
                     }
                     firstQuestion.Exit();
                 }
+                var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
+                foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == chessVista);
+                chessVista.Enter(LifeMode.Quiet, MotionMode.Still);
+                chessVista.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
+                var chess = GameObject.Find("Chess Board").transform.position;
+                camera.transform.position = chess + new Vector3(-0.25f, 0.55f, -0.5f);
+                camera.transform.rotation = Quaternion.LookRotation(chess + Vector3.up * 0.04f - camera.transform.position);
+                camera.Render();
+                RenderTexture.active = target;
+                pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                pixels.Apply(false);
+                File.WriteAllBytes(Path.Combine(OutputFolder, "chess-matte-material-review.png"), pixels.EncodeToPNG());
+                chessVista.Exit();
                 var manifest = new CaptureManifest
                 {
                     sourceHash = generation.SourceHash, unityVersion = Application.unityVersion,
@@ -256,7 +269,8 @@ namespace StarshipCabin.EditorTools
                     foreach (var volume in volumes)
                     {
                         var clearance = Vector3.Distance(worldPosition, volume.transform.position)
-                            - route.ClearanceRadius - volume.Radius;
+                            - route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x)
+                            - volume.Radius * Mathf.Abs(volume.transform.lossyScale.x);
                         if (clearance < nearest)
                         {
                             nearest = clearance;
@@ -288,7 +302,8 @@ namespace StarshipCabin.EditorTools
                         var worldA = routes[first].transform.parent.TransformPoint(localA);
                         var worldB = routes[second].transform.parent.TransformPoint(localB);
                         var clearance = Vector3.Distance(worldA, worldB)
-                            - routes[first].ClearanceRadius - routes[second].ClearanceRadius;
+                            - routes[first].ClearanceRadius * Mathf.Abs(routes[first].transform.parent.lossyScale.x)
+                            - routes[second].ClearanceRadius * Mathf.Abs(routes[second].transform.parent.lossyScale.x);
                         if (clearance < nearest)
                         {
                             nearest = clearance;

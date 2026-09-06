@@ -35,12 +35,30 @@ namespace StarshipCabin.EditorTools
         {
             var ivory = QuartersSceneSetup.CreateMaterial("Chess Ivory", new Color(0.894f, 0.855f, 0.761f));
             var ebony = QuartersSceneSetup.CreateMaterial("Chess Ebony", new Color(0.165f, 0.129f, 0.106f));
+            ConfigureMatteChess(ivory);
+            ConfigureMatteChess(ebony);
             var boardLight = QuartersSceneSetup.CreateMaterial("Chess Board Light", new Color(0.839f, 0.792f, 0.694f));
             var boardDark = QuartersSceneSetup.CreateMaterial("Chess Board Dark", new Color(0.290f, 0.220f, 0.165f));
             var wood = QuartersSceneSetup.CreateMaterial("Cabin Wood", new Color(0.541f, 0.416f, 0.282f));
 
             BuildChessSet(parent, ivory, ebony, boardLight, boardDark, wood);
             BuildLibrary(parent);
+        }
+
+        private static void ConfigureMatteChess(Material material)
+        {
+            // Tiny bevels plus HDR coves produced bright mirror-like sparkles.
+            // These are matte carved pieces; retain diffuse/baked illumination.
+            // Always apply this to existing generated materials as well.
+            material.SetFloat("_Metallic", 0f);
+            material.SetFloat("_Smoothness", 0.08f);
+            material.SetFloat("_SpecularHighlights", 0f);
+            material.SetFloat("_EnvironmentReflections", 0f);
+            material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+            material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+            material.DisableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", Color.black);
+            EditorUtility.SetDirty(material);
         }
 
         // ------------------------------------------------------------------

@@ -6,6 +6,8 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
+The M6.4 exterior study is a new **source-tested, not yet Unity-built** review candidate based on reviewed main `637b15f`. It enlarges Great Weather, adds original terrain/cloud/city maps and atmosphere limbs, places the fleet and harbour in a larger physical setting, and removes sharp chess-piece reflections. See the [M6.4 build and visual review guide](docs/development/exterior-spectacle-review.md). Its proposed version is `2.0.0-m6.4-exterior-study` (`20011`). The M6.3 installation described below remains the latest device-built evidence.
+
 The September M6.3 candidate implements transition/timing fixes and a Great Weather distance, weather-map and shared-shadow benchmark. It was source-tested, regenerated, baked, desktop-render reviewed, package-audited and installed on Quest 3 on 2026-09-05. **In-headset visual, comfort and performance approval remains open.** Follow the [implementation and review guide](docs/development/reliability-great-weather-review.md) for the remaining device acceptance. The installed candidate is `2.0.0-m6.3-reliability-scale` (`20010`); APK SHA-256: `7ea7e41f258b445a06ab8078e19bdd857edcb89ab77010e84424a43709407531`.
 
 The records below describe the earlier M6.2 baseline. M6.3 preserves its approved controls: switching to Quiet cancels and resets event state, holding B jumps directly to a readable preview phase, and the formation remains visibly underway in both Quiet and Living even when comfort motion is set to Still.
