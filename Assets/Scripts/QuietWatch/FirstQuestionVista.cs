@@ -13,14 +13,18 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private AmbientAudioController audioController;
         [SerializeField, Min(15f)] private float graceNoteAtSeconds = 780f;
 
+        [SerializeField] private Renderer cruiseStars;
+        private MaterialPropertyBlock cruiseBlock;
+        private static readonly int TravelId = Shader.PropertyToID("_Travel");
         private LifeMode lifeMode;
         private VistaTimeline timeline;
         private bool paused;
         private bool focused = true;
         private bool active;
 
-        public void Configure(StarWindowSurface window, Light fill, AmbientAudioController audio)
+        public void Configure(StarWindowSurface window, Light fill, AmbientAudioController audio, Renderer stars)
         {
+            cruiseStars = stars;
             starWindow = window;
             exteriorFill = fill;
             audioController = audio;
@@ -35,6 +39,16 @@ namespace StarshipCabin.QuietWatch
                 audioController?.TriggerQuietWatchGrace(VistaId);
             }
             starWindow?.SetGraceAge((float)timeline.EventAge);
+            WriteCruise();
+        }
+
+        private void WriteCruise()
+        {
+            if (cruiseStars == null || timeline == null) return;
+            cruiseBlock ??= new MaterialPropertyBlock();
+            cruiseStars.GetPropertyBlock(cruiseBlock);
+            cruiseBlock.SetFloat(TravelId, (float)((timeline.DriftTravel * 110.0) % 6000.0));
+            cruiseStars.SetPropertyBlock(cruiseBlock);
         }
 
         private void OnApplicationPause(bool value) => paused = value;
@@ -42,7 +56,11 @@ namespace StarshipCabin.QuietWatch
 
         public void PreviewAt(float elapsed, LifeMode life, MotionMode motion)
         {
-            starWindow?.PreviewAt(elapsed, motion == MotionMode.Drift,
+            timeline.Reset(life == LifeMode.Living, false);
+            timeline.SetModes(life == LifeMode.Living, motion == MotionMode.Drift);
+            timeline.Advance(elapsed);
+            WriteCruise();
+            starWindow?.PreviewAt(elapsed, false,
                 life == LifeMode.Living && elapsed >= graceNoteAtSeconds ? elapsed - graceNoteAtSeconds : -1f);
         }
 
@@ -50,7 +68,9 @@ namespace StarshipCabin.QuietWatch
         {
             active = true;
             timeline = new VistaTimeline(graceNoteAtSeconds, 8);
-            timeline.Reset(nextLifeMode == LifeMode.Living, motionMode == MotionMode.Drift);
+            timeline.Reset(nextLifeMode == LifeMode.Living, false);
+            timeline.SetModes(nextLifeMode == LifeMode.Living, motionMode == MotionMode.Drift);
+            WriteCruise();
             lifeMode = nextLifeMode;
             starWindow?.ResetVistaClock();
             ApplyComfort(nextLifeMode, motionMode);

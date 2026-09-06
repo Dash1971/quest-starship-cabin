@@ -339,6 +339,8 @@ namespace StarshipCabin
                         var machinery = 0.72f + 0.28f * Mathf.Sin(2f * Mathf.PI * 0.25f * t);
                         value = (Mathf.Sin(2f * Mathf.PI * 31f * t) * 0.38f
                             + Mathf.Sin(2f * Mathf.PI * 62f * t + 0.8f) * 0.16f
+                            + Mathf.Sin(2f * Mathf.PI * 93f * t + 0.3f) * 0.10f
+                            + Mathf.Sin(2f * Mathf.PI * 124f * t) * 0.045f
                             + filteredNoise * 0.70f) * machinery;
                         break;
                     case "blue-morning":

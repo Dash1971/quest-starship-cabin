@@ -54,6 +54,7 @@ namespace StarshipCabin.QuietWatch
             }
 
             activeVista = vistas[activeIndex];
+            if (activeVista is FirstQuestionVista) Motion = MotionMode.Still;
             activeVista.Enter(Life, Motion);
             SaveAndNotify();
         }
@@ -67,6 +68,12 @@ namespace StarshipCabin.QuietWatch
             }
 
             SelectVista((activeIndex + 1) % vistas.Length);
+        }
+
+        public void SecondaryAction()
+        {
+            if (activeVista is FirstQuestionVista) ToggleMotionMode();
+            else ToggleLifeMode();
         }
 
         public void ToggleLifeMode()
@@ -124,6 +131,10 @@ namespace StarshipCabin.QuietWatch
 
             void Swap()
             {
+                // Cruise is an explicit choice for this stay; never carry it
+                // into another destination or resume it on reentry.
+                if(activeVista is FirstQuestionVista || vistas[nextIndex] is FirstQuestionVista)
+                    Motion=MotionMode.Still;
                 activeVista?.Exit();
                 activeIndex = nextIndex;
                 activeVista = vistas[activeIndex];

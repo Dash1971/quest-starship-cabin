@@ -336,8 +336,38 @@ namespace StarshipCabin.EditorTools
 
         private static void Book(Transform parent, Material material, string name, Vector3 size, Vector3 position, Quaternion rotation)
         {
-            var mesh = QuartersMeshes.ChamferedBox($"Quarters {AssetSafeName(name)}", size.x, size.y, size.z, 0.004f);
-            QuartersSceneSetup.MeshObject(parent, name, mesh, material, position, rotation);
+            var root=new GameObject(name).transform;root.SetParent(parent,false);
+            root.SetPositionAndRotation(position,rotation);
+            QuartersCabinCraft.Finish(material,"QW_CabinWeave",.15f,4f);
+            var flat=size.y<size.z;var axis=flat?Vector3.up:Vector3.forward;
+            var thickness=flat?size.y:size.z;
+            var covers=new MeshDraft();
+            var coverSize=size;if(flat)coverSize.y=.0025f;else coverSize.z=.0025f;
+            foreach(var side in new[] {-1f,1f})
+                QuartersMeshes.AppendChamferedBox(covers,axis*side*(thickness*.5f-.00125f),coverSize,.0007f);
+            var spineSize=size;spineSize.x=.005f;
+            QuartersMeshes.AppendChamferedBox(covers,new Vector3(size.x*.5f-.0025f,0,0),spineSize,.0014f);
+            var cover=QuartersSceneSetup.MeshObject(root,name+" Binding",covers.ToMesh(AssetSafeName(name)+" Binding"),material);
+            cover.transform.localPosition=Vector3.zero;cover.transform.localRotation=Quaternion.identity;
+            var pages=QuartersSceneSetup.CreateMaterial("Book Page Edges",new Color(.88f,.84f,.74f));
+            QuartersCabinCraft.Finish(pages,"QW_BookPaper",.06f,3f);
+            var paperSize=size-new Vector3(.009f,.007f,.007f);
+            var paper=QuartersSceneSetup.MeshObject(root,name+" Pages",QuartersMeshes.ChamferedBox(
+                AssetSafeName(name)+" Page Block",paperSize.x,paperSize.y,paperSize.z,.0014f),pages);
+            paper.transform.localPosition=new Vector3(-.001f,0,0);paper.transform.localRotation=Quaternion.identity;
+            // A restrained embossed rule lies on the actual spine, beneath the title.
+            var foil=QuartersSceneSetup.CreateMaterial("Book Binding Foil",new Color(.55f,.43f,.23f));
+            var rules=new MeshDraft();
+            var along=flat?Vector3.forward:Vector3.up;
+            var length=flat?size.z:size.y;
+            foreach(var side in new[] {-1f,1f})
+            {
+                var c=Vector3.right*(size.x*.5f+.0003f)+along*side*length*.37f;
+                var u=axis*(thickness*.35f);var v=along*.0007f;
+                rules.AddQuadOriented(c-u-v,c+u-v,c+u+v,c-u+v,Vector3.right);
+            }
+            var rule=QuartersSceneSetup.MeshObject(root,name+" Binding Rules",rules.ToMesh(AssetSafeName(name)+" Rules"),foil);
+            rule.transform.localPosition=Vector3.zero;rule.transform.localRotation=Quaternion.identity;
         }
 
         private static string AssetSafeName(string value)
@@ -368,7 +398,12 @@ namespace StarshipCabin.EditorTools
             var characterSize = 0.85f * maxLineLength / (longestLine * fontSize * 0.1f * 0.75f);
 
             var go = new GameObject($"Label: {text.Replace("\n", " ")}");
-            go.transform.SetParent(parent);
+            // Every library label immediately follows its Book call. Rotate its
+            // anchor around that binding's pivot, not around the world origin.
+            var binding=parent.GetChild(parent.childCount-1);
+            if(!binding.name.StartsWith("Book:")) throw new InvalidOperationException("Book label lost its binding.");
+            position=binding.position+binding.rotation*(position-binding.position);
+            go.transform.SetParent(binding,true);
             go.transform.position = position;
             go.transform.rotation = rotation;
 

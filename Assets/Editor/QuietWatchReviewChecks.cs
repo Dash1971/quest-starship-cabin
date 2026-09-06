@@ -161,7 +161,27 @@ namespace StarshipCabin.EditorTools
             var first = vistas.OfType<FirstQuestionVista>().Single(); first.gameObject.SetActive(true);
             first.Enter(LifeMode.Quiet, MotionMode.Still);
             var skyBlock = new MaterialPropertyBlock(); sky.GetPropertyBlock(skyBlock);
-            Require(skyBlock.GetFloat("_GalacticGain") > .8f, "First Question lost its galactic exposure.");
+            Require(Mathf.Abs(skyBlock.GetFloat("_GalacticGain")) < .001f, "First Question must be dust-free.");
+            var cruise=first.GetComponentsInChildren<Renderer>().Single(r=>r.sharedMaterial.shader.name=="StarshipCabin/QuietWatchCruiseStars");
+            Require(cruise.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(cruise.sharedMaterial.shader),"Cruise star shader failed.");
+            float CruiseTravel() { var b=new MaterialPropertyBlock();cruise.GetPropertyBlock(b);return b.GetFloat("_Travel"); }
+            first.PreviewAt(0,LifeMode.Quiet,MotionMode.Still);Require(CruiseTravel()==0,"Cruise must begin stationary.");
+            first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);var travel=CruiseTravel();
+            Require(travel>1000 && travel<1400,"Cruise depth travel is missing or incorrectly eased.");
+            first.ApplyComfort(LifeMode.Living,MotionMode.Drift);Require(CruiseTravel()==travel,"Life toggle rebases cruise.");
+            first.PreviewAt(30,LifeMode.Quiet,MotionMode.Drift);first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);
+            Require(Mathf.Abs(CruiseTravel()-travel)<.001f,"Cruise capture depends on previous pose.");
+            first.PreviewAt(600,LifeMode.Quiet,MotionMode.Still);Require(CruiseTravel()==0,"Still stars drift.");
+            foreach(var fleet in vistas.OfType<AuthoredVista>().Where(v=>v.VistaId=="harbour" || v.VistaId=="long-formation"))
+            {
+                Require(!fleet.GetComponentsInChildren<Transform>(true).Any(t=>t.name.StartsWith("Drive Glow")),"Detached generic drive spheres returned.");
+                foreach(var group in fleet.GetComponentsInChildren<LODGroup>(true).Where(g=>g.name!="Kilometre Harbour Sector"))
+                    foreach(var lod in group.GetLODs())
+                        Require(lod.renderers.SelectMany(r=>r.sharedMaterials).Any(m=>m.HasProperty("_EmissionColor") && m.GetColor("_EmissionColor").b>2f),"Imported engine aperture emission missing in a ship LOD.");
+            }
+            Require(GameObject.Find("Personal Desk Computer")!=null && GameObject.Find("Computer Recessed Screen")!=null,"Personal computer is missing.");
+            foreach(var book in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Book:") && t.parent != null && t.parent.name=="Furnishings"))
+                Require(book.GetComponentsInChildren<MeshFilter>().Length>=3,"Book lost its separate binding/pages.");
             first.Exit(); blue.gameObject.SetActive(true); blue.Enter(LifeMode.Quiet, MotionMode.Still);
             sky.GetPropertyBlock(skyBlock);
             Require(skyBlock.GetFloat("_GalacticGain") < .1f, "Galactic exposure leaks into a planetary vista.");
@@ -175,17 +195,20 @@ namespace StarshipCabin.EditorTools
             var station = harbour.transform.Find("Kilometre Harbour Sector");
             var lods = station.GetComponent<LODGroup>().GetLODs();
             Require(lods.Length == 3, "Harbour must retain three LODs.");
+            Require(station.GetComponent<LODGroup>().size * station.lossyScale.x > 1000f,"Harbour lost its kilometre-scale silhouette.");
+            Require(harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Length==6,"Missing port traffic lanes.");
             foreach (var lod in lods)
             {
                 var districts = lod.renderers.Where(r => r.name.StartsWith("Harbour Districts")).ToArray();
                 Require(districts.Length is >= 4 and <= 5, "District meshes are missing or unbatched.");
+                Require(districts.Any(r=>r.name.EndsWith("Surface3") && r.sharedMaterial.shader.name=="Universal Render Pipeline/Unlit"),"Occupied decks lost luminous windows in a LOD.");
                 foreach (var renderer in districts)
                 {
                     Require(renderer.gameObject.layer == QuietWatchArtAssetBuilder.ExteriorLayer, "District missed exterior lighting layer.");
                     Require(renderer.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(renderer.sharedMaterial.shader),
                         "District shader failed.");
                     var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
-                    Require(mesh != null && mesh.vertexCount < 20000, "District geometry exceeds its per-surface budget.");
+                    Require(mesh != null && mesh.vertexCount < (renderer.name.EndsWith("Surface3") ? 40000 : 20000), "District geometry exceeds its per-surface budget.");
                     var vertices = mesh.vertices; var triangles = mesh.triangles;
                     for (var i = 0; i < triangles.Length; i += 3)
                         Require(Vector3.Cross(vertices[triangles[i+1]]-vertices[triangles[i]],

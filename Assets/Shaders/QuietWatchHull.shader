@@ -13,6 +13,7 @@ Shader "StarshipCabin/QuietWatchHull"
         _EmissionColor ("Window light", Color) = (0,0,0,1)
         _SunDirection ("Sun", Vector) = (-0.5,0.5,0.5,0)
         _SunColor ("Sunlight", Color) = (1.2,1.1,0.91,1)
+        _PortLighting ("Harbour work-light contribution", Float) = 0
         _FixedShadow ("Baked fixed structure shadow", Float) = 1
     }
     SubShader
@@ -31,21 +32,22 @@ Shader "StarshipCabin/QuietWatchHull"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST, _SunDirection;
                 half4 _BaseColor, _EmissionColor, _SunColor;
-                float _FixedShadow, _Metallic, _Smoothness;
+                float _FixedShadow, _Metallic, _Smoothness, _PortLighting;
             CBUFFER_END
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MetallicGlossMap); SAMPLER(sampler_MetallicGlossMap);
             TEXTURE2D(_OcclusionMap); SAMPLER(sampler_OcclusionMap);
             TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
             TEXTURE2D(_EmissionMap); SAMPLER(sampler_EmissionMap);
-            struct A { float4 p:POSITION; float3 n:NORMAL; float2 uv:TEXCOORD0; half4 color:COLOR; float4 t:TANGENT; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct V { float4 p:SV_POSITION; float3 n:TEXCOORD0; float2 uv:TEXCOORD1; float3 world:TEXCOORD2; half2 occlusion:TEXCOORD3; float4 t:TEXCOORD4; UNITY_VERTEX_OUTPUT_STEREO };
+            struct A { float4 p:POSITION; float3 n:NORMAL; float2 uv:TEXCOORD0; half4 color:COLOR; float4 t:TANGENT; float3 port:TEXCOORD2;float3 portNormal:TEXCOORD3; UNITY_VERTEX_INPUT_INSTANCE_ID };
+            struct V { float4 p:SV_POSITION; float3 n:TEXCOORD0; float2 uv:TEXCOORD1; float3 world:TEXCOORD2; half2 occlusion:TEXCOORD3; float4 t:TEXCOORD4; float3 port:TEXCOORD5;float3 portNormal:TEXCOORD6; UNITY_VERTEX_OUTPUT_STEREO };
             V vert(A a)
             {
                 V v; UNITY_SETUP_INSTANCE_ID(a); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(v);
                 v.world=TransformObjectToWorld(a.p.xyz);v.p=TransformWorldToHClip(v.world);
                 v.t=float4(TransformObjectToWorldDir(a.t.xyz,false),a.t.w*GetOddNegativeScale());
                 v.n=TransformObjectToWorldNormal(a.n);v.uv=TRANSFORM_TEX(a.uv,_BaseMap);v.occlusion=a.color.rg;
+                v.port=a.port;v.portNormal=a.portNormal;
                 return v;
             }
             half4 frag(V v):SV_Target
@@ -66,6 +68,21 @@ Shader "StarshipCabin/QuietWatchHull"
                 float3 color=base*(ambient+_SunColor.rgb*diffuse*1.15);
                 float broadSpec=pow(saturate(dot(n,normalize(sun+view))),8+72*gloss*gloss)*diffuse*ao*.28;
                 color+=_SunColor.rgb*lerp(float3(.12,.12,.12),base,metal)*broadSpec;
+                if(_PortLighting>.5)
+                {
+                    // Analytic work-light pools are limited to the physical berth.
+                    // No realtime lights, transparent fog cones or light leaking through the back wall.
+                    float3 p=v.port;float3 pn=normalize(v.portNormal);
+                    float inside=step(13.9,p.x)*step(p.x,26.1)*step(2.55,p.y)*step(p.y,9.45)*step(2.59,p.z)*step(p.z,11.1);
+                    float pool=0;
+                    [unroll] for(int i=0;i<4;i++)
+                    {
+                        float3 delta=float3(20,9.32,3.5+i*1.8)-p;
+                        float d2=max(dot(delta,delta),.1);
+                        pool+=saturate(dot(pn,delta*rsqrt(d2)))*7/(3+d2);
+                    }
+                    color+=base*float3(1.0,.68,.36)*pool*inside*1.8;
+                }
                 color+=SAMPLE_TEXTURE2D(_EmissionMap,sampler_EmissionMap,v.uv).rgb*_EmissionColor.rgb;
                 return half4(color,1);
             }

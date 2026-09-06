@@ -35,6 +35,12 @@ def render(seconds):
    polygon([dirs[0]*inner+[0,0,z],dirs[1]*inner+[0,0,z],dirs[1]*outer+[0,0,z],dirs[0]*outer+[0,0,z]],color)
  box([0,0,0],[7,7,18],[60,75,88])
  for side in (-1,1):box([side*25.7,9.9,-3],[8,3,5],[112,123,134])
+ for arch in layout.get('arches',[]):
+  for a,b in zip(np.linspace(arch['start'],arch['end'],65)[:-1],np.linspace(arch['start'],arch['end'],65)[1:]):
+   def pt(deg,r,z):return [np.cos(np.radians(deg))*r,np.sin(np.radians(deg))*r,z]
+   r0,r1=arch['radius']-arch['width']/2,arch['radius']+arch['width']/2;z=arch['z']+arch['depth']/2
+   polygon([pt(a,r0,z),pt(b,r0,z),pt(b,r1,z),pt(a,r1,z)],[155,169,175])
+   polygon([pt(a,r0+.20,z+.015),pt(b,r0+.20,z+.015),pt(b,r0+.32,z+.015),pt(a,r0+.32,z+.015)],[100,195,220])
  colors={'hull':[138,153,164],'dark':[38,49,58],'ochre':[137,85,42]}
  for b in layout['blocks']:
   box(b['position'],b['size'],colors[b['material']])

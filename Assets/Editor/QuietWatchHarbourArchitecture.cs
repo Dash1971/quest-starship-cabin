@@ -12,7 +12,11 @@ namespace StarshipCabin.EditorTools
     /// <summary>Original station districts, batched into the existing station LODs.</summary>
     internal static class QuietWatchHarbourArchitecture
     {
-        [Serializable] private sealed class Layout { public Block[] blocks; public Route[] routes; }
+        [Serializable] private sealed class Layout { public Block[] blocks; public Route[] routes; public Arch[] arches; }
+        [Serializable] private sealed class Arch
+        {
+            public string name; public float radius,width,depth,z,start,end;
+        }
         [Serializable] private sealed class Route
         {
             public string name, family;
@@ -40,10 +44,8 @@ namespace StarshipCabin.EditorTools
                 Surface("Harbour District Ceramic", new Color(0.38f, 0.43f, 0.47f)),
                 Surface("Harbour District Graphite", new Color(0.065f, 0.085f, 0.105f)),
                 Surface("Harbour District Ochre", new Color(0.42f, 0.24f, 0.095f)),
-                QuartersSceneSetup.CreateEmissiveMaterial("Harbour District Windows",
-                    new Color(0.11f, 0.085f, 0.05f), new Color(1f, 0.72f, 0.42f), 1.6f),
-                QuartersSceneSetup.CreateEmissiveMaterial("Harbour Berth Edge",
-                    new Color(0.025f, 0.09f, 0.11f), new Color(0.18f, 0.65f, 0.75f), 1.8f)
+                PortLight("Harbour District Windows", new Color(2.4f, 1.53f, 0.78f)),
+                PortLight("Harbour Berth Edge", new Color(0.5f, 1.5f, 1.85f))
             };
             var group = station.GetComponent<LODGroup>();
             var lods = group.GetLODs();
@@ -69,8 +71,10 @@ namespace StarshipCabin.EditorTools
                         marker.hideFlags = HideFlags.HideInHierarchy;
                         marker.AddComponent<HarbourClearanceVolume>().ConfigureBox(block.name, size);
                     }
-                    if (block.windows && lod < 2) Windows(drafts[3], center, size, lod);
+                    if (block.windows) Windows(drafts[3], center, size, lod);
                 }
+                foreach(var arch in layout.arches ?? Array.Empty<Arch>())
+                    Archway(station,drafts,arch,lod);
                 // Short, physical edge strips reveal the berth's depth; no floating sign.
                 var floor = layout.blocks.Single(b => b.name == "East berth floor");
                 var roof = layout.blocks.Single(b => b.name == "East berth roof");
@@ -81,10 +85,16 @@ namespace StarshipCabin.EditorTools
                         floorSize.y * 0.5f + 0.08f, 0.5f), new Vector3(0.10f, 0.08f, floorSize.z - 2f));
                 Box(drafts[4], roofCenter + new Vector3(0f, -roofSize.y * 0.5f - 0.05f, roofSize.z * 0.5f - 0.02f),
                     new Vector3(roofSize.x - 3f, 0.12f, 0.08f));
+                // Deep work lights sit on the ceiling, not across the open mouth.
+                for (var rib=0;rib<4;rib++)
+                    Box(drafts[3],new Vector3(20f,9.36f,3.5f+rib*1.8f),new Vector3(9.6f,.10f,.28f));
+                // Concourse mullions and roof equipment provide scale between tiny windows and giant hulls.
+                for(var pier=0;pier<22;pier++)
+                    Box(drafts[1],new Vector3(-42f+pier*4f,26f,-2.92f),new Vector3(.20f,2.5f,.24f));
                 var renderers = new List<Renderer>();
                 for (var surface = 0; surface < drafts.Length; surface++)
                 {
-                    if (surface == 3 && lod == 2) continue;
+
                     var name = $"Harbour Districts LOD{lod} Surface{surface}";
                     var go = QuartersSceneSetup.MeshObject(station, name, drafts[surface].ToMesh(name),
                         materials[surface], Vector3.zero, Quaternion.identity);
@@ -109,8 +119,8 @@ namespace StarshipCabin.EditorTools
         public static Transform[] BuildTraffic(Transform vista, Transform station)
         {
             var layout = ReadLayout();
-            if (layout?.routes == null || layout.routes.Length != 3)
-                throw new InvalidOperationException("Expected three authored harbour corridors.");
+            if (layout?.routes == null || layout.routes.Length != 6)
+                throw new InvalidOperationException("Expected six authored harbour corridors.");
             return layout.routes.Select(spec =>
             {
                 var points = spec.points.Select(p => vista.InverseTransformPoint(station.TransformPoint(p))).ToArray();
@@ -120,6 +130,44 @@ namespace StarshipCabin.EditorTools
                     spec.quietDuration, spec.phase, spec.clearance, 3f, spec.availableInQuiet, spec.grace, spec.shuttle);
                 return ship;
             }).ToArray();
+        }
+
+        private static void Archway(Transform station, MeshDraft[] drafts, Arch arch, int lod)
+        {
+            var steps=lod==0?64:lod==1?40:24;
+            Vector3 Point(float angle,float radius,float z) => new Vector3(
+                Mathf.Cos(angle*Mathf.Deg2Rad)*radius,Mathf.Sin(angle*Mathf.Deg2Rad)*radius,z);
+            for(var i=0;i<steps;i++)
+            {
+                var a=Mathf.Lerp(arch.start,arch.end,i/(float)steps);
+                var b=Mathf.Lerp(arch.start,arch.end,(i+1f)/steps);
+                var r0=arch.radius-arch.width*.5f;var r1=arch.radius+arch.width*.5f;
+                var z0=arch.z-arch.depth*.5f;var z1=arch.z+arch.depth*.5f;
+                foreach(var z in new[] {z0,z1})
+                    drafts[0].AddQuadOriented(Point(a,r0,z),Point(b,r0,z),Point(b,r1,z),Point(a,r1,z),z==z1?Vector3.forward:Vector3.back);
+                foreach(var r in new[] {r0,r1})
+                    drafts[1].AddQuadOriented(Point(a,r,z0),Point(b,r,z0),Point(b,r,z1),Point(a,r,z1),
+                        Point((a+b)*.5f,1,0)*(r==r1?1:-1));
+                // Recessed, segmented light rail follows the structural curve.
+                var gap=(b-a)*.15f;
+                drafts[4].AddQuadOriented(Point(a+gap,r0+.20f,z1+.015f),Point(b-gap,r0+.20f,z1+.015f),
+                    Point(b-gap,r0+.32f,z1+.015f),Point(a+gap,r0+.32f,z1+.015f),Vector3.forward);
+                if(i==0 || i==steps-1)
+                {
+                    var end=i==0?a:b;
+                    var tangent=new Vector3(-Mathf.Sin(end*Mathf.Deg2Rad),Mathf.Cos(end*Mathf.Deg2Rad),0)*(i==0?-1:1);
+                    drafts[0].AddQuadOriented(Point(end,r0,z0),Point(end,r1,z0),Point(end,r1,z1),Point(end,r0,z1),tangent);
+                }
+            }
+            if(lod==0)
+                for(var i=0;i<=64;i++)
+                {
+                    var marker=new GameObject("Clearance - "+arch.name+" "+i);
+                    marker.transform.SetParent(station,false);
+                    marker.transform.localPosition=Point(Mathf.Lerp(arch.start,arch.end,i/64f),arch.radius,arch.z);
+                    marker.hideFlags=HideFlags.HideInHierarchy;
+                    marker.AddComponent<HarbourClearanceVolume>().Configure(arch.name,1.7f);
+                }
         }
 
         private static void Box(MeshDraft draft, Vector3 center, Vector3 size)
@@ -143,6 +191,18 @@ namespace StarshipCabin.EditorTools
             return new Vector3(value[0], value[1], value[2]);
         }
 
+        private static Material PortLight(string name, Color color)
+        {
+            var material = QuartersSceneSetup.CreateMaterial(name,color);
+            material.shader = Shader.Find("Universal Render Pipeline/Unlit");
+            material.SetColor("_BaseColor",color);
+            material.SetTexture("_BaseMap",null);
+            material.SetFloat("_Surface",0f);
+            material.globalIlluminationFlags=MaterialGlobalIlluminationFlags.None;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         private static Material Surface(string name, Color color)
         {
             var material = QuartersSceneSetup.CreateMaterial(name, color);
@@ -160,12 +220,15 @@ namespace StarshipCabin.EditorTools
             for (var deck = 0; deck < Mathf.FloorToInt(size.y / 0.36f); deck++)
                 for (var bay = 0; bay < Mathf.FloorToInt((size.x - 0.4f) / 0.25f); bay++)
                 {
-                    if ((bay * 17 + deck * 11) % 13 < 5 || (lod == 1 && bay % 2 != 0)) continue;
+                    var stride = lod == 2 ? 3 : lod == 1 ? 2 : 1;
+                    if ((bay / stride * 17 + deck * 11) % 13 < 4 || bay % stride != 0) continue;
+                    // Far LOD merges adjacent apertures instead of deleting inhabited decks.
+                    var halfWidth = .050f * stride;
                     var p = center + new Vector3(-size.x * 0.5f + 0.25f + bay * 0.25f,
                         -size.y * 0.5f + 0.22f + deck * 0.36f, size.z * 0.5f + 0.015f);
-                    draft.AddQuadOriented(p + new Vector3(-0.045f, -0.032f, 0),
-                        p + new Vector3(0.045f, -0.032f, 0), p + new Vector3(0.045f, 0.032f, 0),
-                        p + new Vector3(-0.045f, 0.032f, 0), Vector3.forward);
+                    draft.AddQuadOriented(p + new Vector3(-halfWidth, -0.045f, 0),
+                        p + new Vector3(halfWidth, -0.045f, 0), p + new Vector3(halfWidth, 0.045f, 0),
+                        p + new Vector3(-halfWidth, 0.045f, 0), Vector3.forward);
                 }
         }
     }

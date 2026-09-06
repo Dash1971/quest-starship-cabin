@@ -95,6 +95,19 @@ for (var i=0;i<1000;i++)
 }
 Check(agrees,"BVH agrees with all-triangle rays for 1000 seeded queries");
 
+var cruiseClock = new VistaTimeline(780,8);
+cruiseClock.Reset(false,false);cruiseClock.Advance(30);
+Near(cruiseClock.DriftTravel,0,"cruise remains still before explicit start");
+cruiseClock.SetModes(false,true);cruiseClock.Advance(12);
+Near(cruiseClock.DriftTravel,12-2*(1-Math.Exp(-6)),"cruise starts with integrated easing",1e-8);
+var atStop=cruiseClock.DriftTravel;var speedAtStop=cruiseClock.DriftSpeed;
+cruiseClock.SetModes(false,false);
+Near(cruiseClock.DriftTravel,atStop,"stop does not jump star positions");
+cruiseClock.Advance(30);
+Near(cruiseClock.DriftTravel-atStop,2*speedAtStop*(1-Math.Exp(-15)),"cruise decelerates without resetting",1e-8);
+var afterStop=cruiseClock.DriftTravel;cruiseClock.Advance(60);
+Near(cruiseClock.DriftTravel,afterStop,"stopped cruise settles",1e-6);
+
 // Parser diagnostics are deliberately separate from Unity API/type checking.
 var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var files = Directory.GetFiles(Path.Combine(root, "Assets"), "*.cs", SearchOption.AllDirectories);

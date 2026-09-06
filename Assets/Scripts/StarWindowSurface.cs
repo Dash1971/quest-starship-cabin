@@ -98,8 +98,9 @@ namespace StarshipCabin
 
         public void SetQuietWatchComfort(bool living, bool drifting)
         {
-            SetFloat(Shader.PropertyToID("_GalacticGain"), 0.85f);
-            SetMotion(drifting ? 0.010f : 0f, drifting ? 0.003f : 0f);
+            SetFloat(Shader.PropertyToID("_GalacticGain"), 0f);
+            // Cruise has its own depth-resolved stars; the distant celestial field stays fixed.
+            SetMotion(0f, 0f);
             SetFloat(TwinkleId, living ? 0.045f : 0.012f);
             SetFloat(MeteorsId, 0f);
             SetNebula(0f);

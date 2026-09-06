@@ -8,7 +8,7 @@ namespace StarshipCabin.QuietWatch
 {
     /// <summary>
     /// Controller mapping for the diegetic selector: primary advances vista,
-    /// a short secondary press toggles Quiet/Living, holding secondary previews
+    /// a short secondary press toggles cruise in First Question or Quiet/Living elsewhere; holding secondary previews
     /// the current Living event, and thumbstick click toggles Still/Drift.
     /// </summary>
     public sealed class QuietWatchInputController : MonoBehaviour
@@ -26,6 +26,7 @@ namespace StarshipCabin.QuietWatch
         private bool stickWasPressed;
         private float secondaryPressedAt;
         private XRInputDevice secondarySource;
+        private VistaEnvironment secondaryVista;
 
         public void Configure(VistaDirector vistaDirector)
         {
@@ -48,22 +49,24 @@ namespace StarshipCabin.QuietWatch
                 secondaryHoldAttempted = false;
                 secondaryHoldTriggered = false;
                 secondarySource = source;
+                secondaryVista = director != null ? director.ActiveVista : null;
             }
 
+            var validSecondary = director != null && director.ActiveVista == secondaryVista && !director.IsTransitioning;
             if (secondary && !secondaryHoldAttempted
                 && Time.unscaledTime - secondaryPressedAt >= EventPreviewHoldSeconds)
             {
                 secondaryHoldAttempted = true;
-                secondaryHoldTriggered = director?.PreviewGraceNote() == true;
+                secondaryHoldTriggered = validSecondary && director.PreviewGraceNote();
                 if (secondaryHoldTriggered)
                 {
                     Pulse(secondarySource, 0.42f, 0.14f);
                 }
             }
 
-            if (!secondary && secondaryWasPressed && !secondaryHoldAttempted)
+            if (!secondary && secondaryWasPressed && !secondaryHoldAttempted && validSecondary)
             {
-                director?.ToggleLifeMode();
+                director?.SecondaryAction();
                 Pulse(secondarySource);
             }
 

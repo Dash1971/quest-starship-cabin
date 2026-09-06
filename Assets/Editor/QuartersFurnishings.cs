@@ -42,7 +42,12 @@ namespace StarshipCabin.EditorTools
             BuildDesk(parent, mats);
             BuildEntryDoor(parent, mats);
             BuildDecor(parent, mats);
-            QuartersDecor.Build(parent); // Milestone 6: chess set + library
+            QuartersDecor.Build(parent);
+            QuartersCabinCraft.Finish(mats.Wood,"QW_CabinWood",.22f);
+            QuartersCabinCraft.Finish(mats.Upholstery,"QW_CabinWeave",.12f,2f);
+            QuartersCabinCraft.Finish(mats.Linen,"QW_CabinWeave",.10f,2f);
+            QuartersCabinCraft.Finish(mats.Plum,"QW_CabinWeave",.10f,2f);
+            QuartersCabinCraft.Build(parent);
         }
 
         private static FurnishingMaterials CreateFurnishingMaterials()
@@ -161,8 +166,11 @@ namespace StarshipCabin.EditorTools
             Box(parent, mats.Graphite, "Desk Modesty Panel", 0.05f, 0.50f, 1.00f, 0.01f,
                 new Vector3(-3.10f, 0.45f, 2.0f));
 
-            Box(parent, mats.Graphite, "Desk Stool Base", 0.38f, 0.36f, 0.38f, 0.04f,
-                new Vector3(-2.2f, 0.18f, 2.0f));
+            foreach(var x in new[] {-.145f,.145f}) foreach(var z in new[] {-.145f,.145f})
+                Box(parent,mats.Wood,$"Desk Stool Leg {x} {z}",.043f,.36f,.043f,.008f,
+                    new Vector3(-2.2f+x,.18f,2f+z));
+            Box(parent,mats.Graphite,"Desk Stool Seat Rail",.36f,.045f,.36f,.014f,
+                new Vector3(-2.2f,.34f,2f));
             Box(parent, mats.Upholstery, "Desk Stool Cushion", 0.40f, 0.10f, 0.40f, 0.04f,
                 new Vector3(-2.2f, 0.41f, 2.0f));
 
@@ -315,7 +323,9 @@ namespace StarshipCabin.EditorTools
             float sizeX, float sizeY, float sizeZ, float chamfer,
             Vector3 position, Quaternion rotation)
         {
-            var mesh = QuartersMeshes.ChamferedBox($"Quarters {name}", sizeX, sizeY, sizeZ, chamfer);
+            var mesh = name.Contains("Cushion") || name.Contains("Pillow")
+                ? QuartersCabinCraft.Cushion($"Quarters {name}",new Vector3(sizeX,sizeY,sizeZ))
+                : QuartersMeshes.ChamferedBox($"Quarters {name}", sizeX, sizeY, sizeZ, chamfer);
             return QuartersSceneSetup.MeshObject(parent, name, mesh, material, position, rotation);
         }
     }
