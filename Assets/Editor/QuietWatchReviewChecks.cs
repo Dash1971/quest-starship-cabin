@@ -72,6 +72,7 @@ namespace StarshipCabin.EditorTools
                     var a = vertices[triangles[i]]; var b = vertices[triangles[i + 1]]; var c = vertices[triangles[i + 2]];
                     Require(Vector3.Dot(Vector3.Cross(b - a, c - a), a + b + c) > 0f, "Planet triangle faces inward or is degenerate.");
                 }
+                CheckEclipse(weather);
                 weather.Exit();
                 foreach (var vista in vistas.OfType<AuthoredVista>().Where(v => v.VistaId != "great-weather"))
                 {
@@ -116,6 +117,53 @@ namespace StarshipCabin.EditorTools
             {
                 EditorSceneManager.OpenScene(scenePath);
             }
+        }
+
+        private static void CheckEclipse(AuthoredVista weather)
+        {
+            var eclipse = weather.GetComponent<GreatWeatherEclipse>();
+            Require(eclipse != null, "Missing clock-driven eclipse.");
+            var moon = weather.transform.Find("Eclipse Moon");
+            Require(moon != null && Mathf.Abs(moon.lossyScale.x * 0.5f - GreatWeatherEclipse.MoonRadius) < 0.0001f,
+                "Eclipse geometry and shadow radius differ.");
+            weather.Enter(LifeMode.Living, MotionMode.Still);
+            var baseline = moon.localPosition;
+            Require(weather.PreviewGraceNote(), "Eclipse preview must work in Still.");
+            const float previewPhase = 0.55f * 0.55f * (3f - 2f * 0.55f);
+            Require(Vector3.Distance(moon.localPosition, eclipse.PositionAt(previewPhase)) < 0.001f,
+                "Hold-B preview does not seek the readable eclipse phase.");
+            void CheckReceivers()
+            {
+                var receivers = weather.GetComponentsInChildren<Renderer>()
+                    .Where(r => r.sharedMaterial.HasProperty("_OccultorSphere")).ToArray();
+                Require(receivers.Length == 3, "Planet, rings and atmosphere must share the eclipse.");
+                foreach (var receiver in receivers)
+                {
+                    var block = new MaterialPropertyBlock();
+                    receiver.GetPropertyBlock(block);
+                    var sphere = block.GetVector("_OccultorSphere");
+                    Require(Vector3.Distance((Vector3)sphere, moon.position) < 0.0001f
+                        && Mathf.Abs(sphere.w - GreatWeatherEclipse.MoonRadius) < 0.0001f,
+                        "Eclipse shadow detached from the moving moon.");
+                    Require(Mathf.Abs(receiver.sharedMaterial.GetFloat("_SolarAngularRadius")
+                        - GreatWeatherEclipse.SolarAngularRadius) < 1e-6f, "Mismatched eclipse penumbra.");
+                }
+            }
+            CheckReceivers();
+            var middle = weather.GraceNoteAtSeconds + weather.GraceDurationSeconds * 0.75f;
+            weather.PreviewAt(middle, LifeMode.Living, MotionMode.Still);
+            var expected = moon.localPosition;
+            weather.PreviewAt(weather.GraceNoteAtSeconds, LifeMode.Living, MotionMode.Still);
+            weather.PreviewAt(middle, LifeMode.Living, MotionMode.Still);
+            Require(Vector3.Distance(expected, moon.localPosition) < 0.0001f, "Eclipse depends on seek order.");
+            CheckReceivers();
+            weather.ApplyComfort(LifeMode.Quiet, MotionMode.Still);
+            Require(Vector3.Distance(baseline, moon.localPosition) < 0.0001f, "Quiet leaves the eclipse in progress.");
+            CheckReceivers();
+            var relief = weather.transform.Find("Ringed Giant").GetComponent<Renderer>().sharedMaterial.GetTexture("_CloudRelief");
+            Require(relief != null, "Missing authored cloud relief.");
+            var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(relief)) as TextureImporter;
+            Require(importer != null && !importer.sRGBTexture && importer.mipmapEnabled, "Cloud relief import must be linear with mipmaps.");
         }
 
         private static void Require(bool value, string message)

@@ -137,7 +137,7 @@ namespace StarshipCabin.EditorTools
                             : authored.VistaId == "long-formation"
                                 ? new[] { 0f, 10f, 45f, eventPreview }
                                 : authored.VistaId == "great-weather"
-                                    ? new[] { authored.GraceNoteAtSeconds, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.5f, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds }
+                                    ? new[] { authored.GraceNoteAtSeconds, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.25f, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.5f, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds * 0.75f, authored.GraceNoteAtSeconds + authored.GraceDurationSeconds }
                                     : new[] { eventPreview };
                         foreach (var previewAt in previewTimes)
                         {
@@ -177,6 +177,22 @@ namespace StarshipCabin.EditorTools
                     }
                     firstQuestion.Exit();
                 }
+                // Show the actual hold-B eclipse phase from every fixed seat,
+                // not just the couch's unattended-event checkpoints.
+                var weatherPreview = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "great-weather");
+                foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == weatherPreview);
+                weatherPreview.Enter(LifeMode.Living, MotionMode.Still);
+                if (!weatherPreview.PreviewGraceNote()) throw new InvalidOperationException("Eclipse preview failed.");
+                foreach (var point in points)
+                {
+                    camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
+                    camera.Render();
+                    RenderTexture.active = target;
+                    pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                    pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder, "great-weather-eclipse-preview-" + Slug(point.CaptureName) + ".png"), pixels.EncodeToPNG());
+                }
+                weatherPreview.Exit();
                 var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == chessVista);
                 chessVista.Enter(LifeMode.Quiet, MotionMode.Still);

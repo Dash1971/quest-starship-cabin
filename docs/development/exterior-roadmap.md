@@ -4,6 +4,8 @@ The September 6 headset feedback establishes a useful direction: the larger exte
 
 ## M7 — Finish Great Weather as the first hero destination
 
+The [first M7 implementation candidate](great-weather-eclipse-review.md) now provides shallow cloud relief, revised ring/moon lighting and a shared eclipse. It is ready for Unity review; the visual and device acceptance below remains open.
+
 Produce a focused comparison slice before applying changes to all five vistas.
 
 1. **Cloud depth and natural weather structure.** Give belts broad, readable shapes, irregular storm boundaries and restrained upper/lower cloud separation. Review oblique views and the terminator for a sense of layered atmosphere. Start with precomputed detail and a tightly bounded extra sampling cost; prototype before committing to additional transparent shells.
@@ -31,4 +33,4 @@ The First Question remains the dark, sparse visual baseline. Do not turn every d
 
 ## Immediate work versus planned work
 
-M6.5 addresses the chess lighting and removes the sign/indicator pad. M7–M10 above are proposed work, not implemented features or release dates. Start the next exterior PR with the M7 Great Weather comparison slice. Use its headset result to decide which effects earn their GPU cost before expanding the scope.
+M6.5 addresses the chess lighting and removes the sign/indicator pad. The first M7 slice is implemented for review; remaining M7 art/acceptance work and M8–M10 are planned work, not completed features or release dates. Review the M7 Great Weather comparison slice next. Use its headset result to decide which effects earn their GPU cost before expanding the scope.

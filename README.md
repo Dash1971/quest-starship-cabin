@@ -6,6 +6,8 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
+M7 is a **source-tested, not yet Unity-built** Great Weather candidate stacked on the M6.5 cleanup PR. It adds shallow cloud relief, revised shared lighting and a six-minute moon-shadow event. See the [M7 implementation and OpenClaw review guide](docs/development/great-weather-eclipse-review.md) for the 42 captures and device checks. Proposed version: `2.0.0-m7-weather-eclipse` (`20013`).
+
 M6.5 proposes a focused chess-lighting correction and removes the view sign and obsolete table indicator pad. It has **not yet been Unity-built or headset-approved**. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
 
 M6.4 was merged as `46447d5`; OpenClaw's merge record reports Unity/bake/capture/APK/install validation. The September 6 headset feedback confirms a substantial exterior improvement but unchanged chess highlights. Its version is `2.0.0-m6.4-exterior-study` (`20011`). The [M6.4 implementation guide](docs/development/exterior-spectacle-review.md) records the original source-stage work; M6.5 addresses the remaining chess issue.
