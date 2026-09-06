@@ -754,7 +754,8 @@ namespace StarshipCabin.EditorTools
             var firstQuestionRoot = new GameObject("Vista 1 - The First Question");
             var firstQuestion = firstQuestionRoot.AddComponent<FirstQuestionVista>();
             firstQuestion.ConfigureIdentity("first-question", "THE FIRST QUESTION", "STARS ONLY");
-            firstQuestion.Configure(starSurface, exteriorFill, audioController);
+            firstQuestion.Configure(starSurface, exteriorFill, audioController,
+                QuietWatchCruiseBuilder.Build(firstQuestionRoot.transform));
 
             var harbour = QuietWatchExteriorBuilder.BuildHarbour(starSurface, exteriorFill, audioController);
             var blueMorning = QuietWatchExteriorBuilder.BuildBlueMorning(starSurface, exteriorFill, audioController);
@@ -881,9 +882,9 @@ namespace StarshipCabin.EditorTools
         }
 
         internal static GameObject MeshObject(
-            Transform parent, string name, Mesh mesh, Material material, Vector3 position, Quaternion rotation)
+            Transform parent, string name, Mesh mesh, Material material, Vector3 position, Quaternion rotation, bool lightmapUv = true)
         {
-            var saved = SaveMesh(mesh);
+            var saved = SaveMesh(mesh, lightmapUv);
 
             var go = new GameObject(name);
             go.transform.SetParent(parent);
@@ -903,7 +904,7 @@ namespace StarshipCabin.EditorTools
             return go;
         }
 
-        private static Mesh SaveMesh(Mesh mesh)
+        private static Mesh SaveMesh(Mesh mesh, bool lightmapUv = true)
         {
             var path = $"{MeshFolder}/{Sanitize(mesh.name)}.asset";
 
@@ -920,7 +921,7 @@ namespace StarshipCabin.EditorTools
                 AssetDatabase.DeleteAsset(path);
             }
 
-            Unwrapping.GenerateSecondaryUVSet(mesh);
+            if (lightmapUv) Unwrapping.GenerateSecondaryUVSet(mesh);
             AssetDatabase.CreateAsset(mesh, path);
             return mesh;
         }
@@ -955,8 +956,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m9-five-vista-overhaul";
-            PlayerSettings.Android.bundleVersionCode = 20015;
+            PlayerSettings.bundleVersion = "2.0.0-m10-working-harbour";
+            PlayerSettings.Android.bundleVersionCode = 20016;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

@@ -629,6 +629,426 @@
       ],
       "material": "dark",
       "windows": false
+    },
+    {
+      "name": "Upper transit concourse",
+      "position": [
+        0,
+        26,
+        -6
+      ],
+      "size": [
+        88,
+        2.4,
+        6
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Concourse suspension pier -1",
+      "position": [
+        -28,
+        17,
+        -6
+      ],
+      "size": [
+        2.4,
+        16,
+        5
+      ],
+      "material": "hull",
+      "windows": false
+    },
+    {
+      "name": "Outer logistics keel -1",
+      "position": [
+        -40,
+        23,
+        -7
+      ],
+      "size": [
+        13,
+        3.2,
+        8
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terminal observation hall -1",
+      "position": [
+        -40,
+        28.8,
+        -4
+      ],
+      "size": [
+        11,
+        2.8,
+        8
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Terraced habitat -1 0",
+      "position": [
+        -29,
+        32.0,
+        -7
+      ],
+      "size": [
+        4.6,
+        8.0,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown -1 0",
+      "position": [
+        -29,
+        36.5,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terraced habitat -1 1",
+      "position": [
+        -35,
+        33.4,
+        -7
+      ],
+      "size": [
+        4.6,
+        10.8,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown -1 1",
+      "position": [
+        -35,
+        39.3,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terraced habitat -1 2",
+      "position": [
+        -41,
+        34.8,
+        -7
+      ],
+      "size": [
+        4.6,
+        13.6,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown -1 2",
+      "position": [
+        -41,
+        42.1,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Concourse suspension pier 1",
+      "position": [
+        28,
+        17,
+        -6
+      ],
+      "size": [
+        2.4,
+        16,
+        5
+      ],
+      "material": "hull",
+      "windows": false
+    },
+    {
+      "name": "Outer logistics keel 1",
+      "position": [
+        40,
+        23,
+        -7
+      ],
+      "size": [
+        13,
+        3.2,
+        8
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terminal observation hall 1",
+      "position": [
+        40,
+        28.8,
+        -4
+      ],
+      "size": [
+        11,
+        2.8,
+        8
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Terraced habitat 1 0",
+      "position": [
+        29,
+        32.0,
+        -7
+      ],
+      "size": [
+        4.6,
+        8.0,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown 1 0",
+      "position": [
+        29,
+        36.5,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terraced habitat 1 1",
+      "position": [
+        35,
+        33.4,
+        -7
+      ],
+      "size": [
+        4.6,
+        10.8,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown 1 1",
+      "position": [
+        35,
+        39.3,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Terraced habitat 1 2",
+      "position": [
+        41,
+        34.8,
+        -7
+      ],
+      "size": [
+        4.6,
+        13.6,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Habitat crown 1 2",
+      "position": [
+        41,
+        42.1,
+        -7
+      ],
+      "size": [
+        3.8,
+        1.0,
+        5
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "Central transit tower",
+      "position": [
+        0,
+        32,
+        -6
+      ],
+      "size": [
+        5.5,
+        12,
+        7
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "Central lantern",
+      "position": [
+        0,
+        39,
+        -6
+      ],
+      "size": [
+        9,
+        2,
+        6
+      ],
+      "material": "hull",
+      "windows": true
+    },
+    {
+      "name": "West maintenance terrace 0",
+      "position": [
+        -22,
+        -8.2,
+        17
+      ],
+      "size": [
+        2.5,
+        1.2,
+        6
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "West maintenance terrace 1",
+      "position": [
+        -19,
+        -8.2,
+        17
+      ],
+      "size": [
+        2.5,
+        1.2,
+        6
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "West maintenance terrace 2",
+      "position": [
+        -16,
+        -8.2,
+        17
+      ],
+      "size": [
+        2.5,
+        1.2,
+        6
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "West maintenance terrace 3",
+      "position": [
+        -13,
+        -8.2,
+        17
+      ],
+      "size": [
+        2.5,
+        1.2,
+        6
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "East long docking pier",
+      "position": [
+        44,
+        -9,
+        -7
+      ],
+      "size": [
+        43,
+        3,
+        5
+      ],
+      "material": "hull",
+      "windows": false
+    },
+    {
+      "name": "East terminal caisson",
+      "position": [
+        64,
+        -5,
+        -7
+      ],
+      "size": [
+        5,
+        12,
+        10
+      ],
+      "material": "dark",
+      "windows": false
+    },
+    {
+      "name": "East terminal crown",
+      "position": [
+        64,
+        2,
+        -7
+      ],
+      "size": [
+        9,
+        2,
+        8
+      ],
+      "material": "hull",
+      "windows": true
     }
   ],
   "routes": [
@@ -731,6 +1151,21 @@
       "scale": 0.6,
       "points": [
         {
+          "x": -400,
+          "y": 2,
+          "z": -40
+        },
+        {
+          "x": -300,
+          "y": 2,
+          "z": -40
+        },
+        {
+          "x": -200,
+          "y": 2,
+          "z": -40
+        },
+        {
           "x": -95,
           "y": 2,
           "z": -40
@@ -759,15 +1194,218 @@
           "x": 100,
           "y": 12,
           "z": -40
+        },
+        {
+          "x": 200,
+          "y": 12,
+          "z": -40
+        },
+        {
+          "x": 300,
+          "y": 12,
+          "z": -40
+        },
+        {
+          "x": 400,
+          "y": 12,
+          "z": -40
         }
       ],
-      "living": 360,
-      "quietDuration": 480,
-      "phase": 0.43,
+      "living": 792.0000000000001,
+      "quietDuration": 1056.0,
+      "phase": 0.4681818181818182,
       "clearance": 10,
       "availableInQuiet": true,
       "grace": false,
       "shuttle": false
+    },
+    {
+      "name": "Concourse Passenger Liner",
+      "family": "CommandShip",
+      "scale": 0.28,
+      "points": [
+        {
+          "x": 400,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": 300,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": 200,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": 100,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": 0,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": -100,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": -200,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": -300,
+          "y": 24,
+          "z": -27
+        },
+        {
+          "x": -400,
+          "y": 24,
+          "z": -27
+        }
+      ],
+      "living": 1040,
+      "quietDuration": 1404.0,
+      "phase": 0.46875,
+      "clearance": 4.3,
+      "availableInQuiet": true,
+      "grace": false,
+      "shuttle": false
+    },
+    {
+      "name": "Upper Service Courier",
+      "family": "EscortSpear",
+      "scale": 0.11,
+      "points": [
+        {
+          "x": -400,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": -300,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": -200,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": -100,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": 0,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": 100,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": 200,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": 300,
+          "y": 28,
+          "z": 23
+        },
+        {
+          "x": 400,
+          "y": 28,
+          "z": 23
+        }
+      ],
+      "living": 560,
+      "quietDuration": 756.0,
+      "phase": 0.475,
+      "clearance": 1.2,
+      "availableInQuiet": true,
+      "grace": false,
+      "shuttle": false
+    },
+    {
+      "name": "Cross Harbour Commuter",
+      "family": "EscortWing",
+      "scale": 0.13,
+      "points": [
+        {
+          "x": 400,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 300,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 200,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 100,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": -100,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": -200,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": -300,
+          "y": 2,
+          "z": 17
+        },
+        {
+          "x": -400,
+          "y": 2,
+          "z": 17
+        }
+      ],
+      "living": 660,
+      "quietDuration": 891.0000000000001,
+      "phase": 0.4925,
+      "clearance": 1.3,
+      "availableInQuiet": true,
+      "grace": false,
+      "shuttle": false
+    }
+  ],
+  "arches": [
+    {
+      "name": "Crown drydock arch",
+      "radius": 30,
+      "width": 1.3,
+      "depth": 2.4,
+      "z": 4,
+      "start": 12,
+      "end": 166
     }
   ]
 }

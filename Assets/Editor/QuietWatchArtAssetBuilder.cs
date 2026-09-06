@@ -117,7 +117,8 @@ namespace StarshipCabin.EditorTools
 
             if (family != "HarbourSector")
             {
-                AddDriveGlows(root, family);
+                // Engine apertures are already emissive geometry in every imported LOD.
+                // Do not add generic aft spheres: they float outside the real nozzles.
                 if (family == "CommandShip")
                 {
                     var details = AddCommandScaleDetails(root);
@@ -166,8 +167,13 @@ namespace StarshipCabin.EditorTools
             var litWindows = Emissive("Resolute Occupied Decks",new Color(0.21f,0.17f,0.12f),
                 new Color(1f,0.73f,0.42f),1.25f,0f,0.1f);
             var paint = Lit("Resolute Service Markings",new Color(0.78f,0.68f,0.46f),0f,0.18f);
-            var decks = QuartersSceneSetup.MeshObject(ship,"Room-scale occupied decks",windows.ToMesh("Resolute Occupied Deck Windows"),litWindows);
-            var stripes = QuartersSceneSetup.MeshObject(ship,"Hull service markings",marks.ToMesh("Resolute Service Markings"),paint);
+            // Multiple CommandShip instances can coexist in Harbour. Give each
+            // generated mesh a unique asset path so a later ship cannot delete
+            // the mesh referenced by an earlier ship's LODs.
+            var decks = QuartersSceneSetup.MeshObject(ship,"Room-scale occupied decks",
+                windows.ToMesh(ship.name + " Occupied Deck Windows"),litWindows);
+            var stripes = QuartersSceneSetup.MeshObject(ship,"Hull service markings",
+                marks.ToMesh(ship.name + " Service Markings"),paint);
             foreach (var detail in new[] { decks, stripes })
             {
                 detail.transform.localPosition = Vector3.zero;
@@ -180,38 +186,6 @@ namespace StarshipCabin.EditorTools
                 renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
             }
             return new[] { decks.GetComponent<Renderer>(), stripes.GetComponent<Renderer>() };
-        }
-
-        private static void AddDriveGlows(Transform ship, string family)
-        {
-            var command = family == "CommandShip";
-            var xPositions = command ? new[] { -2.75f, 0f, 2.75f } : new[] { -1.15f, 1.15f };
-            var aft = command ? 10.4f : 6.8f;
-            var diameter = command ? 0.36f : 0.25f;
-            var glows = new Transform[xPositions.Length];
-            for (var i = 0; i < xPositions.Length; i++)
-            {
-                var glow = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                glow.name = $"Drive Glow {i + 1}";
-                glow.transform.SetParent(ship, false);
-                glow.transform.localPosition = new Vector3(xPositions[i], 0f, aft);
-                glow.transform.localScale = new Vector3(diameter, diameter, diameter * 0.42f);
-                glow.layer = ExteriorLayer;
-                var collider = glow.GetComponent<Collider>();
-                if (collider != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(collider);
-                }
-                var renderer = glow.GetComponent<Renderer>();
-                renderer.sharedMaterial = materials.Blue;
-                renderer.shadowCastingMode = ShadowCastingMode.Off;
-                renderer.receiveShadows = false;
-                renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
-                glows[i] = glow.transform;
-            }
-
-            var pulse = ship.gameObject.AddComponent<ShipEnginePulse>();
-            pulse.Configure(glows, command ? 0.3f : family == "EscortSpear" ? 2.1f : 4.2f);
         }
 
         public static Light AddExteriorSun(

@@ -20,7 +20,9 @@ def world(point):return (np.asarray(point)@TURN.T*STATION_SCALE+vector('HarbourP
 def glazing(point,eye):
     base=np.array([0,.75,-2.6]);up=np.array([0,1.75,1.2]);up=up/np.linalg.norm(up)
     normal=np.cross([1,0,0],up);direction=point-eye
-    hit=eye+direction*np.dot(base-eye,normal)/np.dot(direction,normal)
+    fraction=np.dot(base-eye,normal)/np.dot(direction,normal)
+    if not 0<fraction<1:return False
+    hit=eye+direction*fraction
     u,v=hit[0],np.dot(hit-base,up);inset=max(0,(v-1.74)/.14*.1)
     return .36<v<1.87 and any(lo+inset+.01<u<hi-inset-.01 for lo,hi in [(-2.88,-1.92),(-1.56,-.60),(-.24,.72),(1.42,2.78)])
 
@@ -47,6 +49,10 @@ for side in (-1,1):
     a=np.array([side*8,8.5,-1.2]);b=np.array([side*27,10,-3])
     volumes += [(a+(b-a)*t,2) for t in np.linspace(0,1,6)]
     volumes += [(np.array([side*25.7,9.9,-3]),4.4)]
+
+for arch in layout.get('arches',[]):
+    volumes += [(np.array([np.cos(a)*arch['radius'],np.sin(a)*arch['radius'],arch['z']]),1.7)
+                for a in np.radians(np.linspace(arch['start'],arch['end'],65))]
 
 def clearances(points, route):
     radius=route['clearance']/STATION_SCALE # station scale; routes are stored in vista space by Unity
@@ -94,5 +100,12 @@ if __name__ == '__main__':
     assert -150 < np.degrees(np.arctan2(-hit[1],hit[0])) < 154
     assert glazing(world(behind),np.array([-1.6,1.1,-1.42]))
     print('PASS: return leg is occluded by the torus, rather than the cabin frame, at 87 seconds')
-    assert len(blocks)<48
+    eyes=[np.array(e) for e in [[-1.6,1.1,-1.42],[1.42,1.22,-.1],[2.05,.95,-1],[-2.2,1.18,2]]]
+    for route in routes:
+        if not route['grace'] and not route['shuttle']:
+            assert not any(glazing(world(sample(route,t)),eye) for t in (0,1) for eye in eyes), 'Visible traffic loop reset'
+    commuter=next(r for r in routes if r['name']=='Cross Harbour Commuter')
+    assert all(glazing(world(sample(commuter,phase(commuter,0))),eye) for eye in eyes)
+    print('PASS: looping traffic resets outside all four window sightlines; arrival commuter crosses all four panes')
+    assert len(blocks)<80
     print(f'PASS: {len(blocks)} authored solids, batched into five material surfaces per near LOD')

@@ -1,5 +1,7 @@
 # Beyond M6: make the existing destinations worth lingering in
 
+**Current focus — M10:** Make Harbour a convincing working port, correct detached drive glows, return First Question to stars/emptiness with deliberate cruising, and improve cabin craft. See [working-harbour-review.md](working-harbour-review.md).
+
 The user requested a bold pass across every backdrop instead of continuing one destination at a time. The [M9 five-vista overhaul candidate](five-vista-overhaul-review.md) implements that revised priority. It combines the next lighting, atmospheric and scale work into one comparative headset review; the milestones below retain the longer-term direction.
 
 The September 6 headset feedback establishes a useful direction: the larger exterior compositions are a substantial improvement. Treat that as visual-direction approval, not full comfort/performance sign-off. The next investment is depth, coherent lighting, authored detail and events that reward patient observation.

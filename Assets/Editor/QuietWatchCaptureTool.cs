@@ -227,6 +227,18 @@ namespace StarshipCabin.EditorTools
                     File.WriteAllBytes(Path.Combine(OutputFolder, "blue-morning-orbital-600s-" + Slug(point.CaptureName) + ".png"), pixels.EncodeToPNG());
                 }
                 orbital.Exit();
+                var cruising=vistas.OfType<FirstQuestionVista>().Single();
+                foreach(var candidate in vistas)candidate.gameObject.SetActive(candidate==cruising);
+                cruising.Enter(LifeMode.Quiet,MotionMode.Still);
+                foreach(var seconds in new[] {0f,4f,12f,45f}) foreach(var point in points)
+                {
+                    cruising.PreviewAt(seconds,LifeMode.Quiet,MotionMode.Drift);
+                    camera.transform.SetPositionAndRotation(point.transform.position,point.transform.rotation);
+                    camera.Render();RenderTexture.active=target;
+                    pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder,$"first-question-cruise-{seconds:000}s-{Slug(point.CaptureName)}.png"),pixels.EncodeToPNG());
+                }
+                cruising.Exit();
                 var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == chessVista);
                 chessVista.Enter(LifeMode.Quiet, MotionMode.Still);
@@ -243,6 +255,15 @@ namespace StarshipCabin.EditorTools
                     pixels.Apply(false);
                     var name = offset == 0f ? "chess-matte-material-review" : offset < 0f ? "chess-head-left" : "chess-head-right";
                     File.WriteAllBytes(Path.Combine(OutputFolder, name + ".png"), pixels.EncodeToPNG());
+                }
+                var roomEyes=new[] {new Vector3(-2.2f,1.18f,2f),new Vector3(.55f,1.5f,2.2f),new Vector3(1.42f,1.22f,-.10f)};
+                var roomTargets=new[] {new Vector3(-2.91f,.93f,2.04f),new Vector3(-1.1f,.6f,-.4f),new Vector3(2.1f,.59f,-.5f)};
+                for(var view=0;view<roomEyes.Length;view++)
+                {
+                    camera.transform.SetPositionAndRotation(roomEyes[view],Quaternion.LookRotation(roomTargets[view]-roomEyes[view]));
+                    camera.Render();RenderTexture.active=target;
+                    pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder,$"cabin-craft-{view}.png"),pixels.EncodeToPNG());
                 }
                 var chessEvidence = new ChessLightingEvidence
                 {
@@ -330,9 +351,9 @@ namespace StarshipCabin.EditorTools
                 string.Empty
             };
 
-            if (routes.Length != 3)
+            if (routes.Length != 6)
             {
-                errors.Add($"Expected exactly three harbour routes, found {routes.Length}.");
+                errors.Add($"Expected exactly six harbour routes, found {routes.Length}.");
             }
             if (volumes.Length < 30)
             {
@@ -342,7 +363,7 @@ namespace StarshipCabin.EditorTools
             foreach (var route in routes)
             {
                 // The corridor envelope must contain the ship, not just its
-                // origin. Check imported mesh bounds at every LOD, plus glows.
+                // origin. Check imported mesh bounds at every LOD, including the imported engine apertures.
                 var envelope = route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x);
                 var meshFilters = route.GetComponentsInChildren<MeshFilter>(true)
                     .Where(filter => filter.sharedMesh != null)

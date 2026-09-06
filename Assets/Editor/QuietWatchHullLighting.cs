@@ -33,7 +33,16 @@ namespace StarshipCabin.EditorTools
             var materialCopies = new Dictionary<Material, Material>();
             var filters = root.GetComponentsInChildren<MeshFilter>(true);
             var groups = root.GetComponentsInChildren<LODGroup>(true);
-            var allLods = new HashSet<Renderer>(groups.SelectMany(g => g.GetLODs()).SelectMany(l => l.renderers));
+            var lodRenderers = groups.SelectMany(g => g.GetLODs()).SelectMany(l => l.renderers).ToArray();
+            if (lodRenderers.Any(renderer => renderer == null))
+                throw new InvalidOperationException(root.name + ": LOD contains a missing renderer.");
+            foreach (var renderer in lodRenderers.OfType<MeshRenderer>())
+            {
+                var filter = renderer.GetComponent<MeshFilter>();
+                if (filter == null || filter.sharedMesh == null)
+                    throw new InvalidOperationException(root.name + ": LOD renderer has no mesh: " + renderer.name);
+            }
+            var allLods = new HashSet<Renderer>(lodRenderers);
             var near = new HashSet<Renderer>(groups.SelectMany(g => g.GetLODs().Take(1)).SelectMany(l => l.renderers));
             {
                 // Bake directly against LOD0 triangle geometry. No physics scene,
@@ -67,9 +76,10 @@ namespace StarshipCabin.EditorTools
                     var vertices = source.vertices; var normals = source.normals;
                     var colors = new Color32[vertices.Length];
                     var matrix = filter.transform.localToWorldMatrix;
+                    var normalMatrix = matrix.inverse.transpose;
                     for (var i = 0; i < vertices.Length; i++)
                     {
-                        var normal = matrix.MultiplyVector(normals[i]).normalized;
+                        var normal = normalMatrix.MultiplyVector(normals[i]).normalized;
                         var origin = matrix.MultiplyPoint3x4(vertices[i]) + normal * bias;
                         var tangent = Vector3.Cross(normal, Mathf.Abs(normal.y) < 0.9f ? Vector3.up : Vector3.right).normalized;
                         var bitangent = Vector3.Cross(normal, tangent);
@@ -87,6 +97,16 @@ namespace StarshipCabin.EditorTools
                     mesh.RecalculateBounds();
                     mesh.name = root.name + " Exterior Occlusion " + index++;
                     mesh.colors32 = colors;
+                    var portPositions = new List<Vector3>(vertices.Length);
+                    var portNormals = new List<Vector3>(vertices.Length);
+                    var intoPort = root.worldToLocalMatrix * matrix;
+                    var normalIntoPort = intoPort.inverse.transpose;
+                    for(var i=0;i<vertices.Length;i++)
+                    {
+                        portPositions.Add(intoPort.MultiplyPoint3x4(vertices[i]));
+                        portNormals.Add(normalIntoPort.MultiplyVector(normals[i]).normalized);
+                    }
+                    mesh.SetUVs(2,portPositions); mesh.SetUVs(3,portNormals);
                     evidence.meshes++; evidence.vertices += vertices.Length;
                     var path = folder + "/" + mesh.name.Replace("/", "-") + ".asset";
                     var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
@@ -110,11 +130,18 @@ namespace StarshipCabin.EditorTools
                                 material.SetTexture(property, original.HasProperty(property) ? original.GetTexture(property) : null);
                             material.SetFloat("_Metallic", original.HasProperty("_Metallic") ? original.GetFloat("_Metallic") : 0f);
                             material.SetFloat("_Smoothness", original.HasProperty("_Smoothness") ? original.GetFloat("_Smoothness") : .2f);
-                            material.SetColor("_EmissionColor", original.IsKeywordEnabled("_EMISSION") ? original.GetColor("_EmissionColor") : Color.black);
+                            // The baked hull shader always samples its emission inputs and does
+                            // not use URP's _EMISSION keyword. Unity can also remove that keyword
+                            // from an otherwise valid authored material during ShaderGUI import,
+                            // so gating the copy on it silently extinguishes engine apertures.
+                            material.SetColor("_EmissionColor", original.HasProperty("_EmissionColor")
+                                ? original.GetColor("_EmissionColor")
+                                : Color.black);
                             material.SetTexture("_EmissionMap", original.HasProperty("_EmissionMap") ? original.GetTexture("_EmissionMap") : null);
                             material.SetVector("_SunDirection", sun);
                             material.SetColor("_SunColor", new Color(1.2f, 1.10f, 0.91f));
                             material.SetFloat("_FixedShadow", fixedStructure ? 1f : 0f);
+                            material.SetFloat("_PortLighting", fixedStructure ? 1f : 0f);
                             EditorUtility.SetDirty(material);
                             materialCopies.Add(original, material);
                         }
