@@ -27,7 +27,7 @@ def generate_rows(first, last):
     x, y = u * 2 * np.pi, v * 2 * np.pi
     storm_mask = np.zeros_like(u)
     # Flow displacement embeds each storm in the surrounding belts.
-    for cx, cy, rx, ry, turns in ((.08, .60, .082, .033, 4.6),
+    for cx, cy, rx, ry, turns in ((.08, .60, .105, .045, 4.6),
                                    (.22, .59, .037, .022, -2.5),
                                    (.86, .65, .048, .026, 2.1),
                                    (.40, .28, .030, .018, -2.7)):
@@ -46,11 +46,23 @@ def generate_rows(first, last):
     belt = .5 + .5*np.sin(shear*8 + .5*turbulence(x*2, y*6))
     filaments = turbulence(x*31, shear*71)
     tone = np.clip(.18 + .63*belt + .10*detail + .065*filaments, 0, 1)
-    dark = np.array([.27, .20, .16])
-    pale = np.array([.92, .86, .72])
+    dark = np.array([.19, .13, .105])
+    pale = np.array([.98, .91, .76])
     rgb = dark + (pale-dark)*tone[..., None]
     warm = np.array([.65, .28, .13])
     rgb = rgb*(1-storm_mask[..., None]*.55)+warm*storm_mask[..., None]*.55
+    # Hero anticyclone: concentric turbulent eyewalls, a shaded copper eye,
+    # and cream cloud streamers wrapped into the surrounding belts.
+    dx=((u-.08+.5)%1-.5)/.105;dy=(v-.60)/.045
+    r=np.sqrt(dx*dx+dy*dy);theta=np.arctan2(dy,dx)
+    eddies=turbulence(x*19,y*23)
+    spiral=.5+.5*np.sin(r*29+theta*3+eddies*1.7)
+    wall=np.clip(.25+spiral*.55+eddies*.10,0,1)
+    storm_rgb=np.array([.24,.075,.033])+(np.array([.99,.83,.58])-np.array([.24,.075,.033]))*wall[...,None]
+    eye=np.exp(-(r/.18)**2)
+    storm_rgb=storm_rgb*(1-eye[...,None]*.6)
+    envelope=np.exp(-(r/.91)**6)*.83
+    rgb=rgb*(1-envelope[...,None])+storm_rgb*envelope[...,None]
     rgb *= (1+.065*filaments[..., None])
     pole = np.clip((np.abs(v-.5)-.34)/.16, 0, 1)
     rgb = rgb*(1-pole[..., None])+np.array([.34,.37,.38])*pole[..., None]

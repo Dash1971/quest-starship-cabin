@@ -54,11 +54,14 @@ def render(center,radius,inner,outer,moonStart,moonTravel,moonDiameter,sun,ringR
     angle=np.radians(eclipse_number('StartAngle')+(eclipse_number('EndAngle')-eclipse_number('StartAngle'))*event)
     eclipseMoon=center+eclipse_number('OrbitRadius')*(sun*np.cos(angle)+unit(np.cross(normal,sun))*np.sin(angle))
     def moon_shadow(point):
-        toMoon=eclipseMoon-point;along=np.sum(toMoon*sun,axis=-1)
-        separation=np.linalg.norm(toMoon-sun*along[...,None],axis=-1)
-        penumbra=np.maximum(.025,np.maximum(along,0)*eclipse_number('SolarAngularRadius'))
-        penumbra=np.maximum(penumbra,np.abs(np.gradient(separation,axis=0))+np.abs(np.gradient(separation,axis=1)))
-        return np.where(along>0,smooth(np.maximum(0,eclipse_number('MoonRadius')-penumbra),eclipse_number('MoonRadius')+penumbra,separation),1)
+        result=np.ones(point.shape[:-1])
+        for body,radius in ((eclipseMoon,eclipse_number('MoonRadius')),(vector('WeatherCompanion'),number('WeatherCompanionDiameter')*.5)):
+            toMoon=body-point;along=np.sum(toMoon*sun,axis=-1)
+            separation=np.linalg.norm(toMoon-sun*along[...,None],axis=-1)
+            penumbra=np.maximum(.025,np.maximum(along,0)*eclipse_number('SolarAngularRadius'))
+            penumbra=np.maximum(penumbra,np.abs(np.gradient(separation,axis=0))+np.abs(np.gradient(separation,axis=1)))
+            result=np.minimum(result,np.where(along>0,smooth(np.maximum(0,radius-penumbra),radius+penumbra,separation),1))
+        return result
     def ring_shadow(point):
         distance=np.sum((center-point)*normal,axis=-1)/np.dot(sun,normal)
         intersection=point+sun*distance[...,None]
@@ -79,7 +82,7 @@ def render(center,radius,inner,outer,moonStart,moonTravel,moonDiameter,sun,ringR
                 packed=sample(relief,n,turn)
                 east=unit(np.stack([-globe[...,2],np.zeros_like(sd),globe[...,0]],-1)+[.000001,0,0])
                 north=unit(np.cross(east,globe))
-                cloudNormal=unit(globe-.75*.125*(east*(packed[...,0]*2-1)[...,None]+north*(packed[...,1]*2-1)[...,None]))@turn.T
+                cloudNormal=unit(globe-1.05*.125*(east*(packed[...,0]*2-1)[...,None]+north*(packed[...,1]*2-1)[...,None]))@turn.T
                 cloudSd=np.sum(cloudNormal*sun,axis=-1)
                 sunOS=sun@turn
                 u=np.arctan2(globe[...,0],-globe[...,2])/(2*np.pi)+.5
@@ -101,6 +104,7 @@ def render(center,radius,inner,outer,moonStart,moonTravel,moonDiameter,sun,ringR
     radial=ringRotation@[-1,0,0]
     sphere(center+radial*(moonStart+moonTravel*event)-sun*8,moonDiameter*.5,False)
     sphere(eclipseMoon,eclipse_number("MoonRadius"),False)
+    sphere(vector("WeatherCompanion"),number("WeatherCompanionDiameter")*.5,False)
     # The shared analytic ring plane and planet shadow.
     denominator=np.sum(ray*normal,axis=-1)
     t=np.dot(center-eye,normal)/np.where(np.abs(denominator)>.00001,denominator,.00001)
@@ -109,7 +113,7 @@ def render(center,radius,inner,outer,moonStart,moonTravel,moonDiameter,sun,ringR
     d=density(rad,inner,outer);toCenter=center-point;along=np.sum(toCenter*sun,axis=-1)
     separation=np.sqrt(np.maximum(0,np.sum(toCenter**2,axis=-1)-along**2))
     transmission=np.where(along>0,smooth(radius-.35,radius+.35,separation),1)
-    ringColor=(np.array([.11,.09,.075])+(np.array([.71,.62,.48])-np.array([.11,.09,.075]))*d[...,None])
+    ringColor=(np.array([.11,.09,.075])+(np.array([.85,.78,.64])-np.array([.11,.09,.075]))*d[...,None])
     incidence=np.dot(normal,sun)
     backlit=(-incidence*np.sum(normal*-ray,axis=-1)>=0)
     scattering=.24+.56*np.sqrt(abs(incidence))+backlit*(1-d)*.18
@@ -136,6 +140,6 @@ if __name__=='__main__':
             euler(vector('WeatherRingAngles')),texture,event=phase,relief=relief)
         draw=ImageDraw.Draw(image)
         draw.rectangle((0,0,1200,46),fill=(15,18,24))
-        draw.text((18,12),'M7 '+name.upper()+' | CPU composition study - not a Unity or headset capture',fill=(225,230,238))
+        draw.text((18,12),'M9 '+name.upper()+' | CPU composition study - not a Unity or headset capture',fill=(225,230,238))
         destination=ROOT/('Builds/ArtReview/weather-eclipse-'+name+'.png')
         destination.parent.mkdir(parents=True,exist_ok=True);image.save(destination);print(destination)

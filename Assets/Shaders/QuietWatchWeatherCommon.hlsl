@@ -10,7 +10,7 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DistanceOrigin;
     float4 _RingCenter, _RingNormal, _RingRadii, _PlanetSphere;
     float _DistanceScale, _WeatherPulse, _ObservationTime;
-    float4 _OccultorSphere;
+    float4 _OccultorSphere, _CompanionSphere;
     float _SolarAngularRadius, _CloudLayerHeight, _CloudReliefStrength;
     half4 _AtmosphereColor;
     float _AtmosphereHeight, _DawnProgress;
@@ -48,16 +48,23 @@ float QWRingTransmission(float3 positionWS)
 
 // Approximate the finite solar disc with an umbra and soft penumbra.
 // Geometry and shading share the same moving sphere; no painted shadow UV.
-float QWMoonTransmission(float3 positionWS)
+float QWSphereTransmission(float3 positionWS, float4 sphere)
 {
-    float3 toMoon = _OccultorSphere.xyz - positionWS;
+    float3 toMoon = sphere.xyz - positionWS;
     float projected = dot(toMoon, normalize(_SunDirection.xyz));
     float separation = length(toMoon - normalize(_SunDirection.xyz) * projected);
     float penumbra = max(0.025, max(projected, 0.0) * _SolarAngularRadius);
     penumbra = max(penumbra, fwidth(separation));
-    float transmission = smoothstep(max(0.0, _OccultorSphere.w - penumbra),
-        _OccultorSphere.w + penumbra, separation);
-    return (_OccultorSphere.w > 0.0 && projected > 0.0) ? transmission : 1.0;
+    float transmission = smoothstep(max(0.0, sphere.w - penumbra),
+        sphere.w + penumbra, separation);
+    return (sphere.w > 0.0 && projected > 0.0) ? transmission : 1.0;
+}
+
+float QWMoonTransmission(float3 positionWS)
+{
+    // Both visible moons supply the same geometric shadow model.
+    return min(QWSphereTransmission(positionWS, _OccultorSphere),
+        QWSphereTransmission(positionWS, _CompanionSphere));
 }
 
 float QWPlanetTransmission(float3 positionWS)

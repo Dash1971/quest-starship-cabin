@@ -664,7 +664,7 @@ namespace StarshipCabin.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.01f, 0.012f, 0.018f);
             camera.nearClipPlane = 0.03f;
-            camera.farClipPlane = 5000f; // Actual fleet metres and a separate deep planetary backdrop.
+            camera.farClipPlane = 20000f; // Actual fleet metres and a separate deep planetary backdrop.
             var cameraData = camera.GetUniversalAdditionalCameraData();
             cameraData.renderPostProcessing = true;
             cameraData.antialiasing = AntialiasingMode.None;
@@ -860,21 +860,14 @@ namespace StarshipCabin.EditorTools
         private static Material CreateStarMaterial()
         {
             const string path = "Assets/Materials/Quiet Watch - First Question.mat";
-            var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
-
             var shader = Shader.Find("StarshipCabin/QuietWatchStarWindow");
-            if (shader == null)
-            {
-                throw new InvalidOperationException(
-                    "Quiet Watch star shader not found. Ensure Assets/Shaders/QuietWatchStarWindow.shader is imported.");
-            }
-
-            var mat = new Material(shader) { name = "Quiet Watch - First Question" };
-            AssetDatabase.CreateAsset(mat, path);
+            if (shader == null) throw new InvalidOperationException("Missing star shader.");
+            var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (mat == null) { mat = new Material(shader); AssetDatabase.CreateAsset(mat, path); }
+            mat.shader = shader;
+            mat.SetTexture("_GalacticMap", QuietWatchExteriorBuilder.CelestialTexture("QW_GalacticSky.png", true, 2048));
+            mat.SetFloat("_GalacticGain", 0.85f);
+            EditorUtility.SetDirty(mat);
             return mat;
         }
 
@@ -962,8 +955,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m8-harbour-depth";
-            PlayerSettings.Android.bundleVersionCode = 20014;
+            PlayerSettings.bundleVersion = "2.0.0-m9-five-vista-overhaul";
+            PlayerSettings.Android.bundleVersionCode = 20015;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

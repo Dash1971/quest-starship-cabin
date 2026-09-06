@@ -213,6 +213,20 @@ namespace StarshipCabin.EditorTools
                     }
                 }
                 harbourPreview.Exit();
+                // All five arrival compositions already have four fixed-seat
+                // frames above. Add the new atmospheric layers late in a stay.
+                var orbital = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "blue-morning");
+                foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == orbital);
+                orbital.Enter(LifeMode.Living, MotionMode.Still);
+                orbital.PreviewAt(600f, LifeMode.Living, MotionMode.Still);
+                foreach (var point in points)
+                {
+                    camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
+                    camera.Render(); RenderTexture.active = target;
+                    pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0); pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder, "blue-morning-orbital-600s-" + Slug(point.CaptureName) + ".png"), pixels.EncodeToPNG());
+                }
+                orbital.Exit();
                 var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == chessVista);
                 chessVista.Enter(LifeMode.Quiet, MotionMode.Still);

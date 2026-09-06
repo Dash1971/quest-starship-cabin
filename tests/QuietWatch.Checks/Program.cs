@@ -1,6 +1,8 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using StarshipCabin.QuietWatch;
+using StarshipCabin.EditorTools;
+using V3 = System.Numerics.Vector3;
 
 var checks = 0;
 void Check(bool ok, string label)
@@ -74,6 +76,25 @@ Near(HarbourShuttleClock.Phase(.23), HarbourShuttleClock.Phase(10000.23), "shutt
 Check(Enumerable.Range(0, 10001).All(i => HarbourShuttleClock.Phase(i / 10000d) is >= 0 and <= 1),
     "shuttle never leaves its audited corridor");
 
+// Real bake ray code: bounded rays, both faces, parallel rays, then BVH vs brute force.
+var face = new QuietWatchOcclusionBvh.Triangle(new V3(-1,-1,0),new V3(1,-1,0),new V3(0,1,0));
+var one = new QuietWatchOcclusionBvh(new[] { face });
+Check(one.Blocked(new V3(0,0,-1),V3.UnitZ,2), "bake ray reaches front face");
+Check(one.Blocked(new V3(0,0,1),-V3.UnitZ,2), "bake ray reaches back face");
+Check(!one.Blocked(new V3(0,0,-1),V3.UnitZ,.5f), "local occlusion respects distance");
+Check(!one.Blocked(new V3(0,0,-1),V3.UnitX,10), "parallel ray does not divide by zero");
+var random = new Random(871);
+V3 RandomPoint() => new V3((float)random.NextDouble()*8-4,(float)random.NextDouble()*8-4,(float)random.NextDouble()*8-4);
+var triangles = Enumerable.Range(0,150).Select(_ => new QuietWatchOcclusionBvh.Triangle(RandomPoint(),RandomPoint(),RandomPoint())).ToArray();
+var treeBvh = new QuietWatchOcclusionBvh(triangles);
+var agrees = true;
+for (var i=0;i<1000;i++)
+{
+    var origin=RandomPoint();var direction=V3.Normalize(RandomPoint());
+    agrees &= treeBvh.Blocked(origin,direction,3)==triangles.Any(t=>QuietWatchOcclusionBvh.Hit(t,origin,direction,3));
+}
+Check(agrees,"BVH agrees with all-triangle rays for 1000 seeded queries");
+
 // Parser diagnostics are deliberately separate from Unity API/type checking.
 var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var files = Directory.GetFiles(Path.Combine(root, "Assets"), "*.cs", SearchOption.AllDirectories);
@@ -88,4 +109,4 @@ foreach (var file in files)
     }
 }
 Console.WriteLine($"PASS: C# syntax in {files.Length} source files (Editor/Android symbols; not Unity compilation)");
-Console.WriteLine($"Completed {checks} timeline checks.");
+Console.WriteLine($"Completed {checks} clock and ray checks.");

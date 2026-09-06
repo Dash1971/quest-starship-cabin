@@ -24,3 +24,4 @@ jobs:
       - run: python tests/check_weather_eclipse.py
       - run: python tests/check_weather_relief.py
       - run: python tests/check_harbour_layout.py
+      - run: python tests/check_cinematic_compositions.py

@@ -2,6 +2,7 @@ Shader "StarshipCabin/QuietWatchGasGiant"
 {
     Properties
     {
+        _CompanionSphere ("Companion Moon Center / Radius", Vector) = (0,0,0,0)
         _OccultorSphere ("Eclipse Moon Center / Radius", Vector) = (0,0,0,0)
         _SolarAngularRadius ("Solar Angular Radius", Float) = 0.00465
         _DistanceScale ("Physical Distance Scale", Float) = 1
