@@ -23,3 +23,4 @@ jobs:
       - run: python tests/check_blue_atlas.py
       - run: python tests/check_weather_eclipse.py
       - run: python tests/check_weather_relief.py
+      - run: python tests/check_harbour_layout.py

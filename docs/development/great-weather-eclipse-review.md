@@ -1,5 +1,7 @@
 # M7 Great Weather: cloud relief and a shared eclipse
 
+Historical M7 review record. For the enlarged eclipse and current Harbour candidate, use the [M8 review guide](harbour-depth-review.md).
+
 This is the first implementation slice of the post-M6 Great Weather milestone. It was originally developed on PR #11's chess-lighting/table cleanup branch. After #11 was merged, this branch was rebased onto `main` for independent review.
 
 ## What should look different

@@ -20,6 +20,9 @@ namespace StarshipCabin.EditorTools
         internal const float RingInner = 76f, RingOuter = 112f;
         internal const float MoonShadowRadius = 96f, MoonTravel = 24f, MoonDiameter = 2.6f;
         internal const float FleetScale = 12f;
+        internal static readonly Vector3 HarbourPosition = new Vector3(1.5f, 3.2f, -44f);
+        internal static readonly Vector3 HarbourAngles = new Vector3(8f, -5f, -7f);
+        internal const float HarbourScale = 0.88f;
 
         public static AuthoredVista BuildHarbour(
             StarWindowSurface stars, Light fill, AmbientAudioController audio)
@@ -27,56 +30,21 @@ namespace StarshipCabin.EditorTools
             var vista = NewVistaRoot("Vista 2 - Harbour of Ten Thousand Lights");
             var station = QuietWatchArtAssetBuilder.InstantiateLod(
                 vista.transform, "HarbourSector", "Kilometre Harbour Sector",
-                new Vector3(1.5f, 3.2f, -44f), Quaternion.Euler(8f, -5f, -7f), 0.88f);
+                HarbourPosition, Quaternion.Euler(HarbourAngles), HarbourScale);
             QuietWatchArtAssetBuilder.AddExteriorSun(
                 vista.transform, "Harbour Distant Sun", Quaternion.Euler(32f, -38f, -18f),
                 new Color(0.74f, 0.84f, 1.0f), 1.62f, true);
             BuildHarbourHabitation(station);
             BuildHarbourClearanceVolumes(vista.transform, station);
 
-            var travellers = new List<Transform>();
-            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
-                vista.transform, "EscortWing", "Inbound Customs Cutter",
-                new Vector3(9.8f, 0.4f, -29f), Quaternion.Euler(3f, -16f, 2f), 0.68f));
-            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
-                vista.transform, "EscortSpear", "Docking Tender",
-                new Vector3(-14f, 8.5f, -50f), Quaternion.Euler(-4f, 12f, -2f), 0.52f, false));
-            travellers.Add(QuietWatchArtAssetBuilder.InstantiateLod(
-                vista.transform, "EscortSpear", "Distant Shuttle",
-                new Vector3(12f, 11f, -66f), Quaternion.Euler(0f, -20f, 0f), 0.24f, false));
-
-            // Every route is authored in station space and converted to the
-            // vista root. This keeps choreography tied to the actual harbour
-            // composition if the station is moved or re-aimed later.
-            ConfigureHarbourRoute(travellers[0], StationRoute(vista.transform, station,
-                    new Vector3(-36f, 10f, -3f),
-                    new Vector3(-39f, 11f, 2f),
-                    new Vector3(-43f, 14f, 10f),
-                    new Vector3(-48f, 19f, 23f),
-                    new Vector3(-55f, 25f, 39f)),
-                58f, 110f, 0f, 3.2f, 9f, false, true);
-            ConfigureHarbourRoute(travellers[1], StationRoute(vista.transform, station,
-                    new Vector3(39f, 14f, 18f),
-                    new Vector3(29f, 15f, 22f),
-                    new Vector3(15f, 15f, 25f),
-                    new Vector3(-4f, 14f, 28f),
-                    new Vector3(-24f, 12f, 32f),
-                    new Vector3(-42f, 10f, 38f)),
-                52f, 112f, 0.16f, 2.8f, 7f, false, false);
-            ConfigureHarbourRoute(travellers[2], StationRoute(vista.transform, station,
-                    new Vector3(-42f, 2f, 34f),
-                    new Vector3(-26f, 3f, 35f),
-                    new Vector3(-8f, 4f, 36f),
-                    new Vector3(12f, 5f, 37f),
-                    new Vector3(30f, 6f, 39f),
-                    new Vector3(45f, 8f, 42f)),
-                70f, 118f, 0.57f, 1.8f, 5f, true, false);
+            QuietWatchHarbourArchitecture.Build(station);
+            var travellers = QuietWatchHarbourArchitecture.BuildTraffic(vista.transform, station);
 
             vista.transform.localScale = Vector3.one * FleetScale;
             AddBlueBackdrop(vista, "Harbour Night World", new Vector3(450f, -1300f, -3000f), 1300f,
                 new Vector3(-0.75f, 0.12f, 0.12f), new Vector3(10f, -35f, -18f));
             return Configure(vista, "harbour", "HARBOUR OF TEN THOUSAND LIGHTS", "ORBITAL SAFE HARBOUR",
-                AuthoredVistaKind.Harbour, stars, fill, audio, station, travellers.ToArray(), new Color(0.32f, 0.66f, 0.92f));
+                AuthoredVistaKind.Harbour, stars, fill, audio, station, travellers, new Color(0.32f, 0.66f, 0.92f));
         }
 
         public static AuthoredVista BuildBlueMorning(
@@ -314,30 +282,6 @@ namespace StarshipCabin.EditorTools
             go.transform.localScale = Vector3.one;
             GameObjectUtility.SetStaticEditorFlags(go, 0);
             return go;
-        }
-
-        private static void ConfigureHarbourRoute(
-            Transform traveller, Vector3[] points, float livingDuration, float quietDuration,
-            float phaseOffset, float clearanceRadius, float bankDegrees,
-            bool availableInQuiet, bool graceRoute)
-        {
-            var route = traveller.gameObject.AddComponent<HarbourTrafficRoute>();
-            route.Configure(points, livingDuration, quietDuration, phaseOffset,
-                clearanceRadius, bankDegrees, availableInQuiet, graceRoute);
-            if (points.Length > 0)
-            {
-                traveller.localPosition = points[0];
-            }
-        }
-
-        private static Vector3[] StationRoute(Transform vista, Transform station, params Vector3[] stationPoints)
-        {
-            var result = new Vector3[stationPoints.Length];
-            for (var i = 0; i < stationPoints.Length; i++)
-            {
-                result[i] = vista.InverseTransformPoint(station.TransformPoint(stationPoints[i]));
-            }
-            return result;
         }
 
         private static void BuildHarbourClearanceVolumes(Transform vista, Transform station)

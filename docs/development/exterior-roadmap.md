@@ -4,7 +4,7 @@ The September 6 headset feedback establishes a useful direction: the larger exte
 
 ## M7 — Finish Great Weather as the first hero destination
 
-The [first M7 implementation candidate](great-weather-eclipse-review.md) now provides shallow cloud relief, revised ring/moon lighting and a shared eclipse. It is ready for Unity review; the visual and device acceptance below remains open.
+The [M7 implementation](great-weather-eclipse-review.md) provides shallow cloud relief, revised ring/moon lighting and a shared eclipse. It passed merge-time Unity review; subsequent headset feedback found the event subtle. The [M8 candidate](harbour-depth-review.md) enlarges the moon and shared shadow; headset readability and device acceptance remain open.
 
 Produce a focused comparison slice before applying changes to all five vistas.
 
@@ -16,6 +16,8 @@ Produce a focused comparison slice before applying changes to all five vistas.
 Deliverables: authored composition/lighting parameters, source-generated or licensed/provenanced assets, fixed-seat/event captures with build identity, a short headset comparison video and measured device timings. M7 succeeds when cloud depth, ring scale and the eclipse read naturally from multiple seats—not merely when shaders compile.
 
 ## M8 — Make the harbour feel inhabited
+
+The [first M8 candidate](harbour-depth-review.md) implements asymmetric districts, a recessed berth, continuous tender service and slower distant traffic. Unity and headset review are pending; subsequent model/material refinement should follow that evidence.
 
 Use the same review loop to replace the most conspicuous procedural repetition with original station architecture: large structural spans, medium docking districts and small windows/service equipment. Add asymmetry and purposeful traffic with visible destinations. A tender passing behind a major structure should communicate more scale than extra background objects. Preserve comfortable relative motion and validate all paths against the actual geometry.
 
@@ -33,4 +35,4 @@ The First Question remains the dark, sparse visual baseline. Do not turn every d
 
 ## Immediate work versus planned work
 
-M6.5 addresses the chess lighting and removes the sign/indicator pad. The first M7 slice is implemented for review; remaining M7 art/acceptance work and M8–M10 are planned work, not completed features or release dates. Review the M7 Great Weather comparison slice next. Use its headset result to decide which effects earn their GPU cost before expanding the scope.
+M6.5 addressed chess lighting and removed the sign/indicator pad. M7's first slice was merged and built; the user liked the direction but found the event subtle. M8 now proposes larger eclipse geometry and an inhabited Harbour composition, with 58 planned review captures. Validate this candidate before declaring either destination artistically complete or moving to M9–M10.

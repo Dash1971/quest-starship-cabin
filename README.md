@@ -6,7 +6,7 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-M7 is the current Great Weather review candidate. It adds shallow cloud relief, revised shared lighting and a six-minute moon-shadow event. Merge review passed the source checks, Unity 6000.5.2f1 scene assertions, a fresh two-lightmap/18-probe bake, 42 distinct fixed-seat/event captures, ARM64 APK build and package audit. See the [M7 implementation and OpenClaw review guide](docs/development/great-weather-eclipse-review.md) for the remaining device checks. Version: `2.0.0-m7-weather-eclipse` (`20013`). **In-headset visual/stereo, comfort, sustained 72 Hz and thermal approval remain open.**
+M8 is the current review candidate: a larger Great Weather eclipse, asymmetric Harbour districts, a working tender berth and slower distant traffic. Proposed version: `2.0.0-m8-harbour-depth` (`20014`). See the [M8 implementation and OpenClaw review guide](docs/development/harbour-depth-review.md). Source checks are available; **Unity compilation, bake, 58 captures, APK, in-headset visual/stereo, sustained 72 Hz and thermal approval remain pending for this candidate**. The [previous M7 review](docs/development/great-weather-eclipse-review.md) records the validation completed before these changes.
 
 M6.5 was merged as `f82a718` after Unity/bake/capture/APK/install validation. It corrected the chess lighting and removed the view sign and obsolete table indicator pad. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
 

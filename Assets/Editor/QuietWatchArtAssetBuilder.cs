@@ -20,7 +20,7 @@ namespace StarshipCabin.EditorTools
         private const string ModelRoot = "Assets/Art/QuietWatch/Models";
         private const string TextureRoot = "Assets/Art/QuietWatch/Textures";
         private const string MaterialRoot = "Assets/Materials/Quiet Watch Benchmark";
-        private const int ExteriorLayer = 8;
+        internal const int ExteriorLayer = 8;
 
         private sealed class MaterialSet
         {
