@@ -66,6 +66,29 @@ for eye,target in seats:
         assert abs(np.dot(direction,up))+moon_radius < depth*np.tan(np.radians(30))
 print('PASS: preview moon and shadow fit all four reference capture cones with radius margin')
 
+# A broad camera cone is not enough: the cabin has four discrete panes with
+# solid mullions between them. Project each astronomical ray back onto the
+# sloped hull and require a conservative 6 cm clearance inside one pane. This
+# caught the original M7 preview, whose moon sat behind framing in three seats.
+slope_origin=np.array([0.,.75,-2.6])
+slope_up=unit(np.array([0.,1.75,1.2]))
+slope_normal=np.cross([1.,0.,0.],slope_up)
+pane_spans=[(-2.88,-1.92),(-1.56,-.60),(-.24,.72),(1.42,2.78)]
+def glazing_coordinates(eye,point):
+    direction=point-eye
+    distance=np.dot(slope_origin-eye,slope_normal)/np.dot(direction,slope_normal)
+    hit=eye+direction*distance
+    return hit[0],np.dot(hit-slope_origin,slope_up)
+def clears_a_pane(uv,margin=.06):
+    u,v=uv
+    if not .35+margin < v < 1.88-margin:return False
+    top_inset=max(0.,(v-1.74)/.14*.10)
+    return any(a+top_inset+margin < u < b-top_inset-margin for a,b in pane_spans)
+for eye,target in seats:
+    assert clears_a_pane(glazing_coordinates(eye,preview)), 'Preview moon is hidden by cabin framing'
+    assert clears_a_pane(glazing_coordinates(eye,shadow)), 'Preview shadow is hidden by cabin framing'
+print('PASS: preview moon and shadow clear a real glazing pane from all four seats')
+
 # Bound the projected shadow ellipse too; its edge is wider than a surface dot.
 for theta in np.linspace(0,2*np.pi,65):
     offset=(tangent*np.cos(theta)+np.cross(sun,tangent)*np.sin(theta))*(moon_radius+.25)

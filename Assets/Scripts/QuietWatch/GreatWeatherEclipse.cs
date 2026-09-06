@@ -5,10 +5,10 @@ namespace StarshipCabin.QuietWatch
     /// <summary>A bounded, authored orbital arc driven only by the vista clock.</summary>
     public sealed class GreatWeatherEclipse : MonoBehaviour
     {
-        public const float OrbitRadius = 90f;
+        public const float OrbitRadius = 76f;
         public const float MoonRadius = 1.8f;
-        public const float StartAngle = -56f;
-        public const float EndAngle = -16f;
+        public const float StartAngle = -75f;
+        public const float EndAngle = -12.7f;
         public const float SolarAngularRadius = 0.00465f;
         private static readonly int SphereId = Shader.PropertyToID("_OccultorSphere");
         [SerializeField] private Transform moon;
