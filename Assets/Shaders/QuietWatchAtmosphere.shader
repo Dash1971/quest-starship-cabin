@@ -2,6 +2,8 @@ Shader "StarshipCabin/QuietWatchAtmosphere"
 {
     Properties
     {
+        _OccultorSphere ("Eclipse Moon Center / Radius", Vector) = (0,0,0,0)
+        _SolarAngularRadius ("Solar Angular Radius", Float) = 0.00465
         _DistanceScale ("Physical Distance Scale", Float) = 1
         _DistanceOrigin ("Distance Reference Eye", Vector) = (-1.6,1.1,-1.42,0)
         _PlanetSphere ("Planet Center / Radius", Vector) = (0,0,0,1)
@@ -57,7 +59,9 @@ Shader "StarshipCabin/QuietWatchAtmosphere"
                 float incidence = dot(normalize(tangent),sun);
                 float day = smoothstep(-0.12,0.28,incidence);
                 float twilight = exp(-pow((incidence+0.015)/0.10,2.0));
-                float alpha = density*(0.012+day*0.58+twilight*0.22);
+                float3 limbPoint = _PlanetSphere.xyz + normalize(tangent)*_PlanetSphere.w;
+                float eclipse = QWMoonTransmission(limbPoint);
+                float alpha = density*(0.012+(day*0.58+twilight*0.22)*eclipse);
                 float3 light = lerp(_AtmosphereColor.rgb,float3(1.0,0.27,0.055),twilight*0.68);
                 return half4(light*alpha*1.55,alpha);
             }

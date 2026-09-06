@@ -97,11 +97,12 @@ Shader "StarshipCabin/QuietWatchMoon"
 
                 float3 n=normalize(input.normalWS);
                 float3 v=QWViewDirection(input.positionWS);
-                float light=smoothstep(-0.10,0.20,dot(n,normalize(_SunDirection.xyz)));
+                float sunDot=dot(n,normalize(_SunDirection.xyz));
+                float light=smoothstep(-0.045,0.06,sunDot)*(0.12+0.88*saturate(sunDot));
                 float rim=pow(1.0-saturate(dot(n,v)),2.2);
                 float transmission=QWRingTransmission(input.positionWS)*QWPlanetTransmission(input.positionWS);
                 float3 color=surface*(0.035+light*transmission*1.08);
-                color+=float3(0.22,0.16,0.11)*rim*light*transmission*0.18;
+                color+=float3(0.22,0.16,0.11)*rim*light*transmission*0.04;
                 color=1.0-exp(-color*1.55);
                 return half4(color,1.0);
             }

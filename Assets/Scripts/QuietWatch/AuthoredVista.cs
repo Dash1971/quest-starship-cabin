@@ -44,6 +44,7 @@ namespace StarshipCabin.QuietWatch
         private MotionMode motionMode;
         private VistaTimeline timeline;
         private VistaBackdropLayers backdropLayers;
+        private GreatWeatherEclipse eclipse;
         private bool originsCached;
         private bool paused;
         private bool focused = true;
@@ -87,6 +88,7 @@ namespace StarshipCabin.QuietWatch
             if (originsCached) return;
             originsCached = true;
             backdropLayers = GetComponent<VistaBackdropLayers>();
+            eclipse = GetComponent<GreatWeatherEclipse>();
             if (slowTurn != null)
             {
                 slowTurnOriginPosition = slowTurn.localPosition;
@@ -370,6 +372,7 @@ namespace StarshipCabin.QuietWatch
                 var emergence = i == 0 ? moonEmergence * grace : Vector3.zero;
                 traveller.localPosition = travellerOrigins[i] + emergence;
             }
+            eclipse?.EvaluateAt(grace);
             SetHeroFloat("_WeatherPulse", 0f);
         }
 
@@ -386,6 +389,7 @@ namespace StarshipCabin.QuietWatch
         private void RestoreTransforms()
         {
             backdropLayers?.EvaluateAt(0f, 0f);
+            eclipse?.EvaluateAt(0f);
             if (slowTurn != null)
             {
                 slowTurn.localPosition = slowTurnOriginPosition;
@@ -483,7 +487,7 @@ namespace StarshipCabin.QuietWatch
             {
                 case AuthoredVistaKind.Harbour: return 72f;
                 case AuthoredVistaKind.BlueMorning: return 110f;
-                case AuthoredVistaKind.GreatWeather: return 240f;
+                case AuthoredVistaKind.GreatWeather: return 360f;
                 case AuthoredVistaKind.LongFormation: return 84f;
                 default: return 90f;
             }

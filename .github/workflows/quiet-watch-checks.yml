@@ -21,3 +21,5 @@ jobs:
       - run: python tests/check_weather_geometry.py
       - run: python tests/check_weather_atlas.py
       - run: python tests/check_blue_atlas.py
+      - run: python tests/check_weather_eclipse.py
+      - run: python tests/check_weather_relief.py

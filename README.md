@@ -6,7 +6,9 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-M6.5 proposes a focused chess-lighting correction and removes the view sign and obsolete table indicator pad. It has **not yet been Unity-built or headset-approved**. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
+M7 is the current Great Weather review candidate. It adds shallow cloud relief, revised shared lighting and a six-minute moon-shadow event. Merge review passed the source checks, Unity 6000.5.2f1 scene assertions, a fresh two-lightmap/18-probe bake, 42 distinct fixed-seat/event captures, ARM64 APK build and package audit. See the [M7 implementation and OpenClaw review guide](docs/development/great-weather-eclipse-review.md) for the remaining device checks. Version: `2.0.0-m7-weather-eclipse` (`20013`). **In-headset visual/stereo, comfort, sustained 72 Hz and thermal approval remain open.**
+
+M6.5 was merged as `f82a718` after Unity/bake/capture/APK/install validation. It corrected the chess lighting and removed the view sign and obsolete table indicator pad. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
 
 M6.4 was merged as `46447d5`; OpenClaw's merge record reports Unity/bake/capture/APK/install validation. The September 6 headset feedback confirms a substantial exterior improvement but unchanged chess highlights. Its version is `2.0.0-m6.4-exterior-study` (`20011`). The [M6.4 implementation guide](docs/development/exterior-spectacle-review.md) records the original source-stage work; M6.5 addresses the remaining chess issue.
 

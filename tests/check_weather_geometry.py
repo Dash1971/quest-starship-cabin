@@ -49,6 +49,6 @@ assert 70 < angle < 90
 assert start_radius+travel > outer+moon_radius
 # The initial shadow ray must hit a dense band, not the division at t=.64.
 t = (start_radius-inner)/(outer-inner)
-density = (.68+.18*math.sin(start_radius*2.9)+.10*math.sin(start_radius*9.7))*(1-.92*math.exp(-((t-.64)/.027)**2))
+density = (.55+.18*math.cos(t*21.99115)+.11*math.cos(t*53.40708)+.12*math.sin(start_radius*2.9)+.05*math.sin(start_radius*9.7))*(1-.92*math.exp(-((t-.64)/.027)**2))
 assert 1-density*.92 < .65
 print(f'PASS: 140,000 km giant spans {angle:.1f} degrees; moon starts in a dense band and clears it fully')

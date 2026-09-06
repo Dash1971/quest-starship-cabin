@@ -10,6 +10,8 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DistanceOrigin;
     float4 _RingCenter, _RingNormal, _RingRadii, _PlanetSphere;
     float _DistanceScale, _WeatherPulse, _ObservationTime;
+    float4 _OccultorSphere;
+    float _SolarAngularRadius, _CloudLayerHeight, _CloudReliefStrength;
     half4 _AtmosphereColor;
     float _AtmosphereHeight, _DawnProgress;
 CBUFFER_END
@@ -23,8 +25,13 @@ float QWRingDensity(float radius)
     float footprint = max(fwidth(radius), 0.00001);
     float broad = 1.0 - smoothstep(1.0, 3.14159, footprint * 2.9);
     float fine = 1.0 - smoothstep(1.0, 3.14159, footprint * 9.7);
-    float structure = 0.68 + 0.18 * sin(radius * 2.9) * broad + 0.10 * sin(radius * 9.7) * fine;
-    float division = 1.0 - 0.92 * exp(-pow((t - 0.64) / 0.027, 2.0));
+    float normalizedFootprint = footprint / max(0.01, _RingRadii.y - _RingRadii.x);
+    float structure = 0.55
+        + 0.18 * cos(t * 21.99115) * (1.0 - smoothstep(1.0, 3.14159, normalizedFootprint * 21.99115))
+        + 0.11 * cos(t * 53.40708) * (1.0 - smoothstep(1.0, 3.14159, normalizedFootprint * 53.40708))
+        + 0.12 * sin(radius * 2.9) * broad + 0.05 * sin(radius * 9.7) * fine;
+    float gapWidth = max(0.027, normalizedFootprint * 0.5);
+    float division = 1.0 - 0.92 * (0.027 / gapWidth) * exp(-pow((t - 0.64) / gapWidth, 2.0));
     return saturate(structure * edge * division);
 }
 
@@ -34,9 +41,23 @@ float QWRingTransmission(float3 positionWS)
     float denominator = dot(sun, _RingNormal.xyz);
     if (abs(denominator) < 0.0001) return 1.0;
     float distanceToPlane = dot(_RingCenter.xyz - positionWS, _RingNormal.xyz) / denominator;
-    if (distanceToPlane <= 0.001) return 1.0;
     float radius = length(positionWS + sun * distanceToPlane - _RingCenter.xyz);
-    return 1.0 - QWRingDensity(radius) * 0.92;
+    float transmission = 1.0 - QWRingDensity(radius) * 0.92;
+    return distanceToPlane > 0.001 ? transmission : 1.0;
+}
+
+// Approximate the finite solar disc with an umbra and soft penumbra.
+// Geometry and shading share the same moving sphere; no painted shadow UV.
+float QWMoonTransmission(float3 positionWS)
+{
+    float3 toMoon = _OccultorSphere.xyz - positionWS;
+    float projected = dot(toMoon, normalize(_SunDirection.xyz));
+    float separation = length(toMoon - normalize(_SunDirection.xyz) * projected);
+    float penumbra = max(0.025, max(projected, 0.0) * _SolarAngularRadius);
+    penumbra = max(penumbra, fwidth(separation));
+    float transmission = smoothstep(max(0.0, _OccultorSphere.w - penumbra),
+        _OccultorSphere.w + penumbra, separation);
+    return (_OccultorSphere.w > 0.0 && projected > 0.0) ? transmission : 1.0;
 }
 
 float QWPlanetTransmission(float3 positionWS)

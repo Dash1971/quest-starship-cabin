@@ -14,7 +14,7 @@ namespace StarshipCabin.EditorTools
     internal static class QuietWatchExteriorBuilder
     {
         internal static readonly Vector3 WeatherCenter = new Vector3(32f, -12f, -104f);
-        internal static readonly Vector3 WeatherSun = new Vector3(-0.78f, 0.14f, 0.50f);
+        internal static readonly Vector3 WeatherSun = new Vector3(-0.78f, -0.02f, 0.50f);
         internal static readonly Vector3 WeatherRingAngles = new Vector3(63f, 8f, -14f);
         internal const float WeatherRadius = 70f;
         internal const float RingInner = 76f, RingOuter = 112f;
@@ -131,6 +131,9 @@ namespace StarshipCabin.EditorTools
             });
             importer.SaveAndReimport();
             planetMaterial.SetTexture("_WeatherMap", AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath));
+            planetMaterial.SetTexture("_CloudRelief", CelestialTexture("QW_WeatherRelief.png", false, 2048));
+            planetMaterial.SetFloat("_CloudLayerHeight", 0.0012f);
+            planetMaterial.SetFloat("_CloudReliefStrength", 0.75f);
             planetMaterial.SetColor("_StormColor", new Color(0.58f, 0.29f, 0.12f));
             ringMaterial.SetColor("_LightColor", new Color(0.71f, 0.62f, 0.48f));
             ringMaterial.SetColor("_DarkColor", new Color(0.11f, 0.09f, 0.075f));
@@ -147,8 +150,19 @@ namespace StarshipCabin.EditorTools
             var farMoon = Sphere(vista.transform, "Far Moon", moonMaterial, new Vector3(92f, 35f, -174f), 3.6f);
             foreach (var body in new[] { planet, rings, shadowMoon, farMoon })
                 body.AddComponent<DistantVistaBounds>();
-            AddAtmosphere(vista.transform, "Great Weather Atmospheric Limb", planet, planetMaterial,
+            var atmosphere = AddAtmosphere(vista.transform, "Great Weather Atmospheric Limb", planet, planetMaterial,
                 new Color(0.46f, 0.64f, 0.82f), 0.006f);
+            var eclipseMoon = Sphere(vista.transform, "Eclipse Moon", moonMaterial, center,
+                GreatWeatherEclipse.MoonRadius * 2f);
+            eclipseMoon.AddComponent<DistantVistaBounds>();
+            foreach (var material in new[] { planetMaterial, ringMaterial, atmosphere.GetComponent<Renderer>().sharedMaterial })
+            {
+                material.SetFloat("_SolarAngularRadius", GreatWeatherEclipse.SolarAngularRadius);
+                EditorUtility.SetDirty(material);
+            }
+            vista.AddComponent<GreatWeatherEclipse>().Configure(eclipseMoon.transform,
+                new[] { planet.GetComponent<Renderer>(), rings.GetComponent<Renderer>(), atmosphere.GetComponent<Renderer>() },
+                center, sun, ringRotation * Vector3.forward);
             var authored = Configure(vista, "great-weather", "THE GREAT WEATHER", "RING SHADOW AND STORMS",
                 AuthoredVistaKind.GreatWeather, stars, fill, audio, planet.transform,
                 new[] { shadowMoon.transform, farMoon.transform }, new Color(0.75f, 0.60f, 0.43f));

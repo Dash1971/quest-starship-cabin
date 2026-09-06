@@ -2,6 +2,8 @@ Shader "StarshipCabin/QuietWatchRings"
 {
     Properties
     {
+        _OccultorSphere ("Eclipse Moon Center / Radius", Vector) = (0,0,0,0)
+        _SolarAngularRadius ("Solar Angular Radius", Float) = 0.00465
         _DistanceScale ("Physical Distance Scale", Float) = 1
         _DistanceOrigin ("Distance Reference Eye", Vector) = (-1.6,1.1,-1.42,0)
         _RingCenter ("Ring Center", Vector) = (8,6,-76,0)
@@ -46,9 +48,12 @@ Shader "StarshipCabin/QuietWatchRings"
                 float radius=length(input.positionWS-_RingCenter.xyz);
                 float density=QWRingDensity(radius);
                 float3 color=lerp(_DarkColor.rgb,_LightColor.rgb,density);
-                color*=0.12+0.88*QWPlanetTransmission(input.positionWS)
-                    *(0.3+0.7*abs(dot(normalize(_RingNormal.xyz),normalize(_SunDirection.xyz))));
-                return half4(color,density*0.68);
+                float3 normal = normalize(_RingNormal.xyz), sun = normalize(_SunDirection.xyz);
+                float incidence = dot(normal,sun);
+                float backlit = step(0.0,-incidence*dot(normal,QWViewDirection(input.positionWS)));
+                float scattering = 0.24 + 0.56*sqrt(abs(incidence)) + backlit*(1.0-density)*0.18;
+                color *= 0.035 + scattering*QWPlanetTransmission(input.positionWS)*QWMoonTransmission(input.positionWS);
+                return half4(color,density*0.76);
             }
             ENDHLSL
         }
