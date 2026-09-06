@@ -176,8 +176,12 @@ namespace StarshipCabin.EditorTools
             {
                 Require(!fleet.GetComponentsInChildren<Transform>(true).Any(t=>t.name.StartsWith("Drive Glow")),"Detached generic drive spheres returned.");
                 foreach(var group in fleet.GetComponentsInChildren<LODGroup>(true).Where(g=>g.name!="Kilometre Harbour Sector"))
-                    foreach(var lod in group.GetLODs())
-                        Require(lod.renderers.SelectMany(r=>r.sharedMaterials).Any(m=>m.HasProperty("_EmissionColor") && m.GetColor("_EmissionColor").b>2f),"Imported engine aperture emission missing in a ship LOD.");
+                {
+                    var lods = group.GetLODs();
+                    for (var lodIndex = 0; lodIndex < lods.Length; lodIndex++)
+                        Require(lods[lodIndex].renderers.SelectMany(r=>r.sharedMaterials).Any(m=>m.HasProperty("_EmissionColor") && m.GetColor("_EmissionColor").b>2f),
+                            $"Imported engine aperture emission missing: {group.name} LOD{lodIndex}.");
+                }
             }
             Require(GameObject.Find("Personal Desk Computer")!=null && GameObject.Find("Computer Recessed Screen")!=null,"Personal computer is missing.");
             foreach(var book in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Where(t=>t.name.StartsWith("Book:") && t.parent != null && t.parent.name=="Furnishings"))

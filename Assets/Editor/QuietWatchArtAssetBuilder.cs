@@ -167,8 +167,13 @@ namespace StarshipCabin.EditorTools
             var litWindows = Emissive("Resolute Occupied Decks",new Color(0.21f,0.17f,0.12f),
                 new Color(1f,0.73f,0.42f),1.25f,0f,0.1f);
             var paint = Lit("Resolute Service Markings",new Color(0.78f,0.68f,0.46f),0f,0.18f);
-            var decks = QuartersSceneSetup.MeshObject(ship,"Room-scale occupied decks",windows.ToMesh("Resolute Occupied Deck Windows"),litWindows);
-            var stripes = QuartersSceneSetup.MeshObject(ship,"Hull service markings",marks.ToMesh("Resolute Service Markings"),paint);
+            // Multiple CommandShip instances can coexist in Harbour. Give each
+            // generated mesh a unique asset path so a later ship cannot delete
+            // the mesh referenced by an earlier ship's LODs.
+            var decks = QuartersSceneSetup.MeshObject(ship,"Room-scale occupied decks",
+                windows.ToMesh(ship.name + " Occupied Deck Windows"),litWindows);
+            var stripes = QuartersSceneSetup.MeshObject(ship,"Hull service markings",
+                marks.ToMesh(ship.name + " Service Markings"),paint);
             foreach (var detail in new[] { decks, stripes })
             {
                 detail.transform.localPosition = Vector3.zero;
