@@ -330,7 +330,14 @@ namespace StarshipCabin.EditorTools
                 // The corridor envelope must contain the ship, not just its
                 // origin. Check imported mesh bounds at every LOD, plus glows.
                 var envelope = route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x);
-                foreach (var filter in route.GetComponentsInChildren<MeshFilter>(true))
+                var meshFilters = route.GetComponentsInChildren<MeshFilter>(true)
+                    .Where(filter => filter.sharedMesh != null)
+                    .ToArray();
+                if (meshFilters.Length == 0)
+                {
+                    errors.Add($"{route.name}: traffic model contains no mesh geometry.");
+                }
+                foreach (var filter in meshFilters)
                 {
                     var bounds = filter.sharedMesh.bounds;
                     foreach (var x in new[] { -1f, 1f })

@@ -1,6 +1,6 @@
 # M8 review candidate: inhabited Harbour and eclipse clarity
 
-Headset feedback on M7 was positive but the eclipse was difficult to notice. This candidate enlarges its moon and shared shadow and makes Harbour's everyday composition more substantial, with visible destinations for traffic. It builds on main `95aa3a1`. Proposed APK: **2.0.0-m8-harbour-depth / 20014**. Unity and Quest validation of this candidate have not been run here.
+Headset feedback on M7 was positive but the eclipse was difficult to notice. This candidate enlarges its moon and shared shadow and makes Harbour's everyday composition more substantial, with visible destinations for traffic. It builds on main `95aa3a1`. APK: **2.0.0-m8-harbour-depth / 20014**. Source, Unity, bake, desktop-render and APK validation completed on 2026-09-06; in-headset visual/stereo, comfort, sustained 72 Hz and thermal acceptance remain open.
 
 ## What changes
 
@@ -35,7 +35,9 @@ Clearance audits now check each imported ship's mesh bounds against its envelope
 
 `tools/preview_harbour_layout.py` creates labelled CPU massing studies for the couch. They approximate the imported ring and ship boxes and mask the cabin panes. They omit real asset detail, lighting, stereo and image processing and must not be presented as Unity captures or artistic acceptance.
 
-## OpenClaw review and build
+## Review and build
+
+The 2026-09-06 review passed 36 clock tests, C# parsing and Unity compilation, the scene assertions, three-route/42-volume traffic validation, a fresh two-lightmap/18-probe bake, 58 non-empty and distinct Metal captures, and an ARM64 APK signature/permission/provenance audit. Visual review confirmed the district massing and tender sequence from all four fixed seats, a clear unobstructed moon and shared shadow from all four eclipse previews, and no chess-glare regression. The review also fixed a null dereference in mesh-envelope validation while retaining a failure when a traffic model has no actual mesh geometry. Source SHA-256: `8987a3a419bf899e5c3995db69b672db68411d96a6e87d9f74eb49cfabfeed80`. APK SHA-256: `2e7cfc7605325d1498dc5942f46f8b614d0e818f9503be4cf0413e6a7f729610`.
 
 1. Use Unity **6000.5.2f1**, regenerate, bake and build through **Starship Cabin → Quiet Watch → Regenerate, Bake and Build Review APK**. Confirm version **20014** and matching source/bake/APK provenance.
 2. Run the scene and traffic audits. Added Unity assertions check district LOD membership, lighting layers, shader validity, nondegenerate geometry, ship bounds, tender dwell, mode continuity and seek order.

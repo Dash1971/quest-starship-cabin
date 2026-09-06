@@ -6,7 +6,7 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-M8 is the current review candidate: a larger Great Weather eclipse, asymmetric Harbour districts, a working tender berth and slower distant traffic. Proposed version: `2.0.0-m8-harbour-depth` (`20014`). See the [M8 implementation and OpenClaw review guide](docs/development/harbour-depth-review.md). Source checks are available; **Unity compilation, bake, 58 captures, APK, in-headset visual/stereo, sustained 72 Hz and thermal approval remain pending for this candidate**. The [previous M7 review](docs/development/great-weather-eclipse-review.md) records the validation completed before these changes.
+M8 is the current review candidate: a larger Great Weather eclipse, asymmetric Harbour districts, a working tender berth and slower distant traffic. Version: `2.0.0-m8-harbour-depth` (`20014`). See the [M8 implementation and review guide](docs/development/harbour-depth-review.md). Source checks, Unity compilation and scene audits, a fresh two-lightmap/18-probe bake, 58 distinct Metal captures, and ARM64 APK security/provenance checks pass; **in-headset visual/stereo, sustained 72 Hz, comfort and thermal approval remain pending for this candidate**. The [previous M7 review](docs/development/great-weather-eclipse-review.md) records the validation completed before these changes.
 
 M6.5 was merged as `f82a718` after Unity/bake/capture/APK/install validation. It corrected the chess lighting and removed the view sign and obsolete table indicator pad. See the [diagnosis and build review](docs/development/chess-lighting-review.md). The next exterior milestone is defined in the [post-M6 visual roadmap](docs/development/exterior-roadmap.md).
 
