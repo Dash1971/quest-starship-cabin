@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace StarshipCabin.EditorTools
 {
@@ -45,20 +47,103 @@ namespace StarshipCabin.EditorTools
             BuildLibrary(parent);
         }
 
+        internal const string ChessShader = "Universal Render Pipeline/Baked Lit";
+
         private static void ConfigureMatteChess(Material material)
         {
-            // Tiny bevels plus HDR coves produced bright mirror-like sparkles.
-            // These are matte carved pieces; retain diffuse/baked illumination.
-            // Always apply this to existing generated materials as well.
-            material.SetFloat("_Metallic", 0f);
-            material.SetFloat("_Smoothness", 0.08f);
-            material.SetFloat("_SpecularHighlights", 0f);
-            material.SetFloat("_EnvironmentReflections", 0f);
-            material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
-            material.EnableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
-            material.DisableKeyword("_EMISSION");
-            material.SetColor("_EmissionColor", Color.black);
+            // A diffuse-only shader removes the specular path entirely. The
+            // previous Lit keyword fix could not address baked bright patches.
+            var shader = Shader.Find(ChessShader);
+            if (shader == null) throw new InvalidOperationException("Missing chess shader: " + ChessShader);
+            var color = material.GetColor("_BaseColor");
+            material.shader = shader;
+            material.shaderKeywords = Array.Empty<string>();
+            material.SetColor("_BaseColor", color);
+            material.SetTexture("_BaseMap", null);
+            material.SetFloat("_Surface", 0f);
+            material.SetFloat("_AlphaClip", 0f);
+            material.SetFloat("_Cull", (float)CullMode.Back);
+            material.SetFloat("_SrcBlend", (float)BlendMode.One);
+            material.SetFloat("_DstBlend", (float)BlendMode.Zero);
+            material.SetFloat("_SrcBlendAlpha", (float)BlendMode.One);
+            material.SetFloat("_DstBlendAlpha", (float)BlendMode.Zero);
+            material.SetFloat("_ZWrite", 1f);
+            material.SetOverrideTag("RenderType", "Opaque");
+            material.renderQueue = (int)RenderQueue.Geometry;
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             EditorUtility.SetDirty(material);
+        }
+
+        private static void ConfigureChessLighting(Transform parent, params GameObject[] pieces)
+        {
+            // All probe positions sit in free space above the tallest king.
+            // A shared anchor gives both combined meshes the same illumination.
+            var probes = new GameObject("Chess Diffuse Light Probes").transform;
+            probes.SetParent(parent, false);
+            probes.position = BoardCenter;
+            var positions = new List<Vector3>();
+            foreach (var y in new[] { 0.09f, 0.30f })
+                foreach (var x in new[] { -0.22f, 0f, 0.22f })
+                    foreach (var z in new[] { -0.22f, 0f, 0.22f })
+                        positions.Add(new Vector3(x, y, z));
+            probes.gameObject.AddComponent<LightProbeGroup>().probePositions = positions.ToArray();
+            var anchor = new GameObject("Chess Diffuse Anchor").transform;
+            anchor.SetParent(probes, false);
+            anchor.localPosition = new Vector3(0f, 0.14f, 0f);
+            foreach (var piece in pieces)
+            {
+                var renderer = piece.GetComponent<MeshRenderer>();
+                // Retain bake contribution/contact shadows, but do not sample
+                // compressed lightmap charts on millimetre-sized piece faces.
+                renderer.receiveGI = ReceiveGI.LightProbes;
+                renderer.lightProbeUsage = LightProbeUsage.BlendProbes;
+                renderer.probeAnchor = anchor;
+                renderer.reflectionProbeUsage = ReflectionProbeUsage.Off;
+                GameObjectUtility.SetStaticEditorFlags(piece,
+                    StaticEditorFlags.ContributeGI | StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccludeeStatic);
+                EditorUtility.SetDirty(renderer);
+            }
+        }
+
+        internal static void ValidateChessLighting(bool requireBake)
+        {
+            var group = GameObject.Find("Chess Diffuse Light Probes")?.GetComponent<LightProbeGroup>();
+            if (group == null || group.probePositions.Length != 18)
+                throw new InvalidOperationException("Chess light probes are missing; regenerate the scene.");
+            Transform sharedAnchor = null;
+            foreach (var name in new[] { "Chess Pieces White", "Chess Pieces Black" })
+            {
+                var renderer = GameObject.Find(name)?.GetComponent<MeshRenderer>();
+                if (renderer == null || renderer.sharedMaterial.shader.name != ChessShader
+                    || !renderer.sharedMaterial.shader.isSupported || ShaderUtil.ShaderHasError(renderer.sharedMaterial.shader)
+                    || renderer.receiveGI != ReceiveGI.LightProbes || renderer.lightProbeUsage != LightProbeUsage.BlendProbes
+                    || renderer.reflectionProbeUsage != ReflectionProbeUsage.Off || renderer.probeAnchor == null)
+                    throw new InvalidOperationException("Chess diffuse lighting contract failed: " + name);
+                if (sharedAnchor != null && renderer.probeAnchor != sharedAnchor)
+                    throw new InvalidOperationException("Chess colours must share the same lighting anchor.");
+                sharedAnchor = renderer.probeAnchor;
+                if (requireBake && renderer.lightmapIndex >= 0 && renderer.lightmapIndex < 65534)
+                    throw new InvalidOperationException("Chess pieces still sample a lightmap: " + name);
+            }
+            if (requireBake && (LightmapSettings.lightProbes == null || LightmapSettings.lightProbes.count < 18
+                || LightmapSettings.lightProbes.bakedProbes.Length < 18))
+                throw new InvalidOperationException("Chess probes have not been baked; regenerate and perform a fresh bake.");
+            if (requireBake)
+            {
+                LightProbes.GetInterpolatedProbe(sharedAnchor.position, null, out var probe);
+                var directions = new[] { Vector3.up, Vector3.down, Vector3.left, Vector3.right, Vector3.forward, Vector3.back };
+                var colors = new Color[directions.Length];
+                probe.Evaluate(directions, colors);
+                var energy = 0f;
+                foreach (var color in colors)
+                {
+                    var value = color.r + color.g + color.b;
+                    if (float.IsNaN(value) || float.IsInfinity(value))
+                        throw new InvalidOperationException("Chess probe lighting is non-finite.");
+                    energy += Mathf.Max(0f, value);
+                }
+                if (energy <= 0.0001f) throw new InvalidOperationException("Chess probe lighting is black; inspect the bake.");
+            }
         }
 
         // ------------------------------------------------------------------
@@ -112,8 +197,9 @@ namespace StarshipCabin.EditorTools
                 AddPiece(blackDraft, spec, facing: -1f);
             }
 
-            QuartersSceneSetup.MeshObject(parent, "Chess Pieces White", whiteDraft.ToMesh("Quarters Chess Pieces White"), ivory);
-            QuartersSceneSetup.MeshObject(parent, "Chess Pieces Black", blackDraft.ToMesh("Quarters Chess Pieces Black"), ebony);
+            var white = QuartersSceneSetup.MeshObject(parent, "Chess Pieces White", whiteDraft.ToMesh("Quarters Chess Pieces White"), ivory);
+            var black = QuartersSceneSetup.MeshObject(parent, "Chess Pieces Black", blackDraft.ToMesh("Quarters Chess Pieces Black"), ebony);
+            ConfigureChessLighting(parent, white, black);
         }
 
         private static Vector3 SquareCenter(int file, int rank)

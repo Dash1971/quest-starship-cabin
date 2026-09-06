@@ -20,6 +20,20 @@ namespace StarshipCabin.EditorTools
             public string[] files;
         }
 
+        [Serializable] private sealed class ChessLightingEvidence
+        {
+            public string sourceHash;
+            public int bakedProbeCount;
+            public ChessRendererEvidence[] pieces;
+        }
+        [Serializable] private sealed class ChessRendererEvidence
+        {
+            public string name, shader, receiveGI, lightProbeUsage, reflectionProbeUsage, probeAnchor;
+            public string[] keywords;
+            public int lightmapIndex;
+            public Color baseColor;
+        }
+
         public static void RegenerateAndCaptureAll()
         {
             QuartersSceneSetup.SetupQuartersScene();
@@ -168,13 +182,37 @@ namespace StarshipCabin.EditorTools
                 chessVista.Enter(LifeMode.Quiet, MotionMode.Still);
                 chessVista.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
                 var chess = GameObject.Find("Chess Board").transform.position;
-                camera.transform.position = chess + new Vector3(-0.25f, 0.55f, -0.5f);
-                camera.transform.rotation = Quaternion.LookRotation(chess + Vector3.up * 0.04f - camera.transform.position);
-                camera.Render();
-                RenderTexture.active = target;
-                pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
-                pixels.Apply(false);
-                File.WriteAllBytes(Path.Combine(OutputFolder, "chess-matte-material-review.png"), pixels.EncodeToPNG());
+                // Keep the original comparison view and add +/-12 cm head offsets.
+                foreach (var offset in new[] { 0f, -0.12f, 0.12f })
+                {
+                    camera.transform.position = chess + new Vector3(-0.25f + offset, 0.55f, -0.5f);
+                    camera.transform.rotation = Quaternion.LookRotation(chess + Vector3.up * 0.04f - camera.transform.position);
+                    camera.Render();
+                    RenderTexture.active = target;
+                    pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                    pixels.Apply(false);
+                    var name = offset == 0f ? "chess-matte-material-review" : offset < 0f ? "chess-head-left" : "chess-head-right";
+                    File.WriteAllBytes(Path.Combine(OutputFolder, name + ".png"), pixels.EncodeToPNG());
+                }
+                var chessEvidence = new ChessLightingEvidence
+                {
+                    sourceHash = generation.SourceHash,
+                    bakedProbeCount = LightmapSettings.lightProbes != null ? LightmapSettings.lightProbes.count : 0,
+                    pieces = new[] { "Chess Pieces White", "Chess Pieces Black" }.Select(name =>
+                    {
+                        var renderer = GameObject.Find(name).GetComponent<MeshRenderer>();
+                        return new ChessRendererEvidence
+                        {
+                            name = name, shader = renderer.sharedMaterial.shader.name,
+                            keywords = renderer.sharedMaterial.shaderKeywords,
+                            receiveGI = renderer.receiveGI.ToString(), lightProbeUsage = renderer.lightProbeUsage.ToString(),
+                            reflectionProbeUsage = renderer.reflectionProbeUsage.ToString(),
+                            probeAnchor = renderer.probeAnchor != null ? renderer.probeAnchor.name : "missing",
+                            lightmapIndex = renderer.lightmapIndex, baseColor = renderer.sharedMaterial.GetColor("_BaseColor")
+                        };
+                    }).ToArray()
+                };
+                File.WriteAllText(Path.Combine(OutputFolder, "chess-lighting.json"), JsonUtility.ToJson(chessEvidence, true));
                 chessVista.Exit();
                 var manifest = new CaptureManifest
                 {

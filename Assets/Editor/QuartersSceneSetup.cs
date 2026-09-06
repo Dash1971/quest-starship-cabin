@@ -773,54 +773,6 @@ namespace StarshipCabin.EditorTools
             controller.AddComponent<FrameTimeTelemetry>().Configure(director);
             controller.AddComponent<QuietWatchInputController>().Configure(director);
 
-            BuildSelectorPanel(director);
-        }
-
-        private static void BuildSelectorPanel(VistaDirector director)
-        {
-            var panelMaterial = CreateEmissiveMaterial(
-                "Quiet Watch Selector Face",
-                new Color(0.018f, 0.028f, 0.040f),
-                new Color(0.07f, 0.20f, 0.28f),
-                0.5f);
-            var panelMesh = QuartersMeshes.ChamferedBox("Quiet Watch Selector", 0.66f, 0.25f, 0.018f, 0.018f);
-            var panel = MeshObject(
-                null,
-                "Quiet Watch Selector",
-                panelMesh,
-                panelMaterial,
-                new Vector3(-1.27f, 0.59f, 0.08f),
-                Quaternion.identity);
-            GameObjectUtility.SetStaticEditorFlags(panel, 0);
-
-            var title = CreatePanelText(panel.transform, "THE QUIET WATCH", new Vector3(0f, 0.070f, -0.011f), 0.0043f,
-                new Color(0.74f, 0.91f, 1f));
-            var subtitle = CreatePanelText(panel.transform, "STARS ONLY", new Vector3(0f, 0.020f, -0.011f), 0.0036f,
-                new Color(0.44f, 0.69f, 0.80f));
-            var state = CreatePanelText(panel.transform, "QUIET / STILL", new Vector3(0f, -0.060f, -0.011f), 0.00255f,
-                new Color(0.72f, 0.78f, 0.78f));
-
-            panel.AddComponent<QuietWatchSelectorPanel>().Configure(director, title, subtitle, state);
-        }
-
-        private static TextMesh CreatePanelText(
-            Transform parent, string initialText, Vector3 localPosition, float characterSize, Color color)
-        {
-            var textObject = new GameObject("Selector Text: " + initialText);
-            textObject.transform.SetParent(parent, false);
-            textObject.transform.localPosition = localPosition;
-
-            var text = textObject.AddComponent<TextMesh>();
-            text.text = initialText;
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 64;
-            text.characterSize = characterSize;
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.color = color;
-            textObject.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
-            GameObjectUtility.SetStaticEditorFlags(textObject, 0);
-            return text;
         }
 
         private static void AddCapturePoints()
@@ -1010,8 +962,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m6.4-exterior-study";
-            PlayerSettings.Android.bundleVersionCode = 20011;
+            PlayerSettings.bundleVersion = "2.0.0-m6.5-cabin-cleanup";
+            PlayerSettings.Android.bundleVersionCode = 20012;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
