@@ -254,12 +254,6 @@ namespace StarshipCabin.QuietWatch
 
         private void UpdateHarbourTraffic(float elapsed, float grace)
         {
-            if (slowTurn != null)
-            {
-                var breathing = Mathf.Sin(elapsed * 0.015f) * 0.035f;
-                slowTurn.localRotation = slowTurnOriginRotation * Quaternion.Euler(0f, 0f, breathing);
-            }
-
             for (var i = 0; i < travellerOrigins.Length; i++)
             {
                 var route = i < harbourRoutes.Length ? harbourRoutes[i] : null;
@@ -278,11 +272,11 @@ namespace StarshipCabin.QuietWatch
                 }
 
                 // The grace-route cutter remains physically docked at point 0
-                // until its one departure. Other lanes loop only while both
-                // endpoints are outside the useful window area.
-                var phase = route.IsGraceRoute ? grace : Mathf.Repeat(route.PhaseOffset
-                    + (float)(timeline.LivingTravel / route.LivingDuration
-                        + timeline.QuietTravel / route.QuietDuration), 1f);
+                // until its one departure. Service traffic eases into its berth
+                // and backs out after a dwell; integrated clocks preserve pose
+                // when switching Quiet/Living.
+                var phase = route.IsGraceRoute ? grace : route.PhaseFromTravel(
+                    timeline.LivingTravel / route.LivingDuration + timeline.QuietTravel / route.QuietDuration);
                 route.Evaluate(phase, out var position, out var tangent, out var curvature);
                 travellers[i].localPosition = position;
 

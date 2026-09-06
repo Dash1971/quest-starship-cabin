@@ -110,6 +110,7 @@ namespace StarshipCabin.EditorTools
                 formation.ApplyComfort(LifeMode.Living, MotionMode.Still);
                 Require(formation.PreviewGraceNote(), "Formation event preview must work in Still.");
                 formation.Exit();
+                CheckHarbour(vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "harbour"));
                 QuietWatchTrafficValidation.ValidateOpenScene();
                 Debug.Log("QUIET_WATCH_REVIEW_CHECKS PASS: scene identity, weather materials/geometry, shadow path, event reset, formation travel/preview, reentry and seek order. Stereo rendering and device performance still require Quest review.");
             }
@@ -117,6 +118,45 @@ namespace StarshipCabin.EditorTools
             {
                 EditorSceneManager.OpenScene(scenePath);
             }
+        }
+
+        private static void CheckHarbour(AuthoredVista harbour)
+        {
+            harbour.gameObject.SetActive(true);
+            harbour.Enter(LifeMode.Living, MotionMode.Still);
+            var station = harbour.transform.Find("Kilometre Harbour Sector");
+            var lods = station.GetComponent<LODGroup>().GetLODs();
+            Require(lods.Length == 3, "Harbour must retain three LODs.");
+            foreach (var lod in lods)
+            {
+                var districts = lod.renderers.Where(r => r.name.StartsWith("Harbour Districts")).ToArray();
+                Require(districts.Length is >= 4 and <= 5, "District meshes are missing or unbatched.");
+                foreach (var renderer in districts)
+                {
+                    Require(renderer.gameObject.layer == QuietWatchArtAssetBuilder.ExteriorLayer, "District missed exterior lighting layer.");
+                    Require(renderer.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(renderer.sharedMaterial.shader),
+                        "District shader failed.");
+                    var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+                    Require(mesh != null && mesh.vertexCount < 20000, "District geometry exceeds its per-surface budget.");
+                    var vertices = mesh.vertices; var triangles = mesh.triangles;
+                    for (var i = 0; i < triangles.Length; i += 3)
+                        Require(Vector3.Cross(vertices[triangles[i+1]]-vertices[triangles[i]],
+                            vertices[triangles[i+2]]-vertices[triangles[i]]).sqrMagnitude > 1e-14f,
+                            "Degenerate harbour district triangle.");
+                }
+            }
+            var tender = harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Single(r => r.IsShuttle);
+            Require(tender.AvailableInQuiet, "Service traffic must be visible without waiting for an event.");
+            harbour.PreviewAt(32f, LifeMode.Living, MotionMode.Still);
+            tender.Evaluate(1f, out var berth, out _, out _);
+            Require(Vector3.Distance(tender.transform.localPosition, berth) < 0.001f, "Tender does not dwell in the berth at 32 seconds.");
+            var docked = tender.transform.localPosition;
+            harbour.ApplyComfort(LifeMode.Quiet, MotionMode.Still);
+            Require(Vector3.Distance(tender.transform.localPosition, docked) < 0.001f, "Life switch teleports tender.");
+            harbour.PreviewAt(90f, LifeMode.Living, MotionMode.Still);
+            harbour.PreviewAt(32f, LifeMode.Living, MotionMode.Still);
+            Require(Vector3.Distance(tender.transform.localPosition, docked) < 0.001f, "Harbour seek depends on previous pose.");
+            harbour.Exit();
         }
 
         private static void CheckEclipse(AuthoredVista weather)

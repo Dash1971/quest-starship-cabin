@@ -62,6 +62,18 @@ Check(!dwell.Advance(1), "return to Living requires a fresh uninterrupted dwell 
 var comet = Clock(); Check(comet.Preview(0, false), "short comet supports real-time preview"); comet.Advance(1);
 Near(comet.EventAge, 1, "short preview does not accelerate the comet clock");
 
+// Exercise the actual runtime shuttle clock, including both cycle boundaries.
+Near(HarbourShuttleClock.Phase(0), 0, "shuttle starts at origin");
+Near(HarbourShuttleClock.Phase(.45), 1, "shuttle dwells inside berth");
+Near(HarbourShuttleClock.Phase(.95), 0, "shuttle rests at origin");
+Near(HarbourShuttleClock.Phase(.2), HarbourShuttleClock.Phase(.7), "outbound and return share a corridor");
+foreach (var boundary in new[] { .4, .5, .9, 1.0 })
+    Near(HarbourShuttleClock.Phase(boundary - 1e-6), HarbourShuttleClock.Phase(boundary + 1e-6),
+        "shuttle position continuous at " + boundary, 1e-8);
+Near(HarbourShuttleClock.Phase(.23), HarbourShuttleClock.Phase(10000.23), "shuttle does not accumulate cycle drift", 1e-10);
+Check(Enumerable.Range(0, 10001).All(i => HarbourShuttleClock.Phase(i / 10000d) is >= 0 and <= 1),
+    "shuttle never leaves its audited corridor");
+
 // Parser diagnostics are deliberately separate from Unity API/type checking.
 var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var files = Directory.GetFiles(Path.Combine(root, "Assets"), "*.cs", SearchOption.AllDirectories);

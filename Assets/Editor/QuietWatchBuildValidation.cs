@@ -18,7 +18,7 @@ namespace StarshipCabin.EditorTools
             // Assets so the stamp actually covers the claimed source surface.
             var root = Directory.GetParent(Application.dataPath)?.FullName
                 ?? throw new InvalidOperationException("Cannot resolve Unity project root.");
-            var extensions = new[] { ".cs", ".shader", ".hlsl", ".png", ".fbx", ".obj", ".blend", ".py" };
+            var extensions = new[] { ".cs", ".shader", ".hlsl", ".png", ".fbx", ".obj", ".blend", ".py", ".json" };
             var roots = new[]
                 {
                     "Assets/Art/QuietWatch",

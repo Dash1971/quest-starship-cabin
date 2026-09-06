@@ -193,6 +193,26 @@ namespace StarshipCabin.EditorTools
                     File.WriteAllBytes(Path.Combine(OutputFolder, "great-weather-eclipse-preview-" + Slug(point.CaptureName) + ".png"), pixels.EncodeToPNG());
                 }
                 weatherPreview.Exit();
+                // Arrival, first ten seconds, occupied berth, and return behind
+                // the station. Review real frame occlusion from every seat.
+                var harbourPreview = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "harbour");
+                foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == harbourPreview);
+                harbourPreview.Enter(LifeMode.Living, MotionMode.Still);
+                foreach (var seconds in new[] { 0f, 10f, 32f, 87f })
+                {
+                    harbourPreview.PreviewAt(seconds, LifeMode.Living, MotionMode.Still);
+                    foreach (var point in points)
+                    {
+                        camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
+                        camera.Render();
+                        RenderTexture.active = target;
+                        pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
+                        pixels.Apply(false);
+                        File.WriteAllBytes(Path.Combine(OutputFolder,
+                            $"harbour-depth-{seconds:000}s-{Slug(point.CaptureName)}.png"), pixels.EncodeToPNG());
+                    }
+                }
+                harbourPreview.Exit();
                 var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");
                 foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == chessVista);
                 chessVista.Enter(LifeMode.Quiet, MotionMode.Still);
@@ -307,6 +327,31 @@ namespace StarshipCabin.EditorTools
 
             foreach (var route in routes)
             {
+                // The corridor envelope must contain the ship, not just its
+                // origin. Check imported mesh bounds at every LOD, plus glows.
+                var envelope = route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x);
+                var meshFilters = route.GetComponentsInChildren<MeshFilter>(true)
+                    .Where(filter => filter.sharedMesh != null)
+                    .ToArray();
+                if (meshFilters.Length == 0)
+                {
+                    errors.Add($"{route.name}: traffic model contains no mesh geometry.");
+                }
+                foreach (var filter in meshFilters)
+                {
+                    var bounds = filter.sharedMesh.bounds;
+                    foreach (var x in new[] { -1f, 1f })
+                    foreach (var y in new[] { -1f, 1f })
+                    foreach (var z in new[] { -1f, 1f })
+                    {
+                        var corner = bounds.center + Vector3.Scale(bounds.extents, new Vector3(x,y,z));
+                        if (Vector3.Distance(filter.transform.TransformPoint(corner), route.transform.position) > envelope)
+                        {
+                            errors.Add($"{route.name}: clearance sphere does not contain {filter.name}.");
+                            break;
+                        }
+                    }
+                }
                 if (route.Points == null || route.Points.Length < 4)
                 {
                     errors.Add($"{route.name}: route requires at least four authored points.");
@@ -322,9 +367,8 @@ namespace StarshipCabin.EditorTools
                     var worldPosition = route.transform.parent.TransformPoint(localPosition);
                     foreach (var volume in volumes)
                     {
-                        var clearance = Vector3.Distance(worldPosition, volume.transform.position)
-                            - route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x)
-                            - volume.Radius * Mathf.Abs(volume.transform.lossyScale.x);
+                        var clearance = volume.SignedDistance(worldPosition)
+                            - route.ClearanceRadius * Mathf.Abs(route.transform.parent.lossyScale.x);
                         if (clearance < nearest)
                         {
                             nearest = clearance;

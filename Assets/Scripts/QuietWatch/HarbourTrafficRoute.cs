@@ -18,6 +18,7 @@ namespace StarshipCabin.QuietWatch
         [SerializeField, Range(0f, 18f)] private float bankDegrees = 7f;
         [SerializeField] private bool availableInQuiet;
         [SerializeField] private bool graceRoute;
+        [SerializeField] private bool shuttle;
 
         public Vector3[] Points => points;
         public float LivingDuration => livingDuration;
@@ -27,11 +28,12 @@ namespace StarshipCabin.QuietWatch
         public float BankDegrees => bankDegrees;
         public bool AvailableInQuiet => availableInQuiet;
         public bool IsGraceRoute => graceRoute;
+        public bool IsShuttle => shuttle;
 
         public void Configure(
             Vector3[] routePoints, float livingSeconds, float quietSeconds,
             float offset, float radius, float maximumBank,
-            bool quiet, bool grace)
+            bool quiet, bool grace, bool roundTrip = false)
         {
             points = routePoints ?? Array.Empty<Vector3>();
             livingDuration = Mathf.Max(8f, livingSeconds);
@@ -41,13 +43,18 @@ namespace StarshipCabin.QuietWatch
             bankDegrees = Mathf.Clamp(maximumBank, 0f, 18f);
             availableInQuiet = quiet;
             graceRoute = grace;
+            shuttle = roundTrip;
         }
 
         public float PhaseAt(float elapsed, bool living)
         {
             var duration = living ? livingDuration : quietDuration;
-            return Mathf.Repeat(elapsed / duration + phaseOffset, 1f);
+            return PhaseFromTravel(elapsed / duration);
         }
+
+        public float PhaseFromTravel(double cycles) => shuttle
+            ? (float)HarbourShuttleClock.Phase(cycles + phaseOffset)
+            : (float)((cycles + phaseOffset) - Math.Floor(cycles + phaseOffset));
 
         public void Evaluate(float phase, out Vector3 position, out Vector3 tangent, out float curvature)
         {
