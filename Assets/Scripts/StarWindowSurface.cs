@@ -98,6 +98,7 @@ namespace StarshipCabin
 
         public void SetQuietWatchComfort(bool living, bool drifting)
         {
+            SetFloat(Shader.PropertyToID("_GalacticGain"), 0.85f);
             SetMotion(drifting ? 0.010f : 0f, drifting ? 0.003f : 0f);
             SetFloat(TwinkleId, living ? 0.045f : 0.012f);
             SetFloat(MeteorsId, 0f);
@@ -107,6 +108,7 @@ namespace StarshipCabin
 
         public void SetAuthoredVistaBackdrop(float density)
         {
+            SetFloat(Shader.PropertyToID("_GalacticGain"), 0.08f);
             SetMotion(0f, 0f);
             SetFloat(TwinkleId, 0.008f);
             SetFloat(MeteorsId, 0f);

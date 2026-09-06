@@ -12,6 +12,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
         _PlanetSphere ("Planet Center / Radius", Vector) = (0,0,0,1)
         _ObservationTime ("Observation Time", Float) = 0
         _DawnProgress ("Dawn Progress", Range(0,1)) = 0
+        _SeparateClouds ("Separate cloud geometry", Float) = 0
     }
     SubShader
     {
@@ -31,7 +32,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
             CBUFFER_START(UnityPerMaterial)
                 half4 _AtmosphereColor, _SunsetColor;
                 float4 _SunDirection, _DistanceOrigin, _PlanetSphere;
-                float _DistanceScale, _ObservationTime, _DawnProgress;
+                float _DistanceScale, _ObservationTime, _DawnProgress, _SeparateClouds;
             CBUFFER_END
             #include "QuietWatchDistance.hlsl"
             TEXTURE2D(_SurfaceMap); SAMPLER(sampler_SurfaceMap);
@@ -84,7 +85,7 @@ Shader "StarshipCabin/QuietWatchBlueWorld"
                 float twilight=exp(-pow((sunDot+0.01)/0.11,2.0));
                 float3 cloudColor=lerp(float3(0.91,0.96,1.0),_SunsetColor.rgb,twilight*0.62);
                 cloudColor*=0.017+daylight*(0.30+0.70*saturate(sunDot))*(0.75+weather.g*0.45);
-                surface=lerp(surface,cloudColor,cloud*0.94);
+                surface=lerp(surface,cloudColor,cloud*0.94*(1-_SeparateClouds));
                 float glint=pow(saturate(dot(n,normalize(sun+v))),80.0)*(1.0-terrain.a)*(1.0-cloud)*daylight;
                 surface+=float3(1.0,0.78,0.48)*glint*0.65;
                 surface+=float3(1.0,0.49,0.14)*fixedWeather.b*(1.0-daylight)*(1.0-cloud*0.75)*2.4;

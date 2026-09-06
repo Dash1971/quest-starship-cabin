@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 from generate_great_weather import save_png
 
-WIDTH, HEIGHT = 2048, 1024
+WIDTH, HEIGHT = 4096, 2048
 
 def smooth(a,b,x):
     t=np.clip((x-a)/(b-a),0,1)

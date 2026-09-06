@@ -111,6 +111,7 @@ namespace StarshipCabin.EditorTools
                 Require(formation.PreviewGraceNote(), "Formation event preview must work in Still.");
                 formation.Exit();
                 CheckHarbour(vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "harbour"));
+                CheckCinematic(vistas);
                 QuietWatchTrafficValidation.ValidateOpenScene();
                 Debug.Log("QUIET_WATCH_REVIEW_CHECKS PASS: scene identity, weather materials/geometry, shadow path, event reset, formation travel/preview, reentry and seek order. Stereo rendering and device performance still require Quest review.");
             }
@@ -118,6 +119,53 @@ namespace StarshipCabin.EditorTools
             {
                 EditorSceneManager.OpenScene(scenePath);
             }
+        }
+
+        private static void CheckCinematic(VistaEnvironment[] vistas)
+        {
+            Require(Camera.main.farClipPlane >= 20000f, "Deep planetary proxies exceed the camera range.");
+            foreach (var v in vistas) v.gameObject.SetActive(false);
+            var blue = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "blue-morning");
+            blue.gameObject.SetActive(true); blue.Enter(LifeMode.Living, MotionMode.Still);
+            blue.PreviewAt(60f, LifeMode.Living, MotionMode.Still);
+            var clouds = blue.GetComponentsInChildren<Renderer>().Where(r => r.sharedMaterial.shader.name == "StarshipCabin/QuietWatchCloudDeck").ToArray();
+            Require(clouds.Length == 2, "Missing raised clouds or aurora.");
+            foreach (var cloud in clouds)
+            {
+                var block = new MaterialPropertyBlock(); cloud.GetPropertyBlock(block);
+                Require(Mathf.Abs(block.GetFloat("_ObservationTime")-60f)<.001f, "Atmospheric layers lost the deterministic clock.");
+                Require(cloud.GetComponent<DistantVistaBounds>() != null, "Cloud layer misses stereo bounds.");
+            }
+            blue.Exit();
+            var hulls = vistas.SelectMany(v => v.GetComponentsInChildren<MeshRenderer>(true))
+                .Where(r => r.sharedMaterials.Any(m => m.shader.name == "StarshipCabin/QuietWatchHull")).ToArray();
+            Require(hulls.Length > 10, "Geometric hull lighting bake is missing.");
+            var shaded = 0; var shadowed = 0;
+            foreach (var hull in hulls)
+            {
+                var mesh = hull.GetComponent<MeshFilter>().sharedMesh; var colors = mesh.colors;
+                Require(colors.Length == mesh.vertexCount, "Missing baked vertex visibility.");
+                foreach (var color in colors)
+                {
+                    Require(color.r >= 0 && color.r <= 1 && color.g >= .23f && color.g <= 1, "Invalid baked occlusion values.");
+                    if (color.g < .9f) shaded++;
+                    if (color.r < .5f) shadowed++;
+                }
+                foreach (var material in hull.sharedMaterials)
+                    Require(material.shader.isSupported && !ShaderUtil.ShaderHasError(material.shader), "Exterior hull shader failed.");
+            }
+            Require(shaded > 0 && shadowed > 0, "Bake produced no structural occlusion/shadows.");
+            var stars = UnityEngine.Object.FindAnyObjectByType<StarWindowSurface>();
+            var sky = stars.GetComponent<Renderer>();
+            Require(sky.sharedMaterial.GetTexture("_GalacticMap") != null, "Missing authored galactic panorama.");
+            var first = vistas.OfType<FirstQuestionVista>().Single(); first.gameObject.SetActive(true);
+            first.Enter(LifeMode.Quiet, MotionMode.Still);
+            var skyBlock = new MaterialPropertyBlock(); sky.GetPropertyBlock(skyBlock);
+            Require(skyBlock.GetFloat("_GalacticGain") > .8f, "First Question lost its galactic exposure.");
+            first.Exit(); blue.gameObject.SetActive(true); blue.Enter(LifeMode.Quiet, MotionMode.Still);
+            sky.GetPropertyBlock(skyBlock);
+            Require(skyBlock.GetFloat("_GalacticGain") < .1f, "Galactic exposure leaks into a planetary vista.");
+            blue.Exit();
         }
 
         private static void CheckHarbour(AuthoredVista harbour)
@@ -187,6 +235,11 @@ namespace StarshipCabin.EditorTools
                     Require(Vector3.Distance((Vector3)sphere, moon.position) < 0.0001f
                         && Mathf.Abs(sphere.w - GreatWeatherEclipse.MoonRadius) < 0.0001f,
                         "Eclipse shadow detached from the moving moon.");
+                    var companion = weather.transform.Find("Far Moon");
+                    var staticSphere = receiver.sharedMaterial.GetVector("_CompanionSphere");
+                    Require(Vector3.Distance((Vector3)staticSphere, companion.position) < .001f
+                        && Mathf.Abs(staticSphere.w - companion.lossyScale.x * .5f) < .001f,
+                        "Companion moon geometry and shared shadow differ.");
                     Require(Mathf.Abs(receiver.sharedMaterial.GetFloat("_SolarAngularRadius")
                         - GreatWeatherEclipse.SolarAngularRadius) < 1e-6f, "Mismatched eclipse penumbra.");
                 }

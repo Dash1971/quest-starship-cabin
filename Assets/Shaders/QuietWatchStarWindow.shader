@@ -10,6 +10,8 @@ Shader "StarshipCabin/QuietWatchStarWindow"
 {
     Properties
     {
+        _GalacticMap ("Authored galactic panorama", 2D) = "black" {}
+        _GalacticGain ("Galactic exposure", Float) = 0.75
         _DeepColor ("Deep Space", Color) = (0.0004, 0.0008, 0.0022, 1)
         _HazeColor ("Distant Haze", Color) = (0.018, 0.026, 0.050, 1)
         _BandColor ("Galactic River", Color) = (0.075, 0.082, 0.120, 1)
@@ -66,7 +68,10 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float _ObservationTime;
                 float _GraceAge;
                 float4 _SkyOffset;
+                float _GalacticGain;
             CBUFFER_END
+
+            TEXTURE2D(_GalacticMap); SAMPLER(sampler_GalacticMap);
 
             struct Attributes
             {
@@ -251,16 +256,9 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float elapsed = _ObservationTime;
                 float band = galacticMask(sky);
 
-                float hazeStructure = fbm(sky * float2(4.0, 7.0) + 2.7);
-                float3 color = lerp(_DeepColor.rgb, _HazeColor.rgb, hazeStructure * 0.035);
-
-                float dustLarge = fbm(sky * float2(15.0, 10.0) + 9.2);
-                float dustFine = fbm(sky * float2(39.0, 27.0) + 31.4);
-                float dust = smoothstep(0.50, 0.79, dustLarge * 0.72 + dustFine * 0.28);
-                float riverTexture = fbm(sky * float2(12.0, 17.0) + 21.0);
-                float river = band * (0.075 + riverTexture * 0.20);
-                color += _BandColor.rgb * river * (1.0 - dust * 0.94);
-                color += _WarmColor.rgb * band * smoothstep(0.72, 0.90, riverTexture) * 0.006;
+                float2 dx=ddx(sky),dy=ddy(sky); dx.x-=round(dx.x);dy.x-=round(dy.x);
+                float4 cosmic=SAMPLE_TEXTURE2D_GRAD(_GalacticMap,sampler_GalacticMap,sky,dx,dy);
+                float3 color=_DeepColor.rgb+cosmic.rgb*_GalacticGain;
 
                 float3 stars = 0.0;
                 stars += starLayer(sky,         34.0, 0.007, 0.18, 1.00, band, 1.22, 1.0, elapsed);
@@ -268,7 +266,7 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 stars += starLayer(sky + 9.17,  92.0, 0.017, 0.38, 0.68, band, 0.76, 0.0, elapsed);
                 stars += starLayer(sky + 37.51, 176.0, 0.030, 0.26, 0.40, band, 0.52, 0.0, elapsed);
                 stars += starLayer(sky + 73.21, 320.0, 0.050, 0.10, 0.22, band, 0.31, 0.0, elapsed);
-                color += stars;
+                color += stars*(1.0-cosmic.a*saturate(_GalacticGain)*0.80);
                 color += firstQuestionComet(sky, _ObservationTime);
 
                 // Filmic response keeps true negative space while preserving

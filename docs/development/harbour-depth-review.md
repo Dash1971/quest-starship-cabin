@@ -1,5 +1,7 @@
 # M8 review candidate: inhabited Harbour and eclipse clarity
 
+Historical M8 review record. The [five-vista overhaul](five-vista-overhaul-review.md) supersedes this as the current candidate.
+
 Headset feedback on M7 was positive but the eclipse was difficult to notice. This candidate enlarges its moon and shared shadow and makes Harbour's everyday composition more substantial, with visible destinations for traffic. It builds on main `95aa3a1`. APK: **2.0.0-m8-harbour-depth / 20014**. Source, Unity, bake, desktop-render and APK validation completed on 2026-09-06; in-headset visual/stereo, comfort, sustained 72 Hz and thermal acceptance remain open.
 
 ## What changes
