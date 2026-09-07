@@ -6,6 +6,11 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 layout = json.loads((ROOT / 'ArtSource/harbour-layout.json').read_text())
 blocks, routes = layout['blocks'], layout['routes']
+def populated_routes():
+    return [dict(route,phase=(route['phase']+index/route.get('count',1))%1,
+                 name=route['name']+(' '+str(index+1) if index else ''))
+            for route in routes for index in range(route.get('count',1))]
+traffic=populated_routes()
 
 source=(ROOT/'Assets/Editor/QuietWatchExteriorBuilder.cs').read_text()
 def scalar(name):return float(re.search(r'\b'+name+r' = ([\d.]+)f',source)[1])
@@ -74,14 +79,14 @@ if __name__ == '__main__':
     time=np.arange(0,7200,.25)
     for blend in (0,.5,1):
         poses=[]
-        for route in routes:
+        for route in traffic:
             cycles=time*(blend/route['living']+(1-blend)/route['quietDuration'])
             p=smooth((time-720)/72) if route['grace'] else phase(route,cycles)
             poses.append(sample(route,p))
-        for i in range(len(routes)):
+        for i in range(len(traffic)):
             for j in range(i):
-                gap=np.linalg.norm(poses[i]-poses[j],axis=-1)-(routes[i]['clearance']+routes[j]['clearance'])/STATION_SCALE
-                assert gap.min()>0,f'Traffic overlap: {routes[i]["name"]}/{routes[j]["name"]}'
+                gap=np.linalg.norm(poses[i]-poses[j],axis=-1)-(traffic[i]['clearance']+traffic[j]['clearance'])/STATION_SCALE
+                assert gap.min()>0,f'Traffic overlap: {traffic[i]["name"]}/{traffic[j]["name"]}'
     print('PASS: traffic separation over two hours in Quiet, Living and blended travel clocks')
     # Service craft rests inside the real berth, with clearance on every side.
     tender=next(r for r in routes if r['name']=='Berth Service Tender')
@@ -107,5 +112,17 @@ if __name__ == '__main__':
     commuter=next(r for r in routes if r['name']=='Cross Harbour Commuter')
     assert all(glazing(world(sample(commuter,phase(commuter,0))),eye) for eye in eyes)
     print('PASS: looping traffic resets outside all four window sightlines; arrival commuter crosses all four panes')
+    assert len(traffic)==32 and sum(r['availableInQuiet'] for r in traffic)==31
+    # Projected traffic cadence is a geometry check, not rendered visibility:
+    # station occlusion, tiny-pixel readability and headset FOV still need captures.
+    times=np.arange(0,1200,2)
+    def cadence(population,eye):
+        return sum((np.array([glazing(p,eye) for p in world(sample(r,phase(r,times/r['quietDuration'])))],dtype=int)
+                    for r in population if r['availableInQuiet']),np.zeros(len(times),dtype=int))
+    for seat,eye in enumerate(eyes):
+        baseline=cadence(routes,eye);populated=cadence(traffic,eye)
+        # The desk has a narrower window angle than the three relaxation seats.
+        assert populated.mean()>baseline.mean()*(2 if seat==3 else 3), 'Staggered traffic does not improve sightline cadence'
+    print('PASS: 31 ambient craft in Quiet; over 3x mean projected traffic cadence at lounge/bed, over 2x at desk (before occlusion/LOD)')
     assert len(blocks)<80
     print(f'PASS: {len(blocks)} authored solids, batched into five material surfaces per near LOD')

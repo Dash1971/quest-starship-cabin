@@ -64,7 +64,6 @@ namespace StarshipCabin.EditorTools
             var graphite=QuartersSceneSetup.CreateMaterial("Cabin Computer Graphite",new Color(.10f,.115f,.12f));
             var ceramic=QuartersSceneSetup.CreateMaterial("Tea Cup Ceramic",new Color(.64f,.67f,.61f));
             ceramic.SetFloat("_Smoothness",.28f);
-            var ink=QuartersSceneSetup.CreateEmissiveMaterial("Computer Reading Ink",new Color(.24f,.32f,.31f),new Color(.30f,.46f,.42f),.32f);
             var screen=QuartersSceneSetup.CreateMaterial("Computer Dark Glass",new Color(.018f,.03f,.032f));
             screen.SetFloat("_Smoothness",.12f);
             var keys=QuartersSceneSetup.CreateMaterial("Computer Keycaps",new Color(.25f,.27f,.26f));
@@ -74,17 +73,7 @@ namespace StarshipCabin.EditorTools
             Part(root,"Computer Stand",graphite,new Vector3(-3.035f,.824f,1.70f),new Vector3(.025f,.13f,.05f),.008f);
             Part(root,"Computer Display Housing",graphite,new Vector3(-3.015f,1.025f,1.70f),new Vector3(.034f,.285f,.43f),.012f);
             Part(root,"Computer Recessed Screen",screen,new Vector3(-2.996f,1.025f,1.70f),new Vector3(.006f,.251f,.394f),.002f);
-            var display=new MeshDraft();
-            // A quiet reading page, with a margin, heading and short paragraph groups.
-            for(var row=0;row<12;row++)
-            {
-                if(row==2 || row==7)continue;
-                var y=1.125f-row*.016f;var length=row==0?.19f:row%4==0?.13f:.25f;
-                var z=1.84f;
-                display.AddQuadOriented(new Vector3(-2.992f,y,z),new Vector3(-2.992f,y,z-length),
-                    new Vector3(-2.992f,y-.0022f,z-length),new Vector3(-2.992f,y-.0022f,z),Vector3.right);
-            }
-            QuartersSceneSetup.MeshObject(root,"Computer Reading Page",display.ToMesh("Computer Quiet Page"),ink);
+            QuietWatchChessTerminal.Build(root);
             Part(root,"Keyboard Tray",graphite,new Vector3(-2.70f,.758f,1.70f),new Vector3(.22f,.021f,.36f),.009f);
             var keyboard=new MeshDraft();
             for(var row=0;row<4;row++)for(var col=0;col<11;col++)
