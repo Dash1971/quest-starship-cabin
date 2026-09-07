@@ -56,7 +56,7 @@ namespace StarshipCabin.EditorTools
             var harbourSun = HarbourSun.normalized;
             QuietWatchHullLighting.Bake(station, harbourSun, true);
             var travellers = QuietWatchHarbourArchitecture.BuildTraffic(vista.transform, station);
-            foreach (var ship in travellers) QuietWatchHullLighting.Bake(ship, harbourSun, false);
+            // Traffic templates are baked once per corridor, then shared by its staggered ships.
 
             vista.transform.localScale = Vector3.one * FleetScale;
             AddBlueBackdrop(vista, "Harbour Night World", HarbourWorldCenter, HarbourWorldRadius,
@@ -379,13 +379,13 @@ namespace StarshipCabin.EditorTools
         {
             var cyan = QuartersSceneSetup.CreateEmissiveMaterial(
                 "Harbour Habitat Cyan", new Color(0.025f, 0.12f, 0.17f),
-                new Color(0.10f, 0.72f, 1.0f), 5.4f);
+                new Color(0.10f, 0.72f, 1.0f), 1.35f);
             var amber = QuartersSceneSetup.CreateEmissiveMaterial(
                 "Harbour Guidance Amber", new Color(0.19f, 0.065f, 0.018f),
-                new Color(1.0f, 0.31f, 0.055f), 6.2f);
+                new Color(1.0f, 0.31f, 0.055f), 1.5f);
 
             var residenceMaterial = QuartersSceneSetup.CreateEmissiveMaterial(
-                "Harbour Residence Windows", new Color(0.12f,0.09f,0.06f),new Color(1f,0.74f,0.43f),1.4f);
+                "Harbour Residence Windows", new Color(0.12f,0.09f,0.06f),new Color(1f,0.74f,0.43f),0.8f);
             var residences = new MeshDraft();
             for (var deck = 0; deck < 4; deck++)
             {
@@ -423,10 +423,10 @@ namespace StarshipCabin.EditorTools
                 for (var i = 0; i < 11; i++)
                 {
                     var x = side * (10f + i * 2.05f);
-                    var pulseSize = i % 5 == 0 ? 0.28f : 0.16f;
+                    var fixtureSize = i % 5 == 0 ? 0.28f : 0.16f;
                     QuartersMeshes.AppendChamferedBox(guidance,
                         new Vector3(x, 10.35f, -2.2f),
-                        new Vector3(pulseSize, pulseSize, 0.14f), 0.025f);
+                        new Vector3(fixtureSize, fixtureSize, 0.14f), 0.025f);
                 }
             }
 

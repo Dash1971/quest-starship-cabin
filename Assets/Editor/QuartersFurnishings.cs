@@ -48,6 +48,7 @@ namespace StarshipCabin.EditorTools
             QuartersCabinCraft.Finish(mats.Linen,"QW_CabinWeave",.10f,2f);
             QuartersCabinCraft.Finish(mats.Plum,"QW_CabinWeave",.10f,2f);
             QuartersCabinCraft.Build(parent);
+            QuietWatchDeskLighting.Build(parent);
         }
 
         private static FurnishingMaterials CreateFurnishingMaterials()

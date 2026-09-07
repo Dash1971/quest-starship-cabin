@@ -83,6 +83,15 @@ namespace StarshipCabin
             surfaceRenderer.SetPropertyBlock(block);
         }
 
+        public void SetCruiseTravel(double easedSeconds)
+        {
+            // Positive sampling offset makes celestial points travel screen-left.
+            // Keep the accumulated value through stop/start; no visible wrapping.
+            offsetX = easedSeconds * 0.0004;
+            offsetY = 0;
+            WriteClock();
+        }
+
         public void SetMotion(float speed, float drift)
         {
             targetSpeed = Mathf.Max(0f, speed);
@@ -99,7 +108,8 @@ namespace StarshipCabin
         public void SetQuietWatchComfort(bool living, bool drifting)
         {
             SetFloat(Shader.PropertyToID("_GalacticGain"), 0f);
-            // Cruise has its own depth-resolved stars; the distant celestial field stays fixed.
+            // FirstQuestionVista integrates both depth layers and the distant field.
+            // Disable the legacy independent drift clock to keep start/stop coherent.
             SetMotion(0f, 0f);
             SetFloat(TwinkleId, living ? 0.045f : 0.012f);
             SetFloat(MeteorsId, 0f);

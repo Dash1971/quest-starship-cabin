@@ -135,7 +135,7 @@ namespace StarshipCabin.EditorTools
                             // from an otherwise valid authored material during ShaderGUI import,
                             // so gating the copy on it silently extinguishes engine apertures.
                             material.SetColor("_EmissionColor", original.HasProperty("_EmissionColor")
-                                ? original.GetColor("_EmissionColor")
+                                ? original.GetColor("_EmissionColor") * (fixedStructure ? .4f : 1f)
                                 : Color.black);
                             material.SetTexture("_EmissionMap", original.HasProperty("_EmissionMap") ? original.GetTexture("_EmissionMap") : null);
                             material.SetVector("_SunDirection", sun);

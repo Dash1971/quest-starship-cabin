@@ -956,8 +956,8 @@ namespace StarshipCabin.EditorTools
 
             PlayerSettings.companyName = "Starship Cabin Project";
             PlayerSettings.productName = "Starship Cabin - The Quiet Watch";
-            PlayerSettings.bundleVersion = "2.0.0-m10-working-harbour";
-            PlayerSettings.Android.bundleVersionCode = 20016;
+            PlayerSettings.bundleVersion = "2.0.0-m11-calm-harbour-cruise";
+            PlayerSettings.Android.bundleVersionCode = 20017;
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "jp.openclaw.starshipcabin.quietwatch");
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

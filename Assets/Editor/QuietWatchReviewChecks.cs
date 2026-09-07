@@ -92,6 +92,7 @@ namespace StarshipCabin.EditorTools
                 }
                 Require(Camera.main.farClipPlane >= 5000f, "Camera clips distant backdrops.");
                 QuartersDecor.ValidateChessLighting(false);
+                QuietWatchDeskLighting.Validate(false);
                 Require(UnityEngine.Object.FindObjectsByType<QuietWatchSelectorPanel>(
                     FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0
                     && GameObject.Find("Quiet Watch Selector") == null && GameObject.Find("Console Pad") == null, "Backdrop sign must not be generated.");
@@ -167,7 +168,10 @@ namespace StarshipCabin.EditorTools
             float CruiseTravel() { var b=new MaterialPropertyBlock();cruise.GetPropertyBlock(b);return b.GetFloat("_Travel"); }
             first.PreviewAt(0,LifeMode.Quiet,MotionMode.Still);Require(CruiseTravel()==0,"Cruise must begin stationary.");
             first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);var travel=CruiseTravel();
-            Require(travel>1000 && travel<1400,"Cruise depth travel is missing or incorrectly eased.");
+            Require(travel>350 && travel<370,"Cruise lateral travel is missing or incorrectly eased.");
+            sky.GetPropertyBlock(skyBlock);
+            var skyTravel=skyBlock.GetVector("_SkyOffset").x;
+            Require(skyTravel>.0039f && skyTravel<.0041f,"Distant stars are not participating in lateral cruise.");
             first.ApplyComfort(LifeMode.Living,MotionMode.Drift);Require(CruiseTravel()==travel,"Life toggle rebases cruise.");
             first.PreviewAt(30,LifeMode.Quiet,MotionMode.Drift);first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);
             Require(Mathf.Abs(CruiseTravel()-travel)<.001f,"Cruise capture depends on previous pose.");
@@ -200,7 +204,7 @@ namespace StarshipCabin.EditorTools
             var lods = station.GetComponent<LODGroup>().GetLODs();
             Require(lods.Length == 3, "Harbour must retain three LODs.");
             Require(station.GetComponent<LODGroup>().size * station.lossyScale.x > 1000f,"Harbour lost its kilometre-scale silhouette.");
-            Require(harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Length==6,"Missing port traffic lanes.");
+            Require(harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Length==QuietWatchHarbourArchitecture.ShipCount,"Missing staggered port traffic.");
             foreach (var lod in lods)
             {
                 var districts = lod.renderers.Where(r => r.name.StartsWith("Harbour Districts")).ToArray();
@@ -219,6 +223,27 @@ namespace StarshipCabin.EditorTools
                             vertices[triangles[i+2]]-vertices[triangles[i]]).sqrMagnitude > 1e-14f,
                             "Degenerate harbour district triangle.");
                 }
+            }
+            foreach(var suffix in new[] {"Surface3","Surface4"})
+            {
+                var lamp=lods[0].renderers.Single(r=>r.name.StartsWith("Harbour Districts") && r.name.EndsWith(suffix));
+                Require(lods.All(l=>l.renderers.Contains(lamp)),"Station lighting changes geometry across LODs.");
+            }
+            var commuters=harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Where(r=>r.name.StartsWith("Cross Harbour Commuter")).ToArray();
+            Require(commuters.Length==12,"Commuter cadence is incomplete.");
+            var shared=commuters[0].GetComponent<LODGroup>().GetLODs()[2].renderers[0].GetComponent<MeshFilter>().sharedMesh;
+            foreach(var commuter in commuters)
+            {
+                var trafficLods=commuter.GetComponent<LODGroup>().GetLODs();
+                Require(trafficLods[2].renderers[0].GetComponent<MeshFilter>().sharedMesh==shared,"Traffic duplicates baked meshes.");
+                Require(Mathf.Abs(trafficLods[2].screenRelativeTransitionHeight-QuietWatchHarbourArchitecture.TrafficCullHeight)<1e-6f,"Small traffic culls prematurely.");
+            }
+            var fill=(Light)new SerializedObject(harbour).FindProperty("exteriorFill").objectReferenceValue;
+            var steadyColor=fill.color;var steadyIntensity=fill.intensity;
+            foreach(var life in new[] {LifeMode.Quiet,LifeMode.Living}) foreach(var time in new[] {10f,80f,360f,760f,900f})
+            {
+                harbour.PreviewAt(time,life,MotionMode.Still);
+                Require(fill.color==steadyColor && Mathf.Abs(fill.intensity-steadyIntensity)<1e-6f,"Harbour pulses or recolours the cabin.");
             }
             var tender = harbour.GetComponentsInChildren<HarbourTrafficRoute>(true).Single(r => r.IsShuttle);
             Require(tender.AvailableInQuiet, "Service traffic must be visible without waiting for an event.");

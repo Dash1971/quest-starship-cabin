@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install numpy==2.3.5
+      - run: python -m pip install numpy==2.3.5 chess==1.11.2
       - run: python tests/check_weather_geometry.py
       - run: python tests/check_weather_atlas.py
       - run: python tests/check_blue_atlas.py
@@ -25,3 +25,4 @@ jobs:
       - run: python tests/check_weather_relief.py
       - run: python tests/check_harbour_layout.py
       - run: python tests/check_cinematic_compositions.py
+      - run: python tests/check_chess_terminal.py

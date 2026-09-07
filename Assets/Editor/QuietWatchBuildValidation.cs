@@ -68,7 +68,11 @@ namespace StarshipCabin.EditorTools
             if (requireBake && (Lightmapping.isRunning || stamp.BakedSourceHash != stamp.SourceHash
                 || LightmapSettings.lightmaps.Length == 0 || LightmapSettings.lightmaps.Any(map => map.lightmapColor == null)))
                 throw new InvalidOperationException("Current scene has no verified completed lightmap bake. Run Bake Quarters Lighting and save before building.");
-            if (requireBake) QuartersDecor.ValidateChessLighting(true);
+            if (requireBake)
+            {
+                QuartersDecor.ValidateChessLighting(true);
+                QuietWatchDeskLighting.Validate(true);
+            }
             return stamp;
         }
     }

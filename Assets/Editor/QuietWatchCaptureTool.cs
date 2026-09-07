@@ -198,9 +198,10 @@ namespace StarshipCabin.EditorTools
                 var harbourPreview = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "harbour");
                 foreach (var candidate in vistas) candidate.gameObject.SetActive(candidate == harbourPreview);
                 harbourPreview.Enter(LifeMode.Living, MotionMode.Still);
-                foreach (var seconds in new[] { 0f, 10f, 32f, 87f })
+                foreach (var seconds in new[] { 0f, 10f, 32f, 87f, 120f, 300f, 600f })
                 {
-                    harbourPreview.PreviewAt(seconds, LifeMode.Living, MotionMode.Still);
+                    var life = seconds >= 120f ? LifeMode.Quiet : LifeMode.Living;
+                    harbourPreview.PreviewAt(seconds, life, MotionMode.Still);
                     foreach (var point in points)
                     {
                         camera.transform.SetPositionAndRotation(point.transform.position, point.transform.rotation);
@@ -209,7 +210,7 @@ namespace StarshipCabin.EditorTools
                         pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0);
                         pixels.Apply(false);
                         File.WriteAllBytes(Path.Combine(OutputFolder,
-                            $"harbour-depth-{seconds:000}s-{Slug(point.CaptureName)}.png"), pixels.EncodeToPNG());
+                            $"harbour-{(life == LifeMode.Quiet ? "quiet" : "depth")}-{seconds:000}s-{Slug(point.CaptureName)}.png"), pixels.EncodeToPNG());
                     }
                 }
                 harbourPreview.Exit();
@@ -265,6 +266,31 @@ namespace StarshipCabin.EditorTools
                     pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
                     File.WriteAllBytes(Path.Combine(OutputFolder,$"cabin-craft-{view}.png"),pixels.EncodeToPNG());
                 }
+                // Moving the eye exposes specular glints and baked surface patches on desk props.
+                foreach (var offset in new[] { -.12f, .12f })
+                {
+                    var eye = roomEyes[0] + Vector3.forward * offset;
+                    camera.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(roomTargets[0] - eye));
+                    camera.Render(); RenderTexture.active = target;
+                    pixels.ReadPixels(new Rect(0, 0, target.width, target.height), 0, 0); pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder, offset < 0 ? "desk-head-left.png" : "desk-head-right.png"), pixels.EncodeToPNG());
+                }
+                var deskEvidence = new ChessLightingEvidence
+                {
+                    sourceHash = generation.SourceHash,
+                    bakedProbeCount = LightmapSettings.lightProbes != null ? LightmapSettings.lightProbes.count : 0,
+                    pieces = QuietWatchDeskLighting.Surfaces(GameObject.Find("Furnishings").transform).Select(renderer =>
+                        new ChessRendererEvidence
+                        {
+                            name = renderer.name, shader = renderer.sharedMaterial.shader.name,
+                            keywords = renderer.sharedMaterial.shaderKeywords,
+                            receiveGI = renderer.receiveGI.ToString(), lightProbeUsage = renderer.lightProbeUsage.ToString(),
+                            reflectionProbeUsage = renderer.reflectionProbeUsage.ToString(),
+                            probeAnchor = renderer.probeAnchor != null ? renderer.probeAnchor.name : "missing",
+                            lightmapIndex = renderer.lightmapIndex, baseColor = renderer.sharedMaterial.GetColor("_BaseColor")
+                        }).ToArray()
+                };
+                File.WriteAllText(Path.Combine(OutputFolder, "desk-lighting.json"), JsonUtility.ToJson(deskEvidence, true));
                 var chessEvidence = new ChessLightingEvidence
                 {
                     sourceHash = generation.SourceHash,
@@ -351,9 +377,9 @@ namespace StarshipCabin.EditorTools
                 string.Empty
             };
 
-            if (routes.Length != 6)
+            if (routes.Length != QuietWatchHarbourArchitecture.ShipCount)
             {
-                errors.Add($"Expected exactly six harbour routes, found {routes.Length}.");
+                errors.Add($"Expected {QuietWatchHarbourArchitecture.ShipCount} populated harbour routes, found {routes.Length}.");
             }
             if (volumes.Length < 30)
             {

@@ -12,6 +12,8 @@ namespace StarshipCabin.EditorTools
     /// <summary>Original station districts, batched into the existing station LODs.</summary>
     internal static class QuietWatchHarbourArchitecture
     {
+        internal const int ShipCount = 32;
+        internal const float TrafficCullHeight = .004f;
         [Serializable] private sealed class Layout { public Block[] blocks; public Route[] routes; public Arch[] arches; }
         [Serializable] private sealed class Arch
         {
@@ -20,6 +22,7 @@ namespace StarshipCabin.EditorTools
         [Serializable] private sealed class Route
         {
             public string name, family;
+            public int count = 1;
             public Vector3[] points;
             public float scale, living, quietDuration, phase, clearance;
             public bool availableInQuiet, grace, shuttle;
@@ -44,11 +47,12 @@ namespace StarshipCabin.EditorTools
                 Surface("Harbour District Ceramic", new Color(0.38f, 0.43f, 0.47f)),
                 Surface("Harbour District Graphite", new Color(0.065f, 0.085f, 0.105f)),
                 Surface("Harbour District Ochre", new Color(0.42f, 0.24f, 0.095f)),
-                PortLight("Harbour District Windows", new Color(2.4f, 1.53f, 0.78f)),
-                PortLight("Harbour Berth Edge", new Color(0.5f, 1.5f, 1.85f))
+                PortLight("Harbour District Windows", new Color(1.2f, 0.83f, 0.46f)),
+                PortLight("Harbour Berth Edge", new Color(0.3f, 0.85f, 1.0f))
             };
             var group = station.GetComponent<LODGroup>();
             var lods = group.GetLODs();
+            var steadyLights = new Renderer[2];
             for (var lod = 0; lod < lods.Length; lod++)
             {
                 var drafts = Enumerable.Range(0, materials.Length).Select(_ => new MeshDraft()).ToArray();
@@ -71,7 +75,7 @@ namespace StarshipCabin.EditorTools
                         marker.hideFlags = HideFlags.HideInHierarchy;
                         marker.AddComponent<HarbourClearanceVolume>().ConfigureBox(block.name, size);
                     }
-                    if (block.windows) Windows(drafts[3], center, size, lod);
+                    if (block.windows && lod==0) Windows(drafts[3], center, size);
                 }
                 foreach(var arch in layout.arches ?? Array.Empty<Arch>())
                     Archway(station,drafts,arch,lod);
@@ -94,7 +98,7 @@ namespace StarshipCabin.EditorTools
                 var renderers = new List<Renderer>();
                 for (var surface = 0; surface < drafts.Length; surface++)
                 {
-
+                    if(surface>=3 && lod>0) { renderers.Add(steadyLights[surface-3]); continue; }
                     var name = $"Harbour Districts LOD{lod} Surface{surface}";
                     var go = QuartersSceneSetup.MeshObject(station, name, drafts[surface].ToMesh(name),
                         materials[surface], Vector3.zero, Quaternion.identity);
@@ -107,6 +111,7 @@ namespace StarshipCabin.EditorTools
                     renderer.shadowCastingMode = surface < 3 ? ShadowCastingMode.On : ShadowCastingMode.Off;
                     renderer.receiveShadows = surface < 3;
                     renderer.motionVectorGenerationMode = MotionVectorGenerationMode.ForceNoMotion;
+                    if(surface>=3) steadyLights[surface-3]=renderer;
                     renderers.Add(renderer);
                 }
                 lods[lod] = new LOD(lods[lod].screenRelativeTransitionHeight,
@@ -121,15 +126,32 @@ namespace StarshipCabin.EditorTools
             var layout = ReadLayout();
             if (layout?.routes == null || layout.routes.Length != 6)
                 throw new InvalidOperationException("Expected six authored harbour corridors.");
-            return layout.routes.Select(spec =>
+            var ships = new List<Transform>();
+            foreach(var spec in layout.routes)
             {
+                if(spec.count<1 || spec.count>12 || ((spec.grace || spec.shuttle) && spec.count!=1))
+                    throw new InvalidOperationException("Invalid harbour lane population: "+spec.name);
                 var points = spec.points.Select(p => vista.InverseTransformPoint(station.TransformPoint(p))).ToArray();
-                var ship = QuietWatchArtAssetBuilder.InstantiateLod(vista, spec.family, spec.name,
+                var template = QuietWatchArtAssetBuilder.InstantiateLod(vista, spec.family, spec.name,
                     points[0], Quaternion.identity, spec.scale, spec.grace);
-                ship.gameObject.AddComponent<HarbourTrafficRoute>().Configure(points, spec.living,
-                    spec.quietDuration, spec.phase, spec.clearance, 3f, spec.availableInQuiet, spec.grace, spec.shuttle);
-                return ship;
-            }).ToArray();
+                var group=template.GetComponent<LODGroup>();var lods=group.GetLODs();
+                var thresholds=new[] {.16f,.045f,TrafficCullHeight};
+                for(var lod=0;lod<lods.Length;lod++)lods[lod].screenRelativeTransitionHeight=thresholds[lod];
+                group.SetLODs(lods);
+                QuietWatchHullLighting.Bake(template,QuietWatchExteriorBuilder.HarbourSun.normalized,false);
+                for(var index=0;index<spec.count;index++)
+                {
+                    // Clones share the baked meshes/materials, not copies of every ship asset.
+                    var ship=index==0?template:UnityEngine.Object.Instantiate(template.gameObject,vista).transform;
+                    ship.name=index==0?spec.name:spec.name+" "+(index+1);
+                    var route=ship.GetComponent<HarbourTrafficRoute>() ?? ship.gameObject.AddComponent<HarbourTrafficRoute>();
+                    route.Configure(points,spec.living,spec.quietDuration,spec.phase+index/(float)spec.count,
+                        spec.clearance,3f,spec.availableInQuiet,spec.grace,spec.shuttle);
+                    ships.Add(ship);
+                }
+            }
+            if(ships.Count!=ShipCount) throw new InvalidOperationException("Harbour population does not match its review budget.");
+            return ships.ToArray();
         }
 
         private static void Archway(Transform station, MeshDraft[] drafts, Arch arch, int lod)
@@ -213,17 +235,16 @@ namespace StarshipCabin.EditorTools
             return material;
         }
 
-        private static void Windows(MeshDraft draft, Vector3 center, Vector3 size, int lod)
+        private static void Windows(MeshDraft draft, Vector3 center, Vector3 size)
         {
             // Roughly one-metre apertures at FleetScale, with unlit rooms and
             // gaps between districts. Coarser LOD keeps the same window size.
             for (var deck = 0; deck < Mathf.FloorToInt(size.y / 0.36f); deck++)
                 for (var bay = 0; bay < Mathf.FloorToInt((size.x - 0.4f) / 0.25f); bay++)
                 {
-                    var stride = lod == 2 ? 3 : lod == 1 ? 2 : 1;
-                    if ((bay / stride * 17 + deck * 11) % 13 < 4 || bay % stride != 0) continue;
-                    // Far LOD merges adjacent apertures instead of deleting inhabited decks.
-                    var halfWidth = .050f * stride;
+                    if ((bay * 17 + deck * 11) % 13 < 4) continue;
+                    // One immutable window mesh is referenced by every station LOD.
+                    const float halfWidth = .050f;
                     var p = center + new Vector3(-size.x * 0.5f + 0.25f + bay * 0.25f,
                         -size.y * 0.5f + 0.22f + deck * 0.36f, size.z * 0.5f + 0.015f);
                     draft.AddQuadOriented(p + new Vector3(-halfWidth, -0.045f, 0),
