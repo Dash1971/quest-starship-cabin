@@ -16,6 +16,7 @@ namespace StarshipCabin.QuietWatch
         [SerializeField] private Renderer cruiseStars;
         private MaterialPropertyBlock cruiseBlock;
         private static readonly int TravelId = Shader.PropertyToID("_Travel");
+        public const float CruiseWidth = 32000f;
         private LifeMode lifeMode;
         private VistaTimeline timeline;
         private bool paused;
@@ -47,8 +48,9 @@ namespace StarshipCabin.QuietWatch
             if (cruiseStars == null || timeline == null) return;
             cruiseBlock ??= new MaterialPropertyBlock();
             cruiseStars.GetPropertyBlock(cruiseBlock);
-            cruiseBlock.SetFloat(TravelId, (float)((timeline.DriftTravel * 110.0) % 6000.0));
+            cruiseBlock.SetFloat(TravelId, (float)((timeline.DriftTravel * 36.0) % CruiseWidth));
             cruiseStars.SetPropertyBlock(cruiseBlock);
+            starWindow?.SetCruiseTravel(timeline.DriftTravel);
         }
 
         private void OnApplicationPause(bool value) => paused = value;
@@ -59,9 +61,9 @@ namespace StarshipCabin.QuietWatch
             timeline.Reset(life == LifeMode.Living, false);
             timeline.SetModes(life == LifeMode.Living, motion == MotionMode.Drift);
             timeline.Advance(elapsed);
-            WriteCruise();
             starWindow?.PreviewAt(elapsed, false,
                 life == LifeMode.Living && elapsed >= graceNoteAtSeconds ? elapsed - graceNoteAtSeconds : -1f);
+            WriteCruise();
         }
 
         public override void Enter(LifeMode nextLifeMode, MotionMode motionMode)

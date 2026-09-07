@@ -430,11 +430,9 @@ namespace StarshipCabin.QuietWatch
             switch (kind)
             {
                 case AuthoredVistaKind.Harbour:
-                    var harbourPulse = lifeMode == LifeMode.Living
-                        ? 0.018f * (0.5f + 0.5f * Mathf.Sin(elapsed * 0.19f))
-                        : 0f;
-                    color = Color.Lerp(fillColor, new Color(0.46f, 0.78f, 1.0f), 0.24f + grace * 0.16f);
-                    intensity += harbourPulse + grace * 0.055f;
+                    // A working port has steady practical lighting. Traffic and
+                    // the departure event must not pulse or recolour the cabin.
+                    color = fillColor;
                     break;
                 case AuthoredVistaKind.BlueMorning:
                     color = Color.Lerp(fillColor, new Color(1.0f, 0.72f, 0.48f), grace);
