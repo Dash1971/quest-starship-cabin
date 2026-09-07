@@ -165,7 +165,7 @@ namespace StarshipCabin.EditorTools
                     var firstQuestion = vistas.OfType<FirstQuestionVista>().Single();
                     firstQuestion.gameObject.SetActive(true);
                     firstQuestion.Enter(LifeMode.Living, MotionMode.Still);
-                    foreach (var previewAt in new[] { 782f, 786f })
+                    foreach (var previewAt in new[] { 780f, 804f, 828f, 864f, 900f })
                     {
                         firstQuestion.PreviewAt(previewAt, LifeMode.Living, MotionMode.Still);
                         camera.transform.SetPositionAndRotation(couch.transform.position, couch.transform.rotation);
@@ -231,13 +231,23 @@ namespace StarshipCabin.EditorTools
                 var cruising=vistas.OfType<FirstQuestionVista>().Single();
                 foreach(var candidate in vistas)candidate.gameObject.SetActive(candidate==cruising);
                 cruising.Enter(LifeMode.Quiet,MotionMode.Still);
-                foreach(var seconds in new[] {0f,4f,12f,45f}) foreach(var point in points)
+                QuietWatchStarMotionAudit.Run(camera,points,cruising,generation.SourceHash);
+                foreach(var seconds in new[] {0f,4f,12f,45f,120f,600f,3600f}) foreach(var point in points)
                 {
                     cruising.PreviewAt(seconds,LifeMode.Quiet,MotionMode.Drift);
                     camera.transform.SetPositionAndRotation(point.transform.position,point.transform.rotation);
                     camera.Render();RenderTexture.active=target;
                     pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
                     File.WriteAllBytes(Path.Combine(OutputFolder,$"first-question-cruise-{seconds:000}s-{Slug(point.CaptureName)}.png"),pixels.EncodeToPNG());
+                }
+                // Hold-B composition from each seat, then a 20-second continuation during cruise.
+                foreach(var point in points) foreach(var seconds in new[]{0f,20f})
+                {
+                    cruising.PreviewCometAt(seconds,MotionMode.Drift);
+                    camera.transform.SetPositionAndRotation(point.transform.position,point.transform.rotation);
+                    camera.Render();RenderTexture.active=target;
+                    pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
+                    File.WriteAllBytes(Path.Combine(OutputFolder,$"first-question-distant-comet-{seconds:000}s-{Slug(point.CaptureName)}.png"),pixels.EncodeToPNG());
                 }
                 cruising.Exit();
                 var chessVista = vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "long-formation");

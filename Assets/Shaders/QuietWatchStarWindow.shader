@@ -1,15 +1,11 @@
-// The Quiet Watch: The First Question.
-//
-// The field is sampled from the camera ray, not the window mesh UV, so it
-// remains celestial space beyond the glass as the officer moves their head.
-// The visual distribution deliberately follows the proven V3 starfield:
-// many clean point sources, a wide brightness range, and only rare circular
-// halos. Diffraction spikes were removed after Quest testing because they
-// resolved as HUD-like scratches rather than stars.
+// Shared camera-ray star background for the four authored vistas.
+// First Question bypasses this field completely and renders its unified 3D catalogue.
+// The other destinations retain their existing restrained galactic exposure.
 Shader "StarshipCabin/QuietWatchStarWindow"
 {
     Properties
     {
+        _FirstQuestionField ("Unified First Question field", Float) = 0
         _GalacticMap ("Authored galactic panorama", 2D) = "black" {}
         _GalacticGain ("Galactic exposure", Float) = 0.75
         _DeepColor ("Deep Space", Color) = (0.0004, 0.0008, 0.0022, 1)
@@ -69,6 +65,7 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 float _GraceAge;
                 float4 _SkyOffset;
                 float _GalacticGain;
+                float _FirstQuestionField;
             CBUFFER_END
 
             TEXTURE2D(_GalacticMap); SAMPLER(sampler_GalacticMap);
@@ -228,29 +225,11 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 return color * keep * shimmer * gain;
             }
 
-            float3 firstQuestionComet(float2 sky, float now)
-            {
-                float age = _GraceAge;
-                float alive = step(0.0, age) * step(age, 8.0);
-                float progress = saturate(age / 8.0);
-                float ease = progress * progress * (3.0 - 2.0 * progress);
-                float2 start = float2(0.27, 0.69);
-                float2 finish = float2(0.65, 0.43);
-                float2 head = lerp(start, finish, ease);
-                float2 direction = normalize(finish - start);
-                float2 delta = sky - head;
-                float behind = dot(delta, -direction);
-                float perpendicular = abs(dot(delta, float2(-direction.y, direction.x)));
-                float tail = smoothstep(0.18, 0.0, behind) * step(0.0, behind);
-                float trailLine = smoothstep(0.0045, 0.0006, perpendicular);
-                float headGlow = smoothstep(0.026, 0.0, length(delta));
-                float lifeFade = sin(progress * 3.14159265);
-                return lerp(_CoolColor.rgb, _StarColor.rgb, 0.65) * (trailLine * tail + headGlow * 1.8) * lifeFade * alive;
-            }
-
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                // No hidden stationary stars or dust behind the moving catalogue.
+                if (_FirstQuestionField > .5) return half4(.00002,.00003,.000055,1);
                 float3 ray = normalize(input.positionWS - GetCameraPositionWS());
                 float2 sky = DirectionToSky(ray);
                 float elapsed = _ObservationTime;
@@ -267,7 +246,6 @@ Shader "StarshipCabin/QuietWatchStarWindow"
                 stars += starLayer(sky + 37.51, 176.0, 0.030, 0.26, 0.40, band, 0.52, 0.0, elapsed);
                 stars += starLayer(sky + 73.21, 320.0, 0.050, 0.10, 0.22, band, 0.31, 0.0, elapsed);
                 color += stars*(1.0-cosmic.a*saturate(_GalacticGain)*0.80);
-                color += firstQuestionComet(sky, _ObservationTime);
 
                 // Filmic response keeps true negative space while preserving
                 // brilliant stellar cores for the existing restrained bloom.

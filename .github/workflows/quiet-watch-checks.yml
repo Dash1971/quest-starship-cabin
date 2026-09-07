@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - run: dotnet run --project tests/QuietWatch.Checks -- .
+      - run: dotnet run --project tests/QuietWatch.Checks -- . /tmp/first-question-catalogue.json
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -26,3 +26,4 @@ jobs:
       - run: python tests/check_harbour_layout.py
       - run: python tests/check_cinematic_compositions.py
       - run: python tests/check_chess_terminal.py
+      - run: python tests/check_first_question.py /tmp/first-question-catalogue.json
