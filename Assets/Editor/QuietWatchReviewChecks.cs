@@ -90,7 +90,7 @@ namespace StarshipCabin.EditorTools
                             renderer.sharedMaterial.GetFloat("_DistanceScale") - 6371000f) < 2f, "Backdrop physical radius mismatch.");
                     }
                 }
-                Require(Camera.main.farClipPlane >= 5000f, "Camera clips distant backdrops.");
+                Require(Camera.main.farClipPlane >= 13000f, "Camera clips distant backdrops.");
                 QuartersDecor.ValidateChessLighting(false);
                 QuietWatchDeskLighting.Validate(false);
                 Require(UnityEngine.Object.FindObjectsByType<QuietWatchSelectorPanel>(
@@ -168,10 +168,22 @@ namespace StarshipCabin.EditorTools
             float CruiseTravel() { var b=new MaterialPropertyBlock();cruise.GetPropertyBlock(b);return b.GetFloat("_Travel"); }
             first.PreviewAt(0,LifeMode.Quiet,MotionMode.Still);Require(CruiseTravel()==0,"Cruise must begin stationary.");
             first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);var travel=CruiseTravel();
-            Require(travel>350 && travel<370,"Cruise lateral travel is missing or incorrectly eased.");
+            Require(travel>955 && travel<970,"Cruise lateral travel is missing or incorrectly eased.");
             sky.GetPropertyBlock(skyBlock);
-            var skyTravel=skyBlock.GetVector("_SkyOffset").x;
-            Require(skyTravel>.0039f && skyTravel<.0041f,"Distant stars are not participating in lateral cruise.");
+            Require(skyBlock.GetFloat("_FirstQuestionField")>.5f && skyBlock.GetFloat("_Twinkle")==0,
+                "A stationary/twinkling background is leaking behind the unified field.");
+            var fieldMesh=cruise.GetComponent<MeshFilter>().sharedMesh;
+            Require(fieldMesh.vertexCount==FirstQuestionField.StarCount*4 && fieldMesh.uv2.Length==fieldMesh.vertexCount,
+                "Unified stellar catalogue is missing or incomplete.");
+            Require(fieldMesh.colors.Max(c=>c.a)>3,"Stellar energy was clamped during mesh import.");
+            var comet=first.GetComponentsInChildren<Renderer>().Single(r=>r.sharedMaterial.shader.name=="StarshipCabin/QuietWatchDistantComet");
+            Require(comet.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(comet.sharedMaterial.shader),"Distant comet shader failed.");
+            first.ApplyComfort(LifeMode.Living,MotionMode.Drift);
+            Require(first.PreviewGraceNote(),"Distant comet preview did not start.");
+            var cometBlock=new MaterialPropertyBlock();comet.GetPropertyBlock(cometBlock);
+            Require(cometBlock.GetVector("_CometPosition").w>.99f,"Comet preview is not at a readable phase.");
+            first.ApplyComfort(LifeMode.Quiet,MotionMode.Drift);comet.GetPropertyBlock(cometBlock);
+            Require(cometBlock.GetVector("_CometPosition").w==0,"Quiet failed to cancel the comet.");
             first.ApplyComfort(LifeMode.Living,MotionMode.Drift);Require(CruiseTravel()==travel,"Life toggle rebases cruise.");
             first.PreviewAt(30,LifeMode.Quiet,MotionMode.Drift);first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);
             Require(Mathf.Abs(CruiseTravel()-travel)<.001f,"Cruise capture depends on previous pose.");
@@ -192,7 +204,7 @@ namespace StarshipCabin.EditorTools
                 Require(book.GetComponentsInChildren<MeshFilter>().Length>=3,"Book lost its separate binding/pages.");
             first.Exit(); blue.gameObject.SetActive(true); blue.Enter(LifeMode.Quiet, MotionMode.Still);
             sky.GetPropertyBlock(skyBlock);
-            Require(skyBlock.GetFloat("_GalacticGain") < .1f, "Galactic exposure leaks into a planetary vista.");
+            Require(skyBlock.GetFloat("_GalacticGain") < .1f && skyBlock.GetFloat("_FirstQuestionField")==0, "First Question overrides leak into a planetary vista.");
             blue.Exit();
         }
 

@@ -1,6 +1,6 @@
 # Beyond M6: make the existing destinations worth lingering in
 
-**Current focus — M11:** Make Harbour busier without flashing lights, change First Question cruise to right-to-left stellar flow, fix desk-object lighting, and replace the placeholder computer screen with a static chess study. See [calm-harbour-review.md](calm-harbour-review.md).
+**Current focus — M12:** Give First Question coherent deskward travel, steady stellar depth and quiet black space, with a much smaller, slower comet. Verify direction through real rendered cameras before the next headset check. See [first-question-review.md](first-question-review.md).
 
 The user requested a bold pass across every backdrop instead of continuing one destination at a time. The [M9 five-vista overhaul candidate](five-vista-overhaul-review.md) implements that revised priority. It combines the next lighting, atmospheric and scale work into one comparative headset review; the milestones below retain the longer-term direction.
 

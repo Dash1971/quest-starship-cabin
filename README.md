@@ -6,7 +6,7 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-M11 is the current **calm working harbour and chess terminal candidate**, based on merged M10 (`290b4d7`). It populates six harbour corridors with 32 staggered craft, keeps station lights steady, changes First Question cruise to right-to-left motion, applies the proven chess lighting treatment to books/computer parts, and replaces the placeholder screen with an original static Fischer–Spassky chess study. Proposed version: `2.0.0-m11-calm-harbour-cruise` (`20017`). See the [OpenClaw build and review guide](docs/development/calm-harbour-review.md). **Unity compilation, regeneration, fresh bake, 95 captures, APK and headset validation remain pending.**
+M12 is the current **First Question deep-space cruise candidate**, based on merged M11 (`a3f2754`). It replaces the layered star display with one coherent 3D stellar field, corrects travel toward the desk, adds steady filtered points and distant star associations, and replaces the oversized shooting-star effect with a small, slow comet. Proposed version: `2.0.0-m12-first-question` (`20018`). See the [OpenClaw build and review guide](docs/development/first-question-review.md). **Unity compilation, GPU direction audit, regeneration, bake, 118 captures, APK and headset validation remain pending.**
 
 **Current controls:** A changes vista. In First Question, tap B to start/stop cruising; stick-click controls the same motion setting. In other vistas, tap B changes Quiet/Living. Hold B for about one second to preview the current event, including the comet in First Question. Cruise starts stopped on entry and resets when leaving First Question. The cabin and camera do not translate.
 

@@ -35,6 +35,7 @@ namespace StarshipCabin
         private float targetSpeed, targetDrift, currentSpeed, currentDrift;
         private float graceAge = -1f;
         private bool paused;
+        private bool unifiedStellarField;
         private bool focused = true;
 
         private void Awake()
@@ -46,7 +47,7 @@ namespace StarshipCabin
 
         private void Update()
         {
-            if (paused || !focused) return;
+            if (unifiedStellarField || paused || !focused) return;
             var dt = Mathf.Min(Time.unscaledDeltaTime, 0.1f);
             observationTime += dt;
             currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, dt * 0.005f);
@@ -83,15 +84,6 @@ namespace StarshipCabin
             surfaceRenderer.SetPropertyBlock(block);
         }
 
-        public void SetCruiseTravel(double easedSeconds)
-        {
-            // Positive sampling offset makes celestial points travel screen-left.
-            // Keep the accumulated value through stop/start; no visible wrapping.
-            offsetX = easedSeconds * 0.0004;
-            offsetY = 0;
-            WriteClock();
-        }
-
         public void SetMotion(float speed, float drift)
         {
             targetSpeed = Mathf.Max(0f, speed);
@@ -108,10 +100,11 @@ namespace StarshipCabin
         public void SetQuietWatchComfort(bool living, bool drifting)
         {
             SetFloat(Shader.PropertyToID("_GalacticGain"), 0f);
-            // FirstQuestionVista integrates both depth layers and the distant field.
-            // Disable the legacy independent drift clock to keep start/stop coherent.
+            // The unified point catalogue owns ALL First Question stars, in Still and cruise.
+            unifiedStellarField=true;
+            SetFloat(Shader.PropertyToID("_FirstQuestionField"),1f);
             SetMotion(0f, 0f);
-            SetFloat(TwinkleId, living ? 0.045f : 0.012f);
+            SetFloat(TwinkleId, 0f);
             SetFloat(MeteorsId, 0f);
             SetNebula(0f);
             SetFloat(DensityId, 0.78f);
@@ -119,6 +112,8 @@ namespace StarshipCabin
 
         public void SetAuthoredVistaBackdrop(float density)
         {
+            unifiedStellarField=false;
+            SetFloat(Shader.PropertyToID("_FirstQuestionField"),0f);
             SetFloat(Shader.PropertyToID("_GalacticGain"), 0.08f);
             SetMotion(0f, 0f);
             SetFloat(TwinkleId, 0.008f);
@@ -135,19 +130,6 @@ namespace StarshipCabin
             SetFloat(VistaClockId, Time.unscaledTime);
             WriteClock();
             ClearGraceNote();
-        }
-
-        public void SetGraceAge(float age)
-        {
-            graceAge = age;
-            SetFloat(GraceAgeId, age);
-        }
-
-        public void TriggerFirstQuestionComet()
-        {
-            graceAge = 0f;
-            SetFloat(GraceStartId, Time.unscaledTime);
-            WriteClock();
         }
 
         public void ClearGraceNote()

@@ -108,6 +108,67 @@ Near(cruiseClock.DriftTravel-atStop,2*speedAtStop*(1-Math.Exp(-15)),"cruise dece
 var afterStop=cruiseClock.DriftTravel;cruiseClock.Advance(60);
 Near(cruiseClock.DriftTravel,afterStop,"stopped cruise settles",1e-6);
 
+// Test motion through Unity's left-handed camera basis: looking -Z means right=-X.
+var catalogue=FirstQuestionField.Catalogue();
+Check(catalogue.Length==12288 && catalogue.Length*4<65535,"stellar field fits one 16-bit-indexed draw");
+Check(catalogue.All(s=>s.Z<=-8000 && s.Z>=-44000 && s.Flux>0 && s.Sigma>=.5),"all stellar depths and filtered point cores are bounded");
+var forward=V3.Normalize(new V3(0,0,-1));var cameraRight=V3.Normalize(V3.Cross(V3.UnitY,forward));
+var wrong=V3.Dot(new V3(-72,0,0),cameraRight);
+Check(wrong>0,"regression reproduces old -X translation as screen-RIGHT");
+var everyStarMovesLeft=true;var fixedDepth=true;var coherent=true;var continuous=true;
+for(var i=0;i<catalogue.Length;i++)
+{
+    var a=FirstQuestionField.At(catalogue[i],i,0);var b=FirstQuestionField.At(catalogue[i],i,1);
+    if(a.Visibility>.99 && b.Visibility>.99)
+    {
+        everyStarMovesLeft &= -b.X/(-b.Z)<-a.X/(-a.Z);
+        fixedDepth &= a.Y==b.Y && a.Z==b.Z;
+        coherent &= Math.Abs(b.X-a.X-FirstQuestionField.Speed)<1e-5;
+    }
+    var edge=(FirstQuestionField.Period*.5-catalogue[i].X)/FirstQuestionField.Speed;
+    var before=FirstQuestionField.At(catalogue[i],i,edge-1e-5);
+    var after=FirstQuestionField.At(catalogue[i],i,edge+1e-5);
+    continuous &= before.Visibility<1e-8 && after.Visibility<1e-8;
+}
+Check(everyStarMovesLeft,"ALL visible stars move screen-left toward the correct relative-space heading");
+Check(fixedDepth && coherent,"every point shares +X translation; no independent angular scroll or approach");
+Check(continuous,"every star recycles only at zero opacity");
+foreach(var seconds in new[]{60.0,600,3600,7200})
+{
+    var allFinite=true;
+    for(var i=0;i<catalogue.Length;i+=13)
+    {
+        var a=FirstQuestionField.At(catalogue[i],i,seconds);
+        var b=FirstQuestionField.At(catalogue[i],i,seconds+.02);
+        allFinite &= double.IsFinite(a.X+a.Y+a.Z) && a.Visibility>=0 && a.Visibility<=1;
+        if(a.Visibility>.99 && b.Visibility>.99) allFinite &= b.X>a.X && a.Z==b.Z;
+    }
+    Check(allFinite,$"stellar flow remains coherent after {seconds/60:0} minutes, including sector changes");
+}
+var cometPosition=FirstQuestionField.CometAt(36,0);var cometLater=FirstQuestionField.CometAt(46,10);
+Near(cometLater.X-cometPosition.X,FirstQuestionField.Speed*10,"comet shares the same cabin-relative translation");
+Check(FirstQuestionField.CometAt(-1,0).Visibility==0 && FirstQuestionField.CometAt(0,0).Visibility==0
+    && FirstQuestionField.CometAt(36,0).Visibility==1 && FirstQuestionField.CometAt(120,0).Visibility==0,"distant comet fades gently over two minutes");
+Check(FirstQuestionField.CometTailDegrees<=2.1f && FirstQuestionField.CometDuration>=120,"comet angular extent and pace cannot regress to a giant meteor streak");
+var cometClock=new VistaTimeline(FirstQuestionField.CometDelay,FirstQuestionField.CometDuration);
+cometClock.Reset(true,false);cometClock.Preview(.3,false);Near(cometClock.EventAge,36,"hold-B starts in a readable distant-comet phase");
+cometClock.Advance(1);Near(cometClock.EventAge,37,"distant-comet preview runs at real time");
+cometClock.SetModes(false,false);Near(cometClock.EventAge,-1,"Quiet cancels the distant comet immediately");
+var eventFrames=new VistaTimeline(FirstQuestionField.CometDelay,FirstQuestionField.CometDuration);
+var eventSeek=new VistaTimeline(FirstQuestionField.CometDelay,FirstQuestionField.CometDuration);
+eventFrames.Reset(true,false);eventFrames.SetModes(true,true);eventSeek.Reset(true,false);eventSeek.SetModes(true,true);
+for(var frame=0;frame<836*72;frame++)eventFrames.Advance(1.0/72);
+eventSeek.Advance(836);
+Near(eventFrames.DriftAtEventStart,eventSeek.DriftAtEventStart,"comet travel origin is identical in 72 Hz playback and direct capture",1e-6);
+eventFrames.Preview(.3,false);Near(eventFrames.DriftAtEventStart,eventFrames.DriftTravel,"late hold-B brings comet into view at current cruise position");
+if(args.Length>1)
+{
+    var model=new {period=FirstQuestionField.Period,speed=FirstQuestionField.Speed,stars=catalogue,
+        comet=FirstQuestionField.CometAt(36,0),cometTailDegrees=FirstQuestionField.CometTailDegrees,
+        cometHalfWidthDegrees=FirstQuestionField.CometHalfWidthDegrees};
+    File.WriteAllText(args[1],System.Text.Json.JsonSerializer.Serialize(model,new System.Text.Json.JsonSerializerOptions{IncludeFields=true}));
+}
+
 // Parser diagnostics are deliberately separate from Unity API/type checking.
 var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var files = Directory.GetFiles(Path.Combine(root, "Assets"), "*.cs", SearchOption.AllDirectories);
@@ -122,4 +183,4 @@ foreach (var file in files)
     }
 }
 Console.WriteLine($"PASS: C# syntax in {files.Length} source files (Editor/Android symbols; not Unity compilation)");
-Console.WriteLine($"Completed {checks} clock and ray checks.");
+Console.WriteLine($"Completed {checks} clock, ray and stellar-field checks.");

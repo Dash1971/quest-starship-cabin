@@ -20,6 +20,7 @@ namespace StarshipCabin.QuietWatch
         public double LivingTravel { get; private set; }
         public double QuietTravel { get; private set; }
         public double DriftTravel { get; private set; }
+        public double DriftAtEventStart { get; private set; }
         public double Activity { get; private set; }
         public double DriftSpeed { get; private set; }
         public double EventAge { get; private set; } = -1;
@@ -37,7 +38,7 @@ namespace StarshipCabin.QuietWatch
             drifting = isDrifting;
             Activity = living ? 1 : 0;
             DriftSpeed = drifting ? 1 : 0;
-            Elapsed = LivingElapsed = LivingTravel = QuietTravel = DriftTravel = 0;
+            Elapsed = LivingElapsed = LivingTravel = QuietTravel = DriftTravel = DriftAtEventStart = 0;
             EventAge = -1;
             preview = false;
         }
@@ -66,6 +67,8 @@ namespace StarshipCabin.QuietWatch
             LivingTravel += Integrate(ref activity, living ? 1 : 0, seconds);
             Activity = activity;
             QuietTravel = Elapsed - LivingTravel;
+            var driftBefore = DriftTravel;
+            var speedBefore = DriftSpeed;
             var speed = DriftSpeed;
             DriftTravel += Integrate(ref speed, drifting ? 1 : 0, seconds);
             DriftSpeed = speed;
@@ -79,6 +82,8 @@ namespace StarshipCabin.QuietWatch
                 if (LivingElapsed < delay) return false;
                 eventSeconds = Math.Min(seconds, LivingElapsed - delay);
                 EventAge = 0;
+                // Anchor world-space events at the exact crossing, independent of frame size.
+                DriftAtEventStart = driftBefore + Integrate(ref speedBefore, drifting ? 1 : 0, seconds-eventSeconds);
                 started = true;
             }
             EventAge = Math.Min(duration, EventAge + eventSeconds * (preview ? 8 : 1));
@@ -92,6 +97,7 @@ namespace StarshipCabin.QuietWatch
         {
             if (!living) return false;
             preview = accelerated;
+            DriftAtEventStart = DriftTravel;
             EventAge = duration * Math.Max(0, Math.Min(1, startFraction));
             return true;
         }
