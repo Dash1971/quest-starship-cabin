@@ -34,3 +34,12 @@ raw=np.frombuffer(zlib.decompress(b''.join(chunks)),dtype=np.uint8).reshape(640,
 assert np.all(raw[:,0]==0) and np.array_equal(raw[:,1:].reshape(a.shape),a),'Shipped display differs from source'
 assert np.max(a[...,:3])<=194 and np.all(a[...,3]==255),'Terminal must stay subdued and opaque'
 print('PASS: original static chess bitmap reproduces exactly; bounded luminance; opaque background')
+source=(ROOT/'Assets/Editor/QuietWatchChessTerminal.cs').read_text()
+compact=''.join(source.split())
+assert 'mesh.uv=new[]{Vector2.right,Vector2.zero,Vector2.up,Vector2.one};' in compact, \
+    'Terminal quad must map image right to world +Z for the +X-facing display'
+assert all(check in compact for check in (
+    'mesh.uv[0]!=Vector2.right','mesh.uv[1]!=Vector2.zero',
+    'mesh.uv[2]!=Vector2.up','mesh.uv[3]!=Vector2.one')), \
+    'Unity validation must reject a mirrored terminal UV layout'
+print('PASS: +X-facing terminal UVs preserve left-to-right artwork orientation')

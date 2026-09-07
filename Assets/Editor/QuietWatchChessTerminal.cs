@@ -45,12 +45,12 @@ namespace StarshipCabin.EditorTools
             material.renderQueue = (int)RenderQueue.Geometry;
             material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
             EditorUtility.SetDirty(material);
-            // Facing +X: screen-right is world -Z. Explicit UVs keep the diagram upright.
+            // Facing +X: screen-right is world +Z. Explicit UVs keep the diagram upright.
             var mesh = new Mesh { name = "Computer Chess Terminal Quad" };
             mesh.vertices = new[] {
                 new Vector3(-2.991f, .902f, 1.895f), new Vector3(-2.991f, .902f, 1.505f),
                 new Vector3(-2.991f, 1.148f, 1.505f), new Vector3(-2.991f, 1.148f, 1.895f) };
-            mesh.uv = new[] { Vector2.zero, Vector2.right, Vector2.one, Vector2.up };
+            mesh.uv = new[] { Vector2.right, Vector2.zero, Vector2.up, Vector2.one };
             mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
             mesh.RecalculateNormals(); mesh.RecalculateBounds();
             var display = QuartersSceneSetup.MeshObject(computer, ScreenName, mesh, material, Vector3.zero, Quaternion.identity, false);
@@ -74,7 +74,9 @@ namespace StarshipCabin.EditorTools
                 || GameObject.Find("Computer Reading Page") != null)
                 throw new InvalidOperationException("Static chess display contract failed; regenerate the scene.");
             var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
-            if (mesh == null || mesh.vertexCount != 4 || mesh.normals[0].x < .99f || mesh.uv[2] != Vector2.one)
+            if (mesh == null || mesh.vertexCount != 4 || mesh.normals[0].x < .99f
+                || mesh.uv[0] != Vector2.right || mesh.uv[1] != Vector2.zero
+                || mesh.uv[2] != Vector2.up || mesh.uv[3] != Vector2.one)
                 throw new InvalidOperationException("Terminal is mirrored or has incorrect UVs.");
         }
     }
