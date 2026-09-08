@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../Assets/Scripts/QuietWatch/FormationManeuver.cs" Link="FormationManeuver.cs" />
     <Compile Include="../../Assets/Scripts/QuietWatch/FirstQuestionField.cs" Link="FirstQuestionField.cs" />
     <Compile Include="../../Assets/Scripts/QuietWatch/VistaTimeline.cs" Link="VistaTimeline.cs" />
     <Compile Include="../../Assets/Scripts/QuietWatch/HarbourShuttleClock.cs" Link="HarbourShuttleClock.cs" />

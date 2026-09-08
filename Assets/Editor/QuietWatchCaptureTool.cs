@@ -165,8 +165,9 @@ namespace StarshipCabin.EditorTools
                     var firstQuestion = vistas.OfType<FirstQuestionVista>().Single();
                     firstQuestion.gameObject.SetActive(true);
                     firstQuestion.Enter(LifeMode.Living, MotionMode.Still);
-                    foreach (var previewAt in new[] { 780f, 804f, 828f, 864f, 900f })
+                    foreach (var age in new[] { 0f,24f,48f,84f,120f })
                     {
+                        var previewAt=FirstQuestionField.CometDelay+age;
                         firstQuestion.PreviewAt(previewAt, LifeMode.Living, MotionMode.Still);
                         camera.transform.SetPositionAndRotation(couch.transform.position, couch.transform.rotation);
                         camera.Render();
@@ -240,6 +241,15 @@ namespace StarshipCabin.EditorTools
                     pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
                     File.WriteAllBytes(Path.Combine(OutputFolder,$"first-question-cruise-{seconds:000}s-{Slug(point.CaptureName)}.png"),pixels.EncodeToPNG());
                 }
+                foreach(var view in QuietWatchFirstQuestionViews.All(points).Where(v=>v.Name.Contains("upward") || v.Name.StartsWith("Standing")))
+                    foreach(var seconds in new[]{0f,12f,600f})
+                    {
+                        cruising.PreviewAt(seconds,LifeMode.Quiet,MotionMode.Drift);
+                        camera.transform.SetPositionAndRotation(view.Position,view.Rotation);
+                        camera.Render();RenderTexture.active=target;
+                        pixels.ReadPixels(new Rect(0,0,target.width,target.height),0,0);pixels.Apply(false);
+                        File.WriteAllBytes(Path.Combine(OutputFolder,$"first-question-coverage-{seconds:000}s-{Slug(view.Name)}.png"),pixels.EncodeToPNG());
+                    }
                 // Hold-B composition from each seat, then a 20-second continuation during cruise.
                 foreach(var point in points) foreach(var seconds in new[]{0f,20f})
                 {

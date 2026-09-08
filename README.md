@@ -6,7 +6,7 @@ The current prototype is a seated, comfort-first VR room with a forward starfiel
 
 ## Current review candidate
 
-M12 is the current **First Question deep-space cruise candidate**, based on merged M11 (`a3f2754`). It replaces the layered star display with one coherent 3D stellar field, corrects travel toward the desk, adds steady filtered points and distant star associations, and replaces the oversized shooting-star effect with a small, slow comet. Proposed version: `2.0.0-m12-first-question` (`20018`). See the [OpenClaw build and review guide](docs/development/first-question-review.md). **Unity compilation, GPU direction audit, regeneration, bake, 118 captures, APK and headset validation remain pending.**
+M13 is the current **full-sky cruise and smooth Formation candidate**, based on merged M12 (`67f0b40`). First Question now surrounds the cabin with stars at every elevation, stronger depth-dependent travel and a more visible six-degree comet. Formation keeps a stable hero mesh and eases preview/replay/cancellation without snapping its attitude. Proposed version: `2.0.0-m13-full-sky` (`20019`). See the [OpenClaw build and review guide](docs/development/full-sky-formation-review.md). **Unity compilation, GPU audits, regeneration, bake, captures, APK and headset validation remain pending.**
 
 **Current controls:** A changes vista. In First Question, tap B to start/stop cruising; stick-click controls the same motion setting. In other vistas, tap B changes Quiet/Living. Hold B for about one second to preview the current event, including the comet in First Question. Cruise starts stopped on entry and resets when leaving First Question. The cabin and camera do not translate.
 

@@ -2,8 +2,8 @@ Shader "StarshipCabin/QuietWatchDistantComet"
 {
     Properties
     {
-        _CometPosition ("Distant nucleus and visibility", Vector) = (11000,7000,-36000,0)
-        _Extent ("Angular tail length and half width", Vector) = (.036652,.003142,0,0)
+        _CometPosition ("Distant nucleus and visibility", Vector) = (12000,7000,-36000,0)
+        _Extent ("Angular tail length and half width", Vector) = (.10472,.011345,0,0)
     }
     SubShader
     {
@@ -42,15 +42,19 @@ Shader "StarshipCabin/QuietWatchDistantComet"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(v);
                 float u=v.angle.x/_Extent.x;
                 float footprint=max(length(ddx(v.angle)),length(ddy(v.angle)))*.45;
-                float sigma=sqrt(.00042*.00042+footprint*footprint);
-                float coma=exp(-.5*dot(v.angle,v.angle)/(sigma*sigma))*.00042*.00042/(sigma*sigma);
-                float width=.00025+saturate(u)*.00125;
+                // A resolved coma and two readable tails; the former 2.1-degree,
+                // subpixel nucleus disappeared behind glass and headset filtering.
+                float sigma=sqrt(.0012*.0012+footprint*footprint);
+                float coma=exp(-.5*dot(v.angle,v.angle)/(sigma*sigma))*.0012*.0012/(sigma*sigma);
+                float envelope=exp(-.5*dot(v.angle,v.angle)/(.003*.003))*.14;
+                float width=.0009+saturate(u)*.006;
                 width=sqrt(width*width+footprint*footprint);
-                float fan=exp(-.5*pow((v.angle.y+.00035*u*u)/width,2));
-                float tail=fan*exp(-u*3.8)*smoothstep(0,.025,u)*(1-smoothstep(.65,1,u));
-                float ion=exp(-.5*pow(v.angle.y/max(.00018,footprint),2))*exp(-max(0,u)*2.7)
+                float fan=exp(-.5*pow((v.angle.y+.0025*u*u)/width,2));
+                float tail=fan*exp(-max(0,u)*1.6)*smoothstep(0,.025,u)*(1-smoothstep(.65,1,u));
+                float ion=exp(-.5*pow(v.angle.y/max(.00045,footprint),2))*exp(-max(0,u)*1.4)
                     *smoothstep(0,.05,u)*(1-smoothstep(.8,1,u));
-                float3 color=coma*float3(1.45,1.52,1.57)+tail*float3(.16,.165,.15)+ion*float3(.02,.035,.05);
+                float3 color=(coma+envelope)*float3(2.0,2.15,2.3)
+                    +tail*float3(.42,.38,.29)+ion*float3(.055,.12,.21);
                 return half4(color*_CometPosition.w,0);
             }
             ENDHLSL

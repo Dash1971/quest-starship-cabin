@@ -179,11 +179,11 @@ namespace StarshipCabin.EditorTools
             var ships = new List<Transform>
             {
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "CommandShip", "Command Ship Resolute",
-                    FlagshipPosition, Quaternion.Euler(0f, -58f, -8f), FlagshipScale),
+                    FlagshipPosition, Quaternion.Euler(0f, -58f, -8f), FlagshipScale, stableHero:true),
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortSpear", "Port Escort",
-                    new Vector3(-22f, 9.0f, -63f), Quaternion.Euler(0f, -48f, -4f), 1.08f),
+                    new Vector3(-22f, 9.0f, -63f), Quaternion.Euler(0f, -48f, -4f), 1.08f, stableHero:true),
                 QuietWatchArtAssetBuilder.InstantiateLod(formationRig, "EscortWing", "Starboard Escort",
-                    new Vector3(24f, 10.0f, -67f), Quaternion.Euler(0f, -54f, 2f), 1.0f)
+                    new Vector3(24f, 10.0f, -67f), Quaternion.Euler(0f, -54f, 2f), 1.0f, stableHero:true)
             };
 
             var formationSun = FormationSun.normalized;
