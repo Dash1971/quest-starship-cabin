@@ -14,7 +14,7 @@ namespace StarshipCabin.EditorTools
         [Serializable] private sealed class Evidence { public string sourceHash; public Sample[] samples; }
         [Serializable] private sealed class Sample
         {
-            public string seat; public int star; public float beforeX,afterX,expectedDeltaX,measuredDeltaX;
+            public string seat; public int star; public float startSeconds,beforeX,afterX,expectedDeltaX,measuredDeltaX;
         }
 
         internal static void Run(Camera camera,VistaCapturePoint[] points,FirstQuestionVista first,string sourceHash)
@@ -30,15 +30,23 @@ namespace StarshipCabin.EditorTools
             var pixels=new Texture2D(512,512,TextureFormat.RGB24,false);
             var block=new MaterialPropertyBlock();stars.GetPropertyBlock(block);
             var catalogue=FirstQuestionField.Catalogue();var samples=new List<Sample>();
-            var clock=new VistaTimeline(780,120);clock.Reset(false,false);clock.SetModes(false,true);clock.Advance(20);
+            double Travel(float seconds)
+            {
+                var clock=new VistaTimeline(FirstQuestionField.CometDelay,FirstQuestionField.CometDuration);
+                clock.Reset(false,false);clock.SetModes(false,true);clock.Advance(seconds);return clock.DriftTravel;
+            }
             try
             {
                 camera.targetTexture=target;camera.aspect=1;camera.cullingMask=1<<QuietWatchArtAssetBuilder.ExteriorLayer;
                 camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=Color.black;
                 if(data!=null)data.renderPostProcessing=false;
                 comet.forceRenderingOff=true;
+                // The second pair crosses the global offset rollover and exercises
+                // regenerated stars. An arrival-only audit never reaches that shader path.
+                foreach(var startSeconds in new[]{0f,(float)Math.Floor(FirstQuestionField.Period/FirstQuestionField.Speed)})
                 foreach(var point in QuietWatchFirstQuestionViews.All(points))
                 {
+                    var beforeTravel=Travel(startSeconds);var afterTravel=Travel(startSeconds+20);
                     camera.transform.SetPositionAndRotation(point.Position,point.Rotation);
                     var sideView=!point.Name.Contains("upward") && !point.Name.StartsWith("Standing");
                     // Include the upper sky and standing poses; the old audit only saw seat centres.
@@ -48,7 +56,7 @@ namespace StarshipCabin.EditorTools
                         for(var i=0;i<catalogue.Length;i++)
                         {
                             var star=catalogue[i];if(star.Scale!=scale)continue;
-                            var a=FirstQuestionField.At(star,i,0);var b=FirstQuestionField.At(star,i,clock.DriftTravel);
+                            var a=FirstQuestionField.At(star,i,beforeTravel);var b=FirstQuestionField.At(star,i,afterTravel);
                             var before=camera.WorldToViewportPoint(new Vector3((float)a.X,(float)a.Y,(float)a.Z));
                             var after=camera.WorldToViewportPoint(new Vector3((float)b.X,(float)b.Y,(float)b.Z));
                             if(a.Visibility<.99 || b.Visibility<.99 || before.z<=0 || after.z<=0)continue;
@@ -74,8 +82,8 @@ namespace StarshipCabin.EditorTools
                             if(energy<10)throw new InvalidOperationException("Star shader did not render audit point: "+selected);
                             return (float)(weighted/energy);
                         }
-                        var x0=Centroid(0);var x1=Centroid(20);var measured=x1-x0;
-                        samples.Add(new Sample{seat=point.Name,star=selected,beforeX=x0,afterX=x1,
+                        var x0=Centroid(startSeconds);var x1=Centroid(startSeconds+20);var measured=x1-x0;
+                        samples.Add(new Sample{seat=point.Name,star=selected,startSeconds=startSeconds,beforeX=x0,afterX=x1,
                             expectedDeltaX=expected,measuredDeltaX=measured});
                         if(Mathf.Abs(measured)<.5f || Mathf.Sign(measured)!=Mathf.Sign(expected) || Mathf.Abs(expected-measured)>.8f)
                             throw new InvalidOperationException($"Rendered stellar flow is reversed or disagrees with projection: {point.Name}, star {selected}, expected {expected:F2}, rendered {measured:F2} px.");
