@@ -101,6 +101,9 @@ namespace StarshipCabin.EditorTools
                 formation.Enter(LifeMode.Quiet, MotionMode.Still);
                 var rig = formation.transform.Find("Formation Flight Rig");
                 var command = rig.Find("Command Ship Resolute");
+                foreach (var group in rig.GetComponentsInChildren<LODGroup>())
+                    Require(group.lodCount==1 && group.GetLODs()[0].screenRelativeTransitionHeight==0,
+                        "Formation hero can switch silhouette or cull during motion.");
                 foreach (var detailName in new[] { "Room-scale occupied decks", "Hull service markings" })
                     Require(command.Find(detailName).localScale == Vector3.one, "Hull details do not inherit fleet scale.");
                 formation.PreviewAt(0, LifeMode.Quiet, MotionMode.Still);
@@ -109,7 +112,20 @@ namespace StarshipCabin.EditorTools
                 Require(Vector3.Distance(formationStart, rig.localPosition) > 0.5f,
                     "Formation must remain visibly underway in Quiet/Still.");
                 formation.ApplyComfort(LifeMode.Living, MotionMode.Still);
+                var beforePreview = rig.localRotation;
                 Require(formation.PreviewGraceNote(), "Formation event preview must work in Still.");
+                Require(Quaternion.Angle(beforePreview,rig.localRotation)<.01f,"Formation hold-B snaps attitude.");
+                formation.AdvancePreview(8);
+                Require(Quaternion.Angle(beforePreview,rig.localRotation)>3f,"Formation preview failed to become readable.");
+                beforePreview=rig.localRotation;
+                formation.ApplyComfort(LifeMode.Quiet,MotionMode.Still);
+                Require(Quaternion.Angle(beforePreview,rig.localRotation)<.01f,"Quiet snaps the fleet back to its old attitude.");
+                for (var frame=0;frame<12*72;frame++)
+                {
+                    beforePreview=rig.localRotation;
+                    formation.AdvancePreview(1f/72);
+                    Require(Quaternion.Angle(beforePreview,rig.localRotation)<.1f,"Fleet attitude jumps during cancellation.");
+                }
                 formation.Exit();
                 CheckHarbour(vistas.OfType<AuthoredVista>().Single(v => v.VistaId == "harbour"));
                 CheckCinematic(vistas);
@@ -168,13 +184,20 @@ namespace StarshipCabin.EditorTools
             float CruiseTravel() { var b=new MaterialPropertyBlock();cruise.GetPropertyBlock(b);return b.GetFloat("_Travel"); }
             first.PreviewAt(0,LifeMode.Quiet,MotionMode.Still);Require(CruiseTravel()==0,"Cruise must begin stationary.");
             first.PreviewAt(12,LifeMode.Quiet,MotionMode.Drift);var travel=CruiseTravel();
-            Require(travel>955 && travel<970,"Cruise lateral travel is missing or incorrectly eased.");
+            var expectedTravel=(12-2*(1-Mathf.Exp(-6)))*FirstQuestionField.Speed;
+            Require(Mathf.Abs(travel-expectedTravel)<.1f,"Cruise lateral travel is missing or incorrectly eased.");
             sky.GetPropertyBlock(skyBlock);
             Require(skyBlock.GetFloat("_FirstQuestionField")>.5f && skyBlock.GetFloat("_Twinkle")==0,
                 "A stationary/twinkling background is leaking behind the unified field.");
             var fieldMesh=cruise.GetComponent<MeshFilter>().sharedMesh;
             Require(fieldMesh.vertexCount==FirstQuestionField.StarCount*4 && fieldMesh.uv2.Length==fieldMesh.vertexCount,
                 "Unified stellar catalogue is missing or incomplete.");
+            var fieldData=new System.Collections.Generic.List<Vector3>();fieldMesh.GetUVs(1,fieldData);
+            Require(fieldMesh.indexFormat==UnityEngine.Rendering.IndexFormat.UInt32
+                && fieldData.Any(v=>v.z==.25f) && fieldData.Any(v=>v.z==.5f) && fieldData.Any(v=>v.z==1f),
+                "Full-sky mesh lost its 32-bit indices or per-depth travel metadata.");
+            Require(fieldMesh.vertices.Any(v=>v.y>Mathf.Abs(v.z)*2) && fieldMesh.vertices.Any(v=>v.z>8000),
+                "First Question reverted to a horizon-only slab.");
             Require(fieldMesh.colors.Max(c=>c.a)>3,"Stellar energy was clamped during mesh import.");
             var comet=first.GetComponentsInChildren<Renderer>().Single(r=>r.sharedMaterial.shader.name=="StarshipCabin/QuietWatchDistantComet");
             Require(comet.sharedMaterial.shader.isSupported && !ShaderUtil.ShaderHasError(comet.sharedMaterial.shader),"Distant comet shader failed.");

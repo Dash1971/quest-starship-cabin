@@ -5,19 +5,19 @@ namespace StarshipCabin.QuietWatch
     /// <summary>Original stellar catalogue and one translation model; independent of Unity for projection tests.</summary>
     public static class FirstQuestionField
     {
-        public const int StarCount = 12288;
-        public const float Period = 196608f;
-        public const float Speed = 96f;
+        public const int StarCount = 24576;
+        public const float Period = 131072f;
+        public const float Speed = 144f;
         public const float NearDepth = 8000f;
-        public const float FarDepth = 44000f;
+        public const float FarDepth = 65536f;
         public const float CometDuration = 120f;
-        public const float CometDelay = 780f;
-        public const float CometTailDegrees = 2.1f;
-        public const float CometHalfWidthDegrees = .18f;
+        public const float CometDelay = 180f;
+        public const float CometTailDegrees = 6f;
+        public const float CometHalfWidthDegrees = .65f;
 
         public struct Star
         {
-            public float X, Y, Z, R, G, B, Flux, Sigma;
+            public float X, Y, Z, R, G, B, Flux, Sigma, Scale;
         }
         public struct Position
         {
@@ -35,6 +35,16 @@ namespace StarshipCabin.QuietWatch
         }
         private static float Unit(uint value) => (Mix(value) & 0xffffff) / 16777216f;
         private static float Range(float a, float b, float u) => a + (b - a) * u;
+        // A full circular cross-section around the direction of flight. The former
+        // Y = +/-0.72 * -Z slab left every ray above 36 degrees completely empty.
+        // Quarter/half/full transverse extents provide depth, all translated by ONE velocity.
+        private static void CrossSection(uint seed, float scale, out float y, out float z)
+        {
+            var radius = Math.Sqrt(Range(NearDepth*NearDepth, FarDepth*FarDepth*scale*scale, Unit(seed)));
+            var angle = Unit(seed+1)*Math.PI*2;
+            y = (float)(Math.Sin(angle)*radius);
+            z = (float)(Math.Cos(angle)*radius);
+        }
         private static double Smooth(double a, double b, double value)
         {
             var t = Math.Max(0, Math.Min(1, (value-a)/(b-a)));
@@ -47,17 +57,17 @@ namespace StarshipCabin.QuietWatch
             for (var i=0; i<stars.Length; i++)
             {
                 var seed = (uint)i * 11 + 71029u;
-                var depth = Range(NearDepth, FarDepth, Unit(seed));
+                var scale = i < 4096 ? .25f : i < 12288 ? .5f : 1f;
+                CrossSection(seed+5,scale,out var y,out var z);
                 var luminance = Unit(seed+3);
                 var temperature = Unit(seed+4);
                 var star = new Star {
-                    X = Range(-Period*.5f, Period*.5f, Unit(seed+1)),
-                    Y = Range(-.72f, .72f, Unit(seed+2))*depth,
-                    Z = -depth,
+                    X = Range(-Period*.5f, Period*.5f, Unit(seed+1))*Math.Max(.5f,scale),
+                    Y = y, Z = z, Scale = scale,
                     R = temperature < .5f ? 1f : Range(1f,.72f,(temperature-.5f)*2),
                     G = temperature < .5f ? Range(.74f,1f,temperature*2) : Range(1f,.84f,(temperature-.5f)*2),
                     B = temperature < .5f ? Range(.48f,1f,temperature*2) : 1f,
-                    Flux = .065f + 3.4f*(float)Math.Pow(luminance,8),
+                    Flux = .065f + 3.4f*(float)Math.Pow(luminance,7),
                     Sigma = .50f + .43f*(float)Math.Pow(luminance,12)
                 };
                 // Sparse distant associations are made of individual stars, never a fog card.
@@ -76,36 +86,38 @@ namespace StarshipCabin.QuietWatch
                 stars[i] = star;
             }
             // Two restrained warm/cool doubles give a recognisable reference for watching travel.
-            stars[0] = new Star { X=5800,Y=5100,Z=-23000,R=1,G=.85f,B=.66f,Flux=3.1f,Sigma=.91f };
-            stars[1] = new Star { X=5878,Y=5145,Z=-23000,R=.8f,G=.89f,B=1,Flux=1.15f,Sigma=.61f };
-            stars[2] = new Star { X=-6700,Y=2600,Z=-18000,R=1,G=.96f,B=.88f,Flux=2.4f,Sigma=.78f };
-            stars[3] = new Star { X=-6795,Y=2630,Z=-18000,R=.78f,G=.87f,B=1,Flux=.8f,Sigma=.55f };
+            stars[0] = new Star { X=5800,Y=5100,Z=-23000,R=1,G=.85f,B=.66f,Flux=3.1f,Sigma=.91f,Scale=1 };
+            stars[1] = new Star { X=5878,Y=5145,Z=-23000,R=.8f,G=.89f,B=1,Flux=1.15f,Sigma=.61f,Scale=1 };
+            stars[2] = new Star { X=-6700,Y=2600,Z=-18000,R=1,G=.96f,B=.88f,Flux=2.4f,Sigma=.78f,Scale=1 };
+            stars[3] = new Star { X=-6795,Y=2630,Z=-18000,R=.78f,G=.87f,B=1,Flux=.8f,Sigma=.55f,Scale=1 };
             return stars;
         }
 
         public static Position At(Star star, int index, double easedSeconds)
         {
             var travel = Math.Max(0,easedSeconds)*Speed;
-            var cycle = Math.Floor((star.X+travel+Period*.5)/Period);
-            var x = star.X+travel-cycle*Period;
+            // Extend near cells along the flight axis so diagonal window views
+            // retain nearby references instead of seeing only their fade-out boundary.
+            var period = Period*Math.Max(.5f,star.Scale);
+            var cycle = Math.Floor((star.X+travel+period*.5)/period);
+            var x = star.X+travel-cycle*period;
             double y=star.Y, z=star.Z;
             if (cycle!=0)
             {
                 // Recycle only at the zero-opacity edges. Changing depth there avoids a repeated
                 // constellation loop. Integer hashing is bit-identical to the vertex shader.
                 var seed = unchecked((uint)(index+1) ^ (uint)cycle*0x9e3779b9u);
-                var depth = Range(NearDepth,FarDepth,Unit(seed));
-                y = Range(-.72f,.72f,Unit(seed+1))*depth;
-                z = -depth;
+                CrossSection(seed,star.Scale,out var nextY,out var nextZ);
+                y = nextY; z = nextZ;
             }
-            return new Position { X=x, Y=y, Z=z, Visibility=1-Smooth(Period*.40,Period*.5,Math.Abs(x)) };
+            return new Position { X=x, Y=y, Z=z, Visibility=1-Smooth(period*.40,period*.5,Math.Abs(x)) };
         }
 
         // Shared event placement for the editor projection audit and the real renderer.
         // The intrinsic orbital change is <0.5 degree over two minutes, not a meteor streak.
         public static Position CometAt(double eventAge, double travelSinceAppearance)
         {
-            return new Position { X=11000+Math.Max(0,travelSinceAppearance)*Speed,
+            return new Position { X=12000+Math.Max(0,travelSinceAppearance)*Speed,
                 Y=7000+Math.Max(0,eventAge)*2.0, Z=-36000,
                 Visibility=eventAge<0 ? 0 : Smooth(0,16,eventAge)*(1-Smooth(94,120,eventAge)) };
         }

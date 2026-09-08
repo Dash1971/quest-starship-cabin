@@ -43,6 +43,7 @@ namespace StarshipCabin.QuietWatch
         private LifeMode lifeMode;
         private MotionMode motionMode;
         private VistaTimeline timeline;
+        private readonly FormationManeuver formationManeuver = new FormationManeuver();
         private VistaBackdropLayers backdropLayers;
         private GreatWeatherEclipse eclipse;
         private bool originsCached;
@@ -133,9 +134,27 @@ namespace StarshipCabin.QuietWatch
 
             if (paused || !focused) return;
             // Do not catch up a suspended app or a large stall in one visible frame.
-            if (timeline.Advance(Mathf.Min(Time.unscaledDeltaTime, 0.1f), AllowEventMotion))
+            AdvanceObservation(Mathf.Min(Time.unscaledDeltaTime, 0.1f));
+        }
+
+        private void AdvanceObservation(float seconds)
+        {
+            if (timeline.Advance(seconds, AllowEventMotion))
                 audioController?.TriggerQuietWatchGrace(VistaId);
+            if (kind == AuthoredVistaKind.LongFormation)
+                formationManeuver.Advance(seconds, timeline.Progress);
             UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
+        }
+
+        /// <summary>Continue the real choreography in capture tools, including event transitions.</summary>
+        public void AdvancePreview(float seconds)
+        {
+            for (double time = 0; time < seconds;)
+            {
+                var dt = (float)Math.Min(1.0 / 72, seconds - time);
+                AdvanceObservation(dt);
+                time += dt;
+            }
         }
 
         // Still/Drift controls optional comfort motion. It must not freeze
@@ -157,6 +176,8 @@ namespace StarshipCabin.QuietWatch
             motionMode = previewMotionMode;
             timeline ??= new VistaTimeline(graceNoteAtSeconds, GraceDuration());
             timeline.Seek(elapsed, lifeMode == LifeMode.Living, motionMode == MotionMode.Drift, AllowEventMotion);
+            if (kind == AuthoredVistaKind.LongFormation)
+                formationManeuver.SeekScheduled(timeline.EventAge, GraceDuration());
             ApplyComfort(previewLifeMode, previewMotionMode);
             starWindow?.PreviewAt(elapsed, false, -1f);
             UpdateComposition((float)timeline.Elapsed, (float)timeline.Progress);
@@ -164,6 +185,7 @@ namespace StarshipCabin.QuietWatch
 
         private void UpdateComposition(float elapsed, float grace)
         {
+            if (kind == AuthoredVistaKind.LongFormation) grace = (float)formationManeuver.Value;
             switch (kind)
             {
                 case AuthoredVistaKind.Harbour:
@@ -192,6 +214,7 @@ namespace StarshipCabin.QuietWatch
             active = true;
             timeline = new VistaTimeline(graceNoteAtSeconds, GraceDuration());
             timeline.Reset(nextLifeMode == LifeMode.Living, nextMotionMode == MotionMode.Drift);
+            formationManeuver.Reset();
             lifeMode = nextLifeMode;
             motionMode = nextMotionMode;
             starWindow?.ResetVistaClock();
@@ -299,13 +322,12 @@ namespace StarshipCabin.QuietWatch
                 // The formation remains visibly underway in both Quiet and
                 // Living, including default Still. Integrated clocks preserve
                 // its pose when Life mode changes instead of rebasing motion.
-                var flightPhase = (float)(timeline.LivingTravel * 0.064
-                    + timeline.QuietTravel * 0.052);
+                var flightPhase = timeline.LivingTravel * 0.064 + timeline.QuietTravel * 0.052;
                 var cruise = new Vector3(
-                    Mathf.Sin(flightPhase) * 3.8f,
-                    Mathf.Sin(flightPhase * 0.63f + 0.5f) * 1.05f,
-                    Mathf.Sin(flightPhase * 0.83f - 0.35f) * 5.8f);
-                var courseYaw = Mathf.Cos(flightPhase) * 2.8f;
+                    (float)Math.Sin(flightPhase) * 3.8f,
+                    (float)Math.Sin(flightPhase * 0.63 + 0.5) * 1.05f,
+                    (float)Math.Sin(flightPhase * 0.83 - 0.35) * 5.8f);
+                var courseYaw = (float)Math.Cos(flightPhase) * 2.8f;
                 var turn = Quaternion.Euler(
                     -2.0f * grace,
                     courseYaw - 10.0f * grace,
@@ -323,19 +345,19 @@ namespace StarshipCabin.QuietWatch
                 }
 
                 traveller.gameObject.SetActive(true);
-                var stationTime = (float)(timeline.LivingTravel + timeline.QuietTravel * 0.80);
-                var phase = stationTime * (0.118f + i * 0.015f) + i * 2.1f;
+                var stationTime = timeline.LivingTravel + timeline.QuietTravel * 0.80;
+                var phase = stationTime * (0.118 + i * 0.015) + i * 2.1;
                 var correctionScale = Mathf.Lerp(0.72f, 1f, (float)timeline.Activity);
                 var correction = new Vector3(
-                    Mathf.Sin(phase) * (0.38f + i * 0.075f),
-                    Mathf.Sin(phase * 0.71f) * (0.22f + i * 0.040f),
-                    Mathf.Cos(phase * 0.53f) * (0.28f + i * 0.055f)) * correctionScale;
+                    (float)Math.Sin(phase) * (0.38f + i * 0.075f),
+                    (float)Math.Sin(phase * 0.71) * (0.22f + i * 0.040f),
+                    (float)Math.Cos(phase * 0.53) * (0.28f + i * 0.055f)) * correctionScale;
                 traveller.localPosition = travellerOrigins[i] + correction;
                 traveller.localRotation = travellerRotations[i]
                     * Quaternion.Euler(
-                        Mathf.Sin(phase * 0.71f) * 0.85f * correctionScale,
-                        Mathf.Sin(phase * 0.6f) * 1.45f * correctionScale,
-                        Mathf.Sin(phase) * 2.10f * correctionScale);
+                        (float)Math.Sin(phase * 0.71) * 0.85f * correctionScale,
+                        (float)Math.Sin(phase * 0.6) * 1.45f * correctionScale,
+                        (float)Math.Sin(phase) * 2.10f * correctionScale);
                 if (i < formationEngines.Length && formationEngines[i] != null)
                 {
                     formationEngines[i].SetActivity(Mathf.Lerp(0.68f, 1f, (float)timeline.Activity));

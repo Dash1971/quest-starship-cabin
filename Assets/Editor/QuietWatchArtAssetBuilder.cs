@@ -59,7 +59,7 @@ namespace StarshipCabin.EditorTools
 
         public static Transform InstantiateLod(
             Transform parent, string family, string name, Vector3 position,
-            Quaternion rotation, float scale, bool castShadows = true)
+            Quaternion rotation, float scale, bool castShadows = true, bool stableHero = false)
         {
             if (materials == null)
             {
@@ -75,8 +75,11 @@ namespace StarshipCabin.EditorTools
             GameObjectUtility.SetStaticEditorFlags(root.gameObject, 0);
 
             var lods = new List<LOD>();
-            var thresholds = new[] { 0.38f, 0.14f, 0.025f };
-            for (var index = 0; index < 3; index++)
+            // Only the three Formation heroes use one mesh at every distance.
+            // Abrupt LOD changes altered their silhouette during gentle travel.
+            // Harbour traffic retains its three-level performance policy.
+            var thresholds = stableHero ? new[] { 0f } : new[] { 0.38f, 0.14f, 0.025f };
+            for (var index = 0; index < thresholds.Length; index++)
             {
                 var path = $"{ModelRoot}/QW_{family}_LOD{index}.fbx";
                 var source = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -122,7 +125,7 @@ namespace StarshipCabin.EditorTools
                 if (family == "CommandShip")
                 {
                     var details = AddCommandScaleDetails(root);
-                    for (var i = 0; i < 2; i++)
+                    for (var i = 0; i < Math.Min(2,lods.Count); i++)
                         lods[i] = new LOD(thresholds[i], lods[i].renderers.Concat(details).ToArray());
                     group.SetLODs(lods.ToArray());
                     group.RecalculateBounds();

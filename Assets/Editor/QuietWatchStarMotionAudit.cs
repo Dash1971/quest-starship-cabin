@@ -14,7 +14,7 @@ namespace StarshipCabin.EditorTools
         [Serializable] private sealed class Evidence { public string sourceHash; public Sample[] samples; }
         [Serializable] private sealed class Sample
         {
-            public string seat; public int star; public float beforeX,afterX,expectedDeltaX,measuredDeltaX;
+            public string seat; public int star; public float startSeconds,beforeX,afterX,expectedDeltaX,measuredDeltaX;
         }
 
         internal static void Run(Camera camera,VistaCapturePoint[] points,FirstQuestionVista first,string sourceHash)
@@ -30,32 +30,43 @@ namespace StarshipCabin.EditorTools
             var pixels=new Texture2D(512,512,TextureFormat.RGB24,false);
             var block=new MaterialPropertyBlock();stars.GetPropertyBlock(block);
             var catalogue=FirstQuestionField.Catalogue();var samples=new List<Sample>();
-            var clock=new VistaTimeline(780,120);clock.Reset(false,false);clock.SetModes(false,true);clock.Advance(20);
+            double Travel(float seconds)
+            {
+                var clock=new VistaTimeline(FirstQuestionField.CometDelay,FirstQuestionField.CometDuration);
+                clock.Reset(false,false);clock.SetModes(false,true);clock.Advance(seconds);return clock.DriftTravel;
+            }
             try
             {
                 camera.targetTexture=target;camera.aspect=1;camera.cullingMask=1<<QuietWatchArtAssetBuilder.ExteriorLayer;
                 camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=Color.black;
                 if(data!=null)data.renderPostProcessing=false;
                 comet.forceRenderingOff=true;
-                foreach(var point in points)
+                // The second pair crosses the global offset rollover and exercises
+                // regenerated stars. An arrival-only audit never reaches that shader path.
+                foreach(var startSeconds in new[]{0f,(float)Math.Floor(FirstQuestionField.Period/FirstQuestionField.Speed)})
+                foreach(var point in QuietWatchFirstQuestionViews.All(points))
                 {
-                    camera.transform.SetPositionAndRotation(point.transform.position,point.transform.rotation);
-                    // Cover near/far and both halves of the real camera projection at every seat.
-                    foreach(var near in new[]{true,false}) foreach(var left in new[]{true,false})
+                    var beforeTravel=Travel(startSeconds);var afterTravel=Travel(startSeconds+20);
+                    camera.transform.SetPositionAndRotation(point.Position,point.Rotation);
+                    var sideView=!point.Name.Contains("upward") && !point.Name.StartsWith("Standing");
+                    // Include the upper sky and standing poses; the old audit only saw seat centres.
+                    foreach(var scale in new[]{.25f,.5f,1f}) foreach(var left in new[]{true,false})
                     {
                         var selected=-1;var expected=0f;
                         for(var i=0;i<catalogue.Length;i++)
                         {
-                            var star=catalogue[i];if((star.Z>-23000)!=near)continue;
-                            var a=FirstQuestionField.At(star,i,0);var b=FirstQuestionField.At(star,i,clock.DriftTravel);
+                            var star=catalogue[i];if(star.Scale!=scale)continue;
+                            var a=FirstQuestionField.At(star,i,beforeTravel);var b=FirstQuestionField.At(star,i,afterTravel);
                             var before=camera.WorldToViewportPoint(new Vector3((float)a.X,(float)a.Y,(float)a.Z));
                             var after=camera.WorldToViewportPoint(new Vector3((float)b.X,(float)b.Y,(float)b.Z));
                             if(a.Visibility<.99 || b.Visibility<.99 || before.z<=0 || after.z<=0)continue;
                             if((before.x<.5f)!=left || before.x<.2f || before.x>.8f || before.y<.2f || before.y>.8f
                                 || after.x<.15f || after.x>.85f || after.y<.15f || after.y>.85f)continue;
-                            expected=(after.x-before.x)*512;selected=i;break;
+                            expected=(after.x-before.x)*512;
+                            if(Mathf.Abs(expected)<.5f || (sideView && expected>=0))continue;
+                            selected=i;break;
                         }
-                        if(selected<0)throw new InvalidOperationException("No motion-audit star in camera: "+point.CaptureName);
+                        if(selected<0)throw new InvalidOperationException("No motion-audit star in camera: "+point.Name);
                         float Centroid(float seconds)
                         {
                             first.PreviewAt(seconds,LifeMode.Quiet,MotionMode.Drift);
@@ -71,17 +82,17 @@ namespace StarshipCabin.EditorTools
                             if(energy<10)throw new InvalidOperationException("Star shader did not render audit point: "+selected);
                             return (float)(weighted/energy);
                         }
-                        var x0=Centroid(0);var x1=Centroid(20);var measured=x1-x0;
-                        samples.Add(new Sample{seat=point.CaptureName,star=selected,beforeX=x0,afterX=x1,
+                        var x0=Centroid(startSeconds);var x1=Centroid(startSeconds+20);var measured=x1-x0;
+                        samples.Add(new Sample{seat=point.Name,star=selected,startSeconds=startSeconds,beforeX=x0,afterX=x1,
                             expectedDeltaX=expected,measuredDeltaX=measured});
-                        if(expected>=-.5f || measured>=-.5f || Mathf.Abs(expected-measured)>.8f)
-                            throw new InvalidOperationException($"Rendered stellar flow is reversed or disagrees with projection: {point.CaptureName}, star {selected}, expected {expected:F2}, rendered {measured:F2} px.");
+                        if(Mathf.Abs(measured)<.5f || Mathf.Sign(measured)!=Mathf.Sign(expected) || Mathf.Abs(expected-measured)>.8f)
+                            throw new InvalidOperationException($"Rendered stellar flow is reversed or disagrees with projection: {point.Name}, star {selected}, expected {expected:F2}, rendered {measured:F2} px.");
                     }
                 }
                 Directory.CreateDirectory("Builds/Validation");
                 File.WriteAllText("Builds/Validation/first-question-motion.json",JsonUtility.ToJson(
                     new Evidence{sourceHash=sourceHash,samples=samples.ToArray()},true));
-                Debug.Log("First Question GPU audit: 16 near/far, left/right camera samples move LEFT and agree with projection.");
+                Debug.Log($"First Question GPU audit: {samples.Count} seated/upward/standing, near/mid/far samples agree with 3D translation; seated side views move LEFT.");
             }
             finally
             {
