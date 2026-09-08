@@ -125,7 +125,7 @@ for(var i=0;i<catalogue.Length;i++)
         fixedDepth &= a.Y==b.Y && a.Z==b.Z;
         coherent &= Math.Abs(b.X-a.X-FirstQuestionField.Speed)<1e-5;
     }
-    var edge=(FirstQuestionField.Period*catalogue[i].Scale*.5-catalogue[i].X)/FirstQuestionField.Speed;
+    var edge=(FirstQuestionField.Period*Math.Max(.5,catalogue[i].Scale)*.5-catalogue[i].X)/FirstQuestionField.Speed;
     var before=FirstQuestionField.At(catalogue[i],i,edge-1e-5);
     var after=FirstQuestionField.At(catalogue[i],i,edge+1e-5);
     continuous &= before.Visibility<1e-8 && after.Visibility<1e-8;

@@ -32,7 +32,7 @@ def noise(v):return (mix(v)&0xffffff)/16777216
 def positions(model,seconds):
  stars=model['stars'];p=np.array([[s[k] for k in ('X','Y','Z')] for s in stars],float)
  eased=seconds-2*(1-np.exp(-seconds/2));distance=eased*model['speed']
- scales=np.array([s['Scale'] for s in stars]);period=model['period']*scales
+ scales=np.array([s['Scale'] for s in stars]);period=model['period']*np.maximum(.5,scales)
  cycles=np.floor((p[:,0]+distance+period*.5)/period).astype(np.uint32)
  p[:,0]+=distance-cycles.astype(float)*period
  seed=np.arange(1,len(stars)+1,dtype=np.uint32)^(cycles*np.uint32(0x9e3779b9))

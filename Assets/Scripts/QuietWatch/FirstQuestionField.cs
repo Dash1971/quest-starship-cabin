@@ -37,7 +37,7 @@ namespace StarshipCabin.QuietWatch
         private static float Range(float a, float b, float u) => a + (b - a) * u;
         // A full circular cross-section around the direction of flight. The former
         // Y = +/-0.72 * -Z slab left every ray above 36 degrees completely empty.
-        // Quarter/half/full-sized cells provide depth, all translated by ONE velocity.
+        // Quarter/half/full transverse extents provide depth, all translated by ONE velocity.
         private static void CrossSection(uint seed, float scale, out float y, out float z)
         {
             var radius = Math.Sqrt(Range(NearDepth*NearDepth, FarDepth*FarDepth*scale*scale, Unit(seed)));
@@ -62,7 +62,7 @@ namespace StarshipCabin.QuietWatch
                 var luminance = Unit(seed+3);
                 var temperature = Unit(seed+4);
                 var star = new Star {
-                    X = Range(-Period*.5f, Period*.5f, Unit(seed+1))*scale,
+                    X = Range(-Period*.5f, Period*.5f, Unit(seed+1))*Math.Max(.5f,scale),
                     Y = y, Z = z, Scale = scale,
                     R = temperature < .5f ? 1f : Range(1f,.72f,(temperature-.5f)*2),
                     G = temperature < .5f ? Range(.74f,1f,temperature*2) : Range(1f,.84f,(temperature-.5f)*2),
@@ -96,7 +96,9 @@ namespace StarshipCabin.QuietWatch
         public static Position At(Star star, int index, double easedSeconds)
         {
             var travel = Math.Max(0,easedSeconds)*Speed;
-            var period = Period*star.Scale;
+            // Extend near cells along the flight axis so diagonal window views
+            // retain nearby references instead of seeing only their fade-out boundary.
+            var period = Period*Math.Max(.5f,star.Scale);
             var cycle = Math.Floor((star.X+travel+period*.5)/period);
             var x = star.X+travel-cycle*period;
             double y=star.Y, z=star.Z;

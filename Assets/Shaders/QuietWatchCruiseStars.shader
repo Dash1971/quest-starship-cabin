@@ -41,12 +41,13 @@ Shader "StarshipCabin/QuietWatchCruiseStars"
                 V v; UNITY_SETUP_INSTANCE_ID(a); UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(v);
                 // The desk/ship bow is -X. Space moves +X relative to the cabin.
                 // Facing the window (-Z), camera-right is -X: this projects LEFT.
-                float period=_WrapWidth*a.data.z;
+                float cellScale=max(.5,a.data.z);
+                float period=_WrapWidth*cellScale;
                 float localCycle=floor((a.p.x+_Travel+period*.5)/period);
                 float3 stellarPosition=a.p.xyz;
                 stellarPosition.x=a.p.x+_Travel-localCycle*period;
-                // All three periods divide the global period exactly, preserving phase at rollover.
-                uint cycle=(uint)(_Sector/a.data.z+localCycle);
+                // Both cell periods divide the global period exactly, preserving phase at rollover.
+                uint cycle=(uint)(_Sector/cellScale+localCycle);
                 if(cycle!=0u)
                 {
                     uint seed=(uint)(a.data.y+1)^cycle*0x9e3779b9u;

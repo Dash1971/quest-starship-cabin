@@ -4,10 +4,10 @@ from pathlib import Path
 import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'tools'))
-from preview_first_question import positions, project, unit, SEATS, glazing
+from preview_first_question import positions, project, unit, SEATS, glazing, views
 model=json.loads(Path(sys.argv[1]).read_text())
 # Check this projection tool against values emitted by the ACTUAL runtime model,
-# including all three cell boundaries. It is not an independent stand-in catalogue.
+# including both cell periods. It is not an independent stand-in catalogue.
 for checkpoint in model['checkpoints']:
  p,fade=positions(model,checkpoint['seconds'])
  actual=np.array([[v[k] for k in ('X','Y','Z')] for v in checkpoint['positions']])
@@ -69,6 +69,22 @@ for name,eye,target in SEATS:
   assert foreground.sum()>=20,f'No foreground travel references at {name}/{seconds}'
   assert np.median(shift[foreground])>2*np.median(shift[background]),f'Flat motion at {name}/{seconds}'
  print(f'PASS: {name}: >150 points move LEFT; >=20 near references with >2x background travel at 0/10/60/120 minutes')
+# The real GPU audit must be able to observe every depth tier on both sides of
+# oblique/upward cameras. This caught premature near-star fade in diagonal views.
+smallest=100000;samples=0
+for seconds in (0,float(np.floor(model['period']/model['speed']))):
+ p,fade=positions(model,seconds);q,later=positions(model,seconds+20)
+ for name,eye,target in views():
+  a=project(p,np.array(eye),target,512,512)/512;b=project(q,np.array(eye),target,512,512)/512
+  delta=(b[:,0]-a[:,0])*512
+  for scale in (.25,.5,1):
+   for left in (True,False):
+    ok=(scales==scale)&(fade>.99)&(later>.99)&((a[:,0]<.5)==left)&(a[:,0]>.2)&(a[:,0]<.8)&(a[:,1]>.2)&(a[:,1]<.8)
+    ok&=(b[:,0]>.15)&(b[:,0]<.85)&(b[:,1]>.15)&(b[:,1]<.85)&(np.abs(delta)>.5)
+    if 'upward' not in name and 'standing' not in name:ok&=delta<0
+    assert ok.any(),f'Missing persistent travel reference: {seconds}/{name}/{scale}/{left}'
+    smallest=min(smallest,int(ok.sum()));samples+=1
+print(f'PASS: {samples} GPU-audit selections have persistent references; smallest candidate pool = {smallest}')
 # Full six-degree comet tail, including width, stays in the reference panes at hold-B's readable phase.
 p=np.array([model['comet'][k] for k in ('X','Y','Z')]);anti=unit(np.array([-1,.24,-.08]))
 for name,base_eye,target in SEATS:
@@ -87,4 +103,4 @@ assert '_Time' not in field and '_ObservationTime' not in field, 'Independent st
 assert 'stellarPosition.x=a.p.x+_Travel-localCycle*period' in field, 'Shader translation differs from the audited model'
 print('PASS: unified field bypasses stationary sky layers, dust and the old UV-space meteor')
 
-assert 'float3 data:TEXCOORD1' in field and '_Sector/a.data.z+localCycle' in field,'Per-depth shader recycling metadata missing'
+assert 'float3 data:TEXCOORD1' in field and '_Sector/cellScale+localCycle' in field,'Per-depth shader recycling metadata missing'
